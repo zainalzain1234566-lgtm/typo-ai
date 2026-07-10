@@ -16,6 +16,7 @@ import { ScaledSlide, SlideRenderer, DisclaimerFooter } from "@/components/carou
 import { useApp } from "@/lib/app-context";
 import { useToast } from "@/components/ui/toast";
 import { TEMPLATE_DEFS, getPalette, SIZES } from "@/lib/templates";
+import { DEFAULT_ACCENT_COLOR } from "@/lib/constants";
 import { exportSlideToPng, downloadDataUrl, exportAllToZip, slidesToBlobs, waitForFonts } from "@/lib/export";
 import { mapProject } from "@/lib/db-mappers";
 import { updateProjectAction, recordExportAction } from "@/app/actions/projects";
@@ -78,7 +79,8 @@ export default function ExportPage() {
     );
   }
 
-  const pal = getPalette(project.settings.templateId, project.settings.paletteId);
+  const basePal = getPalette(project.settings.templateId, project.settings.paletteId);
+  const pal = brandKit.primaryColor && brandKit.primaryColor !== DEFAULT_ACCENT_COLOR ? { ...basePal, accent: brandKit.primaryColor } : basePal;
   const brandKitData = { instagramHandle: brandKit.instagramHandle, logoDataUrl: brandKit.logoUrl, primaryColor: brandKit.primaryColor, font: project.settings.font, disclaimerText: brandKit.disclaimerText };
   const tmpl = TEMPLATE_DEFS.find((t) => t.id === project.settings.templateId);
   const sizeLabel = { "1080x1080": "1080×1080", "1080x1350": "1080×1350", "1080x1920": "1080×1920" }[project.settings.size];

@@ -58,9 +58,13 @@ export default function VerifyEmailPage() {
       setError("أدخل الرمز كاملاً (6 أرقام)");
       return;
     }
+    if (!email) {
+      setError("تعذر تحديد البريد الإلكتروني");
+      return;
+    }
     setError(null);
     setLoading(true);
-    const { error } = await supabase.auth.verifyOtp({ token_hash: token, type: "email" });
+    const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
     setLoading(false);
     if (error) {
       setError(error.message);

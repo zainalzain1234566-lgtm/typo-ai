@@ -25,8 +25,9 @@ import type { FontFamily, Tone, Language, ContentLevel, CarouselSize, Slide, Bra
 import {
   updateProfileAction, updateBrandKitAction, updatePreferencesAction, deleteAccountAction,
 } from "@/app/actions/auth";
-import { testTelegramAction } from "@/app/actions/telegram";
+import { testTelegramAction, testSavedTelegramAction, getTelegramStatusAction } from "@/app/actions/telegram";
 import { createClient } from "@/lib/supabase/client";
+import { DEFAULT_ACCENT_COLOR, DEFAULT_DISCLAIMER_TEXT } from "@/lib/constants";
 
 const SECTIONS = [
   { id: "account", label: "الحساب", icon: UserIcon },
@@ -64,9 +65,9 @@ export default function SettingsPage() {
   const [igHandle, setIgHandle] = useState("");
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [primaryColor, setPrimaryColor] = useState("#6D5EFC");
+  const [primaryColor, setPrimaryColor] = useState(DEFAULT_ACCENT_COLOR);
   const [brandFont, setBrandFont] = useState<FontFamily>("tajawal");
-  const [disclaimerText, setDisclaimerText] = useState("هذا المحتوى للتوعية فقط ولا يغني عن استشارة الطبيب");
+  const [disclaimerText, setDisclaimerText] = useState(DEFAULT_DISCLAIMER_TEXT);
   const [showDisclaimer, setShowDisclaimer] = useState(true);
 
   const [defLang, setDefLang] = useState<Language>("العربية الفصحى");
@@ -80,6 +81,7 @@ export default function SettingsPage() {
   const [tgChatId, setTgChatId] = useState("");
   const [tgEnabled, setTgEnabled] = useState(false);
   const [tgTesting, setTgTesting] = useState(false);
+  const [hasSavedToken, setHasSavedToken] = useState(false);
 
   useEffect(() => {
     if (user) { setName(user.name); setAvatarUrl(user.avatarUrl); }
@@ -89,7 +91,7 @@ export default function SettingsPage() {
     setLogoUrl(brandKit.logoUrl);
     setPrimaryColor(brandKit.primaryColor);
     setBrandFont(brandKit.font as FontFamily);
-    setDisclaimerText(brandKit.disclaimerText ?? "هذا المحتوى للتوعية فقط ولا يغني عن استشارة الطبيب");
+    setDisclaimerText(brandKit.disclaimerText ?? DEFAULT_DISCLAIMER_TEXT);
   }, [brandKit]);
   useEffect(() => {
     if (preferences) {
@@ -102,21 +104,16 @@ export default function SettingsPage() {
     }
   }, [preferences]);
 
-  // Load telegram settings from DB (not in context — token stays server-side)
+  // Load telegram status via server action — the bot token itself never reaches the browser
   useEffect(() => {
     if (!user) return;
-    const supabase = createClient();
-    supabase.from("user_preferences")
-      .select("telegram_bot_token, telegram_chat_id, telegram_enabled")
-      .eq("user_id", user.id)
-      .single()
-      .then(({ data }) => {
-        if (data) {
-          setTgToken(data.telegram_bot_token ?? "");
-          setTgChatId(data.telegram_chat_id ?? "");
-          setTgEnabled(!!data.telegram_enabled);
-        }
-      });
+    getTelegramStatusAction().then((result) => {
+      if (result.success) {
+        setHasSavedToken(result.data.hasToken);
+        setTgChatId(result.data.chatId);
+        setTgEnabled(result.data.enabled);
+      }
+    });
   }, [user]);
 
   if (!ready) return null;
@@ -207,12 +204,16 @@ export default function SettingsPage() {
   };
 
   const saveTelegram = async () => {
-    const result = await updatePreferencesAction({
-      telegram_bot_token: tgToken || null,
+    // Only send the token if the user typed a new one — an empty field means "keep the saved token"
+    const payload: Record<string, unknown> = {
       telegram_chat_id: tgChatId || null,
       telegram_enabled: tgEnabled,
-    });
+    };
+    if (tgToken) payload.telegram_bot_token = tgToken;
+
+    const result = await updatePreferencesAction(payload);
     if (result.success) {
+      if (tgToken) { setHasSavedToken(true); setTgToken(""); }
       refresh();
       toast({ type: "success", title: "تم حفظ إعدادات تلغرام" });
     } else {
@@ -221,12 +222,12 @@ export default function SettingsPage() {
   };
 
   const testTelegram = async () => {
-    if (!tgToken || !tgChatId) {
-      toast({ type: "error", title: "أدخل الرمز ومعرّف المحادثة أولاً" });
-      return;
-    }
     setTgTesting(true);
-    const result = await testTelegramAction(tgToken, tgChatId);
+    const result = tgToken
+      ? await testTelegramAction(tgToken, tgChatId)
+      : hasSavedToken
+      ? await testSavedTelegramAction()
+      : { success: false, error: "أدخل الرمز ومعرّف المحادثة أولاً" };
     if (result.success) toast({ type: "success", title: "تم الإرسال! تحقق من تلغرام" });
     else toast({ type: "error", title: result.error ?? "فشل الاتصال" });
     setTgTesting(false);
@@ -465,7 +466,7 @@ export default function SettingsPage() {
                         type="password"
                         value={tgToken}
                         onChange={(e) => setTgToken(e.target.value)}
-                        placeholder="123456:ABC-DEF..."
+                        placeholder={hasSavedToken ? "•••••••• (رمز محفوظ — اتركه فارغًا للإبقاء عليه)" : "123456:ABC-DEF..."}
                       />
                     </div>
                     <div>

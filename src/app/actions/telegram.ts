@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { log, logError } from "@/lib/logger";
+import { APP_NAME } from "@/lib/constants";
 
 const TELEGRAM_API = "https://api.telegram.org";
 
@@ -76,7 +77,8 @@ export async function sendToTelegramAction(projectId: string, formData: FormData
     await supabase
       .from("projects")
       .update({ status: "completed", last_exported_at: new Date().toISOString() })
-      .eq("id", projectId);
+      .eq("id", projectId)
+      .eq("user_id", config.userId);
     await supabase.rpc("increment_usage", { p_user_id: config.userId, p_field: "exports_used" });
 
     log("TELEGRAM", "send success", { projectId, slideCount: files.length });
@@ -87,20 +89,58 @@ export async function sendToTelegramAction(projectId: string, formData: FormData
   }
 }
 
+export async function getTelegramStatusAction() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "غير مصرح" } as const;
+
+  const { data: prefs } = await supabase
+    .from("user_preferences")
+    .select("telegram_chat_id, telegram_enabled, telegram_bot_token")
+    .eq("user_id", user.id)
+    .single();
+
+  return {
+    success: true,
+    data: {
+      hasToken: !!prefs?.telegram_bot_token,
+      chatId: prefs?.telegram_chat_id ?? "",
+      enabled: !!prefs?.telegram_enabled,
+    },
+  } as const;
+}
+
+export async function testSavedTelegramAction() {
+  const supabase = await createClient();
+  const config = await getTelegramConfig(supabase);
+  if (!config) {
+    return { success: false, error: "لم يتم إعداد تلغرام. راجع الإعدادات." };
+  }
+  return sendTestMessage(config.botToken, config.chatId);
+}
+
 export async function testTelegramAction(botToken: string, chatId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "غير مصرح" };
+
   log("TELEGRAM", "test attempt", { chatId });
 
   if (!botToken || !chatId) {
     return { success: false, error: "الرمز ومعرّف المحادثة مطلوبان" };
   }
 
+  return sendTestMessage(botToken, chatId);
+}
+
+async function sendTestMessage(botToken: string, chatId: string) {
   try {
     const res = await fetch(`${TELEGRAM_API}/bot${botToken}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         chat_id: chatId,
-        text: "✅ تم ربط بوت تلغرام بنجاح مع Typo AI",
+        text: `✅ تم ربط بوت تلغرام بنجاح مع ${APP_NAME}`,
       }),
     });
 

@@ -4,8 +4,9 @@ import { motion } from "framer-motion";
 import { ScaledSlide } from "@/components/carousel/slide-renderer";
 import { TEMPLATE_DEFS, getPalette } from "@/lib/templates";
 import type { Slide, BrandKit, BrandKitSettings } from "@/lib/types";
+import { DEFAULT_ACCENT_COLOR } from "@/lib/constants";
 
-const demoBrandKit: BrandKit = { instagramHandle: "@typo.ai", logoDataUrl: null, primaryColor: "#6D5EFC", font: "tajawal" };
+const demoBrandKit: BrandKit = { instagramHandle: "@typo.ai", logoDataUrl: null, primaryColor: DEFAULT_ACCENT_COLOR, font: "tajawal" };
 const demoBkSettings: BrandKitSettings = { enabled: false, showLogo: false, showAccountName: false, showSlideNumber: false, showDisclaimer: true, placement: "bottom-left" };
 
 const slides: Slide[] = [

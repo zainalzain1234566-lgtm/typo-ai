@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
+import { DEFAULT_ACCENT_COLOR, DEFAULT_DISCLAIMER_TEXT } from "@/lib/constants";
 
 // ============= Types (matching frontend expectations) =============
 
@@ -52,11 +53,11 @@ interface AppContextValue extends AppData {
 const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
   const [user, setUser] = useState<AppUser | null>(null);
   const [ready, setReady] = useState(false);
   const [stats, setStats] = useState<Stats>({ totalProjects: 0, completedProjects: 0, exportCount: 0, favoriteTemplates: 0 });
-  const [brandKit, setBrandKit] = useState<{ instagramHandle: string; logoUrl: string | null; primaryColor: string; font: string; disclaimerText: string }>({ instagramHandle: "", logoUrl: null, primaryColor: "#6D5EFC", font: "tajawal", disclaimerText: "هذا المحتوى للتوعية فقط ولا يغني عن استشارة الطبيب" });
+  const [brandKit, setBrandKit] = useState<{ instagramHandle: string; logoUrl: string | null; primaryColor: string; font: string; disclaimerText: string }>({ instagramHandle: "", logoUrl: null, primaryColor: DEFAULT_ACCENT_COLOR, font: "tajawal", disclaimerText: DEFAULT_DISCLAIMER_TEXT });
   const [preferences, setPreferences] = useState({ language: "العربية الفصحى", tone: "مبسطة", level: "مبتدئ", size: "portrait", slideCount: 6, preferredTemplateId: null });
   const [telegramEnabled, setTelegramEnabled] = useState(false);
 
@@ -101,9 +102,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setBrandKit({
         instagramHandle: bk.instagram_username ?? "",
         logoUrl,
-        primaryColor: bk.primary_color ?? "#6D5EFC",
+        primaryColor: bk.primary_color ?? DEFAULT_ACCENT_COLOR,
         font: bk.default_font ?? "tajawal",
-        disclaimerText: bk.disclaimer_text ?? "هذا المحتوى للتوعية فقط ولا يغني عن استشارة الطبيب",
+        disclaimerText: bk.disclaimer_text ?? DEFAULT_DISCLAIMER_TEXT,
       });
     }
 
@@ -142,7 +143,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("[APP] auth event", event, { hasSession: !!session });
       if (event === "SIGNED_IN" && session?.user) {
         if (mounted) {
@@ -160,7 +161,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       if (mounted) setReady(true);
     });
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [supabase, loadUserData]);
 
   const value: AppContextValue = {

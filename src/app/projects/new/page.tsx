@@ -28,6 +28,7 @@ import {
   projectToUpdateInput, mapProject, mapSlide,
 } from "@/lib/db-mappers";
 import { cn } from "@/lib/utils";
+import { DEFAULT_ACCENT_COLOR, DEFAULT_DISCLAIMER_TEXT } from "@/lib/constants";
 import type { Project, Slide, ContentType, Tone, Language, ContentLevel, CarouselSize, CTAOption, FontFamily, Placement, SlideType } from "@/lib/types";
 import {
   createProjectAction, updateProjectAction, updateSlideAction,
@@ -603,7 +604,8 @@ function Step4Template({ project, updateSettings, brandKit }: {
   brandKit: any;
 }) {
   const tmpl = VISIBLE_TEMPLATES.find((t) => t.id === project.settings.templateId) ?? VISIBLE_TEMPLATES[0];
-  const pal = getPalette(project.settings.templateId, project.settings.paletteId);
+  const basePal = getPalette(project.settings.templateId, project.settings.paletteId);
+  const pal = brandKit.primaryColor && brandKit.primaryColor !== DEFAULT_ACCENT_COLOR ? { ...basePal, accent: brandKit.primaryColor } : basePal;
   const previewSlide = project.slides[0] ?? { id: "p", type: "cover" as SlideType, title: project.title, body: "" };
   const brandKitData = { instagramHandle: brandKit.instagramHandle, logoDataUrl: brandKit.logoUrl, primaryColor: brandKit.primaryColor, font: project.settings.font, disclaimerText: brandKit.disclaimerText };
 
@@ -724,7 +726,7 @@ function Step4Template({ project, updateSettings, brandKit }: {
               step={0.05}
               value={project.settings.fontSizeScale}
               onChange={(e) => updateSettings({ fontSizeScale: parseFloat(e.target.value) })}
-              className="w-full h-2 rounded-full appearance-none cursor-pointer bg-stone-200 accent-[#6D5EFC]"
+              className="w-full h-2 rounded-full appearance-none cursor-pointer bg-stone-200 accent-accent"
             />
             <div className="flex justify-between mt-1">
               <span className="text-xs text-ink-subtle">صغير</span>
@@ -969,7 +971,7 @@ function Step6Export({ project }: { project: Project }) {
             font={project.settings.font}
             size={project.settings.size}
             brandKitSettings={project.settings.brandKit}
-            brandKitData={{ instagramHandle: "@typo.ai", logoDataUrl: null, primaryColor: "#6D5EFC", font: project.settings.font, disclaimerText: "هذا المحتوى للتوعية فقط ولا يغني عن استشارة الطبيب" }}
+            brandKitData={{ instagramHandle: "@typo.ai", logoDataUrl: null, primaryColor: DEFAULT_ACCENT_COLOR, font: project.settings.font, disclaimerText: DEFAULT_DISCLAIMER_TEXT }}
             medical={{ specialty: project.settings.specialty, source: project.settings.source }}
             index={0}
             total={project.slides.length}

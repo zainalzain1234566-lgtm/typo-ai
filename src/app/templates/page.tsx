@@ -15,8 +15,9 @@ import { useApp } from "@/lib/app-context";
 import { toggleTemplateFavoriteAction } from "@/app/actions/projects";
 import { cn } from "@/lib/utils";
 import type { Slide, BrandKit, BrandKitSettings, CarouselSize } from "@/lib/types";
+import { DEFAULT_ACCENT_COLOR } from "@/lib/constants";
 
-const demoBrandKit: BrandKit = { instagramHandle: "@typo.ai", logoDataUrl: null, primaryColor: "#6D5EFC", font: "tajawal" };
+const demoBrandKit: BrandKit = { instagramHandle: "@typo.ai", logoDataUrl: null, primaryColor: DEFAULT_ACCENT_COLOR, font: "tajawal" };
 const demoBkSettings: BrandKitSettings = { enabled: false, showLogo: false, showAccountName: false, showSlideNumber: false, showDisclaimer: true, placement: "bottom-left" };
 const demoSlide: Slide = { id: "d", type: "cover", title: "أهمية شرب الماء يوميًا", body: "دليل طبي مبسّط" };
 const demoContent: Slide = { id: "d2", type: "content", title: "كم كوبًا تحتاج؟", body: "يحتاج البالغون إلى ٢-٣ لتر يوميًا" };

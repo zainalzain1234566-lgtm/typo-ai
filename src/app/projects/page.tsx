@@ -20,6 +20,7 @@ import { mapProject, mapFolder } from "@/lib/db-mappers";
 import { getPalette } from "@/lib/templates";
 import { FEATURE_FLAGS } from "@/lib/feature-flags";
 import { cn, relativeTime } from "@/lib/utils";
+import { DEFAULT_ACCENT_COLOR } from "@/lib/constants";
 import type { Project, Folder as FolderType } from "@/lib/types";
 import {
   deleteProjectAction, duplicateProjectAction, toggleProjectFavoriteAction,
@@ -354,7 +355,7 @@ function ProjectCard({ project, folders, onOpen, onDuplicate, onDelete, onExport
               font={project.settings.font}
               size={project.settings.size}
               brandKitSettings={project.settings.brandKit}
-              brandKitData={{ instagramHandle: "@typo.ai", logoDataUrl: null, primaryColor: "#6D5EFC", font: project.settings.font }}
+              brandKitData={{ instagramHandle: "@typo.ai", logoDataUrl: null, primaryColor: DEFAULT_ACCENT_COLOR, font: project.settings.font }}
               medical={{ specialty: project.settings.specialty, source: project.settings.source }}
               index={0}
               total={project.slides.length}

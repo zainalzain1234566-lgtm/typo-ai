@@ -1,3 +1,6 @@
+import { AI_DEFAULT_BASE_URL, AI_DEFAULT_MODEL, APP_NAME } from "@/lib/constants";
+import { logError } from "@/lib/logger";
+
 export interface GenerationInput {
   topic: string;
   contentType: string;
@@ -35,8 +38,11 @@ export class ExternalAIProvider implements GenerationProvider {
 
   constructor() {
     this.apiKey = process.env.AI_API_KEY!;
-    this.baseUrl = process.env.AI_BASE_URL || "https://openrouter.ai/api/v1";
-    this.model = process.env.AI_MODEL || "openai/gpt-4o-mini";
+    this.baseUrl = process.env.AI_BASE_URL || AI_DEFAULT_BASE_URL;
+    this.model = process.env.AI_MODEL || AI_DEFAULT_MODEL;
+    if (process.env.NODE_ENV === "production" && !process.env.NEXT_PUBLIC_APP_URL) {
+      logError("PROJECT", "NEXT_PUBLIC_APP_URL is not set in production — OpenRouter HTTP-Referer will fall back to localhost");
+    }
   }
 
   async generate(input: GenerationInput): Promise<GeneratedCarousel> {
@@ -65,7 +71,7 @@ export class ExternalAIProvider implements GenerationProvider {
     };
     if (this.baseUrl.includes("openrouter")) {
       headers["HTTP-Referer"] = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-      headers["X-Title"] = "Typo AI";
+      headers["X-Title"] = APP_NAME;
     }
 
     const response = await fetch(`${this.baseUrl}/chat/completions`, {
@@ -255,7 +261,7 @@ export async function reviewMedicalContent(
   };
   if (baseUrl.includes("openrouter")) {
     headers["HTTP-Referer"] = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    headers["X-Title"] = "Typo AI";
+    headers["X-Title"] = APP_NAME;
   }
 
   const body: Record<string, unknown> = {

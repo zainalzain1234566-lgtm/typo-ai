@@ -71,7 +71,7 @@ export async function forgotPasswordAction(formData: FormData) {
 
   const supabase = await createClient();
   const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(".supabase.co", "")}/reset-password`,
+    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/reset-password`,
   });
 
   if (error) {
@@ -169,7 +169,7 @@ export async function createFolderAction(name: string) {
   const parsed = folderSchema.safeParse({ name });
   if (!parsed.success) return { success: false, error: parsed.error.errors[0].message };
 
-  const { data, error } = await supabase.from("folders").insert({ user_id: user.id, name }).select().single();
+  const { data, error } = await supabase.from("folders").insert({ user_id: user.id, name: parsed.data.name }).select().single();
   if (error) {
     logError("SETTINGS", "createFolder failed", error.message);
     return { success: false, error: "تعذر إنشاء المجلد" };
@@ -221,8 +221,16 @@ export async function deleteAccountAction() {
   // Profile cascade will delete all user data
   log("AUTH", "deleteAccount", { userId: user.id });
   const admin = createAdminClient();
-  await admin.from("profiles").delete().eq("id", user.id);
-  await admin.auth.admin.deleteUser(user.id);
+  const { error: profileError } = await admin.from("profiles").delete().eq("id", user.id);
+  if (profileError) {
+    logError("AUTH", "deleteAccount profile delete failed", profileError.message);
+    return { success: false, error: "تعذر حذف الحساب" };
+  }
+  const { error: authError } = await admin.auth.admin.deleteUser(user.id);
+  if (authError) {
+    logError("AUTH", "deleteAccount auth delete failed", authError.message);
+    return { success: false, error: "تعذر حذف الحساب بالكامل، الرجاء المحاولة لاحقًا" };
+  }
 
   await supabase.auth.signOut();
   revalidatePath("/");

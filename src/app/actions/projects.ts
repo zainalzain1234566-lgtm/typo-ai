@@ -1,12 +1,13 @@
 "use server";
 
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { createProjectSchema, updateProjectSchema, SIZE_MAP } from "@/lib/validation/projects";
 import { getGenerationProvider, type GenerationInput, reviewMedicalContent } from "@/lib/services/generation";
-import { reorderSlidesSchema, updateSlideSchema, createSlideSchema } from "@/lib/validation/slides";
+import { reorderSlidesSchema, updateSlideSchema } from "@/lib/validation/slides";
 import type { Database } from "@/types/database";
 import { log, logError } from "@/lib/logger";
+import { AI_DEFAULT_BASE_URL, AI_DEFAULT_MODEL } from "@/lib/constants";
 
 // ============= Create project with generation =============
 
@@ -153,8 +154,8 @@ export async function createProjectAction(input: Record<string, unknown>) {
     let reviewVerdict = "pending";
     try {
       const apiKey = process.env.AI_API_KEY!;
-      const baseUrl = process.env.AI_BASE_URL || "https://openrouter.ai/api/v1";
-      const model = process.env.AI_MODEL || "deepseek/deepseek-v4-flash";
+      const baseUrl = process.env.AI_BASE_URL || AI_DEFAULT_BASE_URL;
+      const model = process.env.AI_MODEL || AI_DEFAULT_MODEL;
       const review = await reviewMedicalContent(generated.slides, apiKey, baseUrl, model);
       reviewVerdict = review.verdict;
       log("PROJECT", "medical review", { verdict: review.verdict, flags: review.flags.length });
@@ -197,6 +198,8 @@ export async function createProjectAction(input: Record<string, unknown>) {
       .from("generation_jobs")
       .update({ status: "failed", error_message: errMsg.slice(0, 500), completed_at: new Date().toISOString() })
       .eq("id", genJob.id);
+    // Project has no slides and generation failed — don't leave it stuck in "in_progress"
+    await supabase.from("projects").update({ status: "archived" }).eq("id", project.id);
     return { success: false, error: errMsg.slice(0, 200) };
   }
 }
@@ -362,16 +365,23 @@ export async function addSlideAction(projectId: string, afterPosition: number, t
 
   // Generate content for new slide using the project's real settings
   const provider = getGenerationProvider();
-  const generated = await provider.generate({
-    topic: topic || project.topic,
-    contentType: contentType || project.content_type,
-    targetAudience: project.target_audience ?? "",
-    level: project.content_level,
-    tone: project.tone,
-    language: project.language,
-    slideCount: 3,
-    ctaType: project.cta_type,
-  });
+  let generated;
+  try {
+    generated = await provider.generate({
+      topic: topic || project.topic,
+      contentType: contentType || project.content_type,
+      targetAudience: project.target_audience ?? "",
+      level: project.content_level,
+      tone: project.tone,
+      language: project.language,
+      slideCount: 3,
+      ctaType: project.cta_type,
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logError("SLIDE", "add generation failed", msg);
+    return { success: false, error: "تعذر توليد محتوى الشريحة" };
+  }
 
   // Find the ending slide position to insert before it
   const { data: slides } = await supabase

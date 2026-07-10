@@ -3,9 +3,7 @@
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useApp } from "@/lib/app-context";
-
-const protectedRoutes = ["/projects", "/settings"];
-const authRoutes = ["/login", "/signup", "/verify-email", "/forgot-password", "/reset-password"];
+import { PROTECTED_ROUTES, AUTH_ROUTES } from "@/lib/constants";
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { ready, isAuthenticated } = useApp();
@@ -15,8 +13,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!ready) return;
 
-    const isProtected = protectedRoutes.some((r) => pathname.startsWith(r));
-    const isAuthRoute = authRoutes.includes(pathname);
+    const isProtected = PROTECTED_ROUTES.some((r) => pathname.startsWith(r));
+    const isAuthRoute = AUTH_ROUTES.includes(pathname);
 
     if (isProtected && !isAuthenticated) {
       router.replace("/login");

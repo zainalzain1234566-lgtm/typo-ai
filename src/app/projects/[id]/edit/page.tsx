@@ -17,7 +17,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ScaledSlide } from "@/components/carousel/slide-renderer";
 import { useApp } from "@/lib/app-context";
 import { useToast } from "@/components/ui/toast";
-import { TEMPLATE_DEFS, getPalette, ALL_FONTS } from "@/lib/templates";
+import { TEMPLATE_DEFS, VISIBLE_TEMPLATES, getPalette, ALL_FONTS } from "@/lib/templates";
+import { DEFAULT_ACCENT_COLOR } from "@/lib/constants";
 import {
   mapProject, useTemplateLookup, projectToUpdateInput, FONT_FE_TO_DB,
 } from "@/lib/db-mappers";
@@ -140,7 +141,8 @@ export default function EditorPage() {
   }
 
   const currentSlide = project.slides[currentSlideIdx];
-  const pal = getPalette(project.settings.templateId, project.settings.paletteId);
+  const basePal = getPalette(project.settings.templateId, project.settings.paletteId);
+  const pal = brandKit.primaryColor && brandKit.primaryColor !== DEFAULT_ACCENT_COLOR ? { ...basePal, accent: brandKit.primaryColor } : basePal;
   const brandKitData = { instagramHandle: brandKit.instagramHandle, logoDataUrl: brandKit.logoUrl, primaryColor: brandKit.primaryColor, font: project.settings.font, disclaimerText: brandKit.disclaimerText };
   const tmpl = TEMPLATE_DEFS.find((t) => t.id === project.settings.templateId);
 
@@ -357,7 +359,7 @@ function TemplateDialog({ open, onClose, project, update, brandKitData }: {
   return (
     <Dialog open={open} onClose={onClose} title="تغيير القالب" description="اختر قالبًا جديدًا. لن يتأثر المحتوى.">
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[400px] overflow-y-auto thin-scrollbar">
-        {TEMPLATE_DEFS.map((t) => {
+        {VISIBLE_TEMPLATES.map((t) => {
           const p = getPalette(t.id, project.settings.paletteId);
           const active = project.settings.templateId === t.id;
           return (
@@ -490,7 +492,7 @@ function BrandDialog({ open, onClose, project, update }: {
             step={0.05}
             value={project.settings.fontSizeScale}
             onChange={(e) => update({ settings: { ...project.settings, fontSizeScale: parseFloat(e.target.value) } })}
-            className="w-full h-2 rounded-full appearance-none cursor-pointer bg-stone-200 accent-[#6D5EFC]"
+            className="w-full h-2 rounded-full appearance-none cursor-pointer bg-stone-200 accent-accent"
           />
           <div className="flex justify-between mt-1">
             <span className="text-xs text-ink-subtle">صغير</span>
