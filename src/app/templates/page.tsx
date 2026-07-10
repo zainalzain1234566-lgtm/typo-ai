@@ -9,17 +9,18 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
 import { ScaledSlide } from "@/components/carousel/slide-renderer";
-import { TEMPLATE_DEFS, getPalette, SIZES, ALL_FONTS } from "@/lib/templates";
+import { TEMPLATE_DEFS, getPalette, SIZES, ALL_FONTS, VISIBLE_TEMPLATES } from "@/lib/templates";
+import { FEATURE_FLAGS } from "@/lib/feature-flags";
 import { useApp } from "@/lib/app-context";
 import { toggleTemplateFavoriteAction } from "@/app/actions/projects";
 import { cn } from "@/lib/utils";
 import type { Slide, BrandKit, BrandKitSettings, CarouselSize } from "@/lib/types";
 
 const demoBrandKit: BrandKit = { instagramHandle: "@typo.ai", logoDataUrl: null, primaryColor: "#6D5EFC", font: "tajawal" };
-const demoBkSettings: BrandKitSettings = { enabled: false, showLogo: false, showAccountName: false, showSlideNumber: false, placement: "bottom-left" };
-const demoSlide: Slide = { id: "d", type: "cover", title: "كيف يعمل الذكاء الاصطناعي؟", body: "دليل مبسّط" };
-const demoContent: Slide = { id: "d2", type: "content", title: "البيانات هي الأساس", body: "يعتمد الذكاء الاصطناعي على البيانات" };
-const demoEnding: Slide = { id: "d3", type: "ending", title: "تابعنا للمزيد", body: "شاركنا اهتمامك", ctaText: "تابع الحساب" };
+const demoBkSettings: BrandKitSettings = { enabled: false, showLogo: false, showAccountName: false, showSlideNumber: false, showDisclaimer: true, placement: "bottom-left" };
+const demoSlide: Slide = { id: "d", type: "cover", title: "أهمية شرب الماء يوميًا", body: "دليل طبي مبسّط" };
+const demoContent: Slide = { id: "d2", type: "content", title: "كم كوبًا تحتاج؟", body: "يحتاج البالغون إلى ٢-٣ لتر يوميًا" };
+const demoEnding: Slide = { id: "d3", type: "ending", title: "استشر طبيبك", body: "هذا المحتوى لا يغني عن الاستشارة الطبية", ctaText: "احفظ المنشور" };
 
 export default function TemplatesPage() {
   const router = useRouter();
@@ -37,7 +38,7 @@ export default function TemplatesPage() {
     if (ready) loadFavorites();
   }, [ready, loadFavorites]);
 
-  const tmpl = preview ? TEMPLATE_DEFS.find((t) => t.id === preview) : null;
+  const tmpl = preview ? VISIBLE_TEMPLATES.find((t) => t.id === preview) : null;
 
   const handleToggleFavorite = async (templateId: string) => {
     setFavorites((prev) =>
@@ -56,7 +57,7 @@ export default function TemplatesPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {TEMPLATE_DEFS.map((t, i) => {
+          {VISIBLE_TEMPLATES.map((t, i) => {
             const pal = getPalette(t.id, ["p1", "p2", "p3", "p4"][i % 4]);
             const isFav = favorites.includes(t.id);
             return (
@@ -84,12 +85,14 @@ export default function TemplatesPage() {
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-bold text-ink">{t.name}</h3>
-                    <button
-                      onClick={() => handleToggleFavorite(t.id)}
-                      className={cn("p-1.5 rounded-lg transition-colors cursor-pointer", isFav ? "text-red-500" : "text-ink-subtle hover:text-ink")}
-                    >
-                      <Heart className={cn("w-4 h-4", isFav && "fill-current")} />
-                    </button>
+                    {!FEATURE_FLAGS.favorites && (
+                      <button
+                        onClick={() => handleToggleFavorite(t.id)}
+                        className={cn("p-1.5 rounded-lg transition-colors cursor-pointer", isFav ? "text-red-500" : "text-ink-subtle hover:text-ink")}
+                      >
+                        <Heart className={cn("w-4 h-4", isFav && "fill-current")} />
+                      </button>
+                    )}
                   </div>
                   <p className="text-sm text-ink-muted mb-3">{t.description}</p>
                   <div className="flex gap-1.5 mb-3">
@@ -116,7 +119,7 @@ export default function TemplatesPage() {
         {tmpl && (
           <div className="space-y-5">
             <div className="flex gap-2">
-              {SIZES.map((s) => (
+              {SIZES.filter((s) => !FEATURE_FLAGS.medicalMode || s.id === "1080x1350").map((s) => (
                 <button
                   key={s.id}
                   onClick={() => setPreviewSize(s.id as CarouselSize)}

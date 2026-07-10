@@ -18,6 +18,7 @@ import { ScaledSlide } from "@/components/carousel/slide-renderer";
 import { useApp } from "@/lib/app-context";
 import { mapProject, mapFolder } from "@/lib/db-mappers";
 import { getPalette } from "@/lib/templates";
+import { FEATURE_FLAGS } from "@/lib/feature-flags";
 import { cn, relativeTime } from "@/lib/utils";
 import type { Project, Folder as FolderType } from "@/lib/types";
 import {
@@ -160,88 +161,96 @@ export default function ProjectsPage() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          {statCards.map((s) => (
-            <div key={s.label} className="rounded-2xl border border-stone-200 bg-white p-5 shadow-soft">
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-extrabold text-ink">{s.value}</span>
-                <s.icon className="w-5 h-5 text-accent" />
-              </div>
-              <p className="text-sm text-ink-muted mt-1">{s.label}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="mb-6">
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-            <button
-              onClick={() => setFolderFilter("all")}
-              className={cn(
-                "shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-colors cursor-pointer",
-                folderFilter === "all" ? "bg-accent text-white" : "bg-white border border-stone-200 text-ink-muted hover:bg-stone-50"
-              )}
-            >
-              جميع المشاريع
-            </button>
-            {folders.map((f) => (
-              <div key={f.id} className="shrink-0 flex items-center group">
-                <button
-                  onClick={() => setFolderFilter(f.id)}
-                  className={cn(
-                    "px-4 py-2 rounded-xl text-sm font-medium transition-colors cursor-pointer flex items-center gap-1.5",
-                    folderFilter === f.id ? "bg-accent text-white" : "bg-white border border-stone-200 text-ink-muted hover:bg-stone-50"
-                  )}
-                >
-                  <Folder className="w-4 h-4" />
-                  {f.name}
-                </button>
-                <Dropdown
-                  trigger={<button className="p-1.5 text-ink-subtle hover:text-ink cursor-pointer opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"><MoreVertical className="w-3.5 h-3.5" /></button>}
-                >
-                  <DropdownItem onClick={() => { setFolderDialog({ mode: "edit", id: f.id, name: f.name }); setFolderName(f.name); }}>
-                    <Pencil className="w-4 h-4" /> إعادة تسمية
-                  </DropdownItem>
-                  <DropdownItem onClick={() => handleDeleteFolder(f.id)} destructive>
-                    <Trash2 className="w-4 h-4" /> حذف
-                  </DropdownItem>
-                </Dropdown>
+        {!FEATURE_FLAGS.stats && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            {statCards.map((s) => (
+              <div key={s.label} className="rounded-2xl border border-stone-200 bg-white p-5 shadow-soft">
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl font-extrabold text-ink">{s.value}</span>
+                  <s.icon className="w-5 h-5 text-accent" />
+                </div>
+                <p className="text-sm text-ink-muted mt-1">{s.label}</p>
               </div>
             ))}
-            <button
-              onClick={() => { setFolderDialog({ mode: "create" }); setFolderName(""); }}
-              className="shrink-0 px-3 py-2 rounded-xl text-sm font-medium bg-white border border-dashed border-stone-300 text-ink-muted hover:bg-stone-50 cursor-pointer flex items-center gap-1.5"
-            >
-              <FolderPlus className="w-4 h-4" /> مجلد جديد
-            </button>
           </div>
-        </div>
+        )}
+
+        {!FEATURE_FLAGS.folders && (
+          <div className="mb-6">
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+              <button
+                onClick={() => setFolderFilter("all")}
+                className={cn(
+                  "shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-colors cursor-pointer",
+                  folderFilter === "all" ? "bg-accent text-white" : "bg-white border border-stone-200 text-ink-muted hover:bg-stone-50"
+                )}
+              >
+                جميع المشاريع
+              </button>
+              {folders.map((f) => (
+                <div key={f.id} className="shrink-0 flex items-center group">
+                  <button
+                    onClick={() => setFolderFilter(f.id)}
+                    className={cn(
+                      "px-4 py-2 rounded-xl text-sm font-medium transition-colors cursor-pointer flex items-center gap-1.5",
+                      folderFilter === f.id ? "bg-accent text-white" : "bg-white border border-stone-200 text-ink-muted hover:bg-stone-50"
+                    )}
+                  >
+                    <Folder className="w-4 h-4" />
+                    {f.name}
+                  </button>
+                  <Dropdown
+                    trigger={<button className="p-1.5 text-ink-subtle hover:text-ink cursor-pointer opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"><MoreVertical className="w-3.5 h-3.5" /></button>}
+                  >
+                    <DropdownItem onClick={() => { setFolderDialog({ mode: "edit", id: f.id, name: f.name }); setFolderName(f.name); }}>
+                      <Pencil className="w-4 h-4" /> إعادة تسمية
+                    </DropdownItem>
+                    <DropdownItem onClick={() => handleDeleteFolder(f.id)} destructive>
+                      <Trash2 className="w-4 h-4" /> حذف
+                    </DropdownItem>
+                  </Dropdown>
+                </div>
+              ))}
+              <button
+                onClick={() => { setFolderDialog({ mode: "create" }); setFolderName(""); }}
+                className="shrink-0 px-3 py-2 rounded-xl text-sm font-medium bg-white border border-dashed border-stone-300 text-ink-muted hover:bg-stone-50 cursor-pointer flex items-center gap-1.5"
+              >
+                <FolderPlus className="w-4 h-4" /> مجلد جديد
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-wrap items-center gap-3 mb-6">
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-subtle" />
             <Input placeholder="ابحث في المشاريع..." value={search} onChange={(e) => setSearch(e.target.value)} className="pr-10" />
           </div>
-          <select
-            value={sizeFilter}
-            onChange={(e) => setSizeFilter(e.target.value)}
-            className="h-11 rounded-xl border border-stone-200 bg-white px-3 text-sm text-ink cursor-pointer"
-          >
-            <option value="all">كل المقاسات</option>
-            <option value="1080x1080">مربع</option>
-            <option value="1080x1350">عمودي</option>
-            <option value="1080x1920">ستوري</option>
-          </select>
-          <select
-            value={folderFilter}
-            onChange={(e) => setFolderFilter(e.target.value)}
-            className="h-11 rounded-xl border border-stone-200 bg-white px-3 text-sm text-ink cursor-pointer"
-          >
-            <option value="all">كل المجلدات</option>
-            <option value="none">بدون مجلد</option>
-            {folders.map((f) => (
-              <option key={f.id} value={f.id}>{f.name}</option>
-            ))}
-          </select>
+          {!FEATURE_FLAGS.extraSizes && (
+            <select
+              value={sizeFilter}
+              onChange={(e) => setSizeFilter(e.target.value)}
+              className="h-11 rounded-xl border border-stone-200 bg-white px-3 text-sm text-ink cursor-pointer"
+            >
+              <option value="all">كل المقاسات</option>
+              <option value="1080x1080">مربع</option>
+              <option value="1080x1350">عمودي</option>
+              <option value="1080x1920">ستوري</option>
+            </select>
+          )}
+          {!FEATURE_FLAGS.folders && (
+            <select
+              value={folderFilter}
+              onChange={(e) => setFolderFilter(e.target.value)}
+              className="h-11 rounded-xl border border-stone-200 bg-white px-3 text-sm text-ink cursor-pointer"
+            >
+              <option value="all">كل المجلدات</option>
+              <option value="none">بدون مجلد</option>
+              {folders.map((f) => (
+                <option key={f.id} value={f.id}>{f.name}</option>
+              ))}
+            </select>
+          )}
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as SortKey)}
@@ -356,12 +365,14 @@ function ProjectCard({ project, folders, onOpen, onDuplicate, onDelete, onExport
             </div>
           )}
         </div>
-        <button
-          onClick={(e) => { e.stopPropagation(); onFavorite(); }}
-          className={cn("absolute top-4 left-4 p-2 rounded-full bg-white/90 backdrop-blur cursor-pointer transition-colors", project.favorite ? "text-red-500" : "text-ink-subtle hover:text-ink")}
-        >
-          <Heart className={cn("w-4 h-4", project.favorite && "fill-current")} />
-        </button>
+        {!FEATURE_FLAGS.favorites && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onFavorite(); }}
+            className={cn("absolute top-4 left-4 p-2 rounded-full bg-white/90 backdrop-blur cursor-pointer transition-colors", project.favorite ? "text-red-500" : "text-ink-subtle hover:text-ink")}
+          >
+            <Heart className={cn("w-4 h-4", project.favorite && "fill-current")} />
+          </button>
+        )}
         <div className="absolute top-4 right-4">
           <Dropdown
             trigger={
@@ -371,20 +382,29 @@ function ProjectCard({ project, folders, onOpen, onDuplicate, onDelete, onExport
             }
           >
             <DropdownItem onClick={onOpen}><FileText className="w-4 h-4" /> فتح المشروع</DropdownItem>
-            <DropdownItem onClick={onDuplicate}><Copy className="w-4 h-4" /> تكرار المشروع</DropdownItem>
+            {!FEATURE_FLAGS.duplicateProject && <DropdownItem onClick={onDuplicate}><Copy className="w-4 h-4" /> تكرار المشروع</DropdownItem>}
             <DropdownItem onClick={onExport}><Download className="w-4 h-4" /> تصدير</DropdownItem>
+            {!FEATURE_FLAGS.folders && (
+              <>
+                <DropdownSeparator />
+                <div className="px-3 py-1 text-xs text-ink-subtle">نقل إلى مجلد</div>
+                <DropdownItem onClick={() => onMove(null)}><FolderOpen className="w-4 h-4" /> بدون مجلد</DropdownItem>
+                {folders.map((f) => (
+                  <DropdownItem key={f.id} onClick={() => onMove(f.id)}>
+                    <Folder className="w-4 h-4" /> {f.name}
+                  </DropdownItem>
+                ))}
+              </>
+            )}
+            {!FEATURE_FLAGS.favorites && (
+              <>
+                <DropdownSeparator />
+                <DropdownItem onClick={onFavorite}>
+                  <Star className="w-4 h-4" /> {project.favorite ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}
+                </DropdownItem>
+              </>
+            )}
             <DropdownSeparator />
-            <div className="px-3 py-1 text-xs text-ink-subtle">نقل إلى مجلد</div>
-            <DropdownItem onClick={() => onMove(null)}><FolderOpen className="w-4 h-4" /> بدون مجلد</DropdownItem>
-            {folders.map((f) => (
-              <DropdownItem key={f.id} onClick={() => onMove(f.id)}>
-                <Folder className="w-4 h-4" /> {f.name}
-              </DropdownItem>
-            ))}
-            <DropdownSeparator />
-            <DropdownItem onClick={onFavorite}>
-              <Star className="w-4 h-4" /> {project.favorite ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}
-            </DropdownItem>
             <DropdownItem onClick={onDelete} destructive>
               <Trash2 className="w-4 h-4" /> حذف
             </DropdownItem>
@@ -402,10 +422,13 @@ function ProjectCard({ project, folders, onOpen, onDuplicate, onDelete, onExport
           ) : (
             <Badge className="bg-amber-100 text-amber-700">مسودة</Badge>
           )}
+          {project.reviewStatus === "pass" && <Badge className="bg-green-100 text-green-700">مراجعة طبية: مقبول</Badge>}
+          {project.reviewStatus === "needs_review" && <Badge className="bg-amber-100 text-amber-700">مراجعة طبية: يحتاج مراجعة</Badge>}
+          {project.reviewStatus === "blocked" && <Badge className="bg-red-100 text-red-700">مراجعة طبية: ممنوع</Badge>}
         </div>
         <div className="flex items-center justify-between mt-3 text-xs text-ink-subtle">
           <span>{relativeTime(project.updatedAt)}</span>
-          {folder && <span className="flex items-center gap-1"><Folder className="w-3 h-3" /> {folder.name}</span>}
+          {!FEATURE_FLAGS.folders && folder && <span className="flex items-center gap-1"><Folder className="w-3 h-3" /> {folder.name}</span>}
         </div>
       </div>
     </div>

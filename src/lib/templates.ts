@@ -1,4 +1,5 @@
 import type { Palette, Template, FontFamily } from "./types";
+import { FEATURE_FLAGS } from "./feature-flags";
 
 export const PALETTES: Palette[] = [
   { id: "p1", name: "مكمّل", background: "#FAFAF9", text: "#1C1917", accent: "#6D5EFC", secondary: "#E8E6FE" },
@@ -86,28 +87,32 @@ const RETRO_PALETTES: Palette[] = [
 ];
 
 export const TEMPLATE_DEFS: Template[] = [
-  { id: "tahrir", name: "تحرير", description: "تصميم تحريري بأرقام كبيرة وتباين واضح", palettes: PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "tahrir" },
-  { id: "wadeh", name: "واضح", description: "تصميم نظيف بمساحات واسعة وخط واضح", palettes: PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "wadeh" },
-  { id: "noqta", name: "نقطة", description: "نقطة بصرية مركزية مع عنوان بارز", palettes: PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "noqta" },
-  { id: "itar", name: "إطار", description: "إطار زخرفي حول المحتوى مع خلفية ناعمة", palettes: PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "itar" },
-  { id: "mujaz", name: "موجز", description: "تصميم مختصر بكتلة نصية متمركزة", palettes: PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "mujaz" },
-  { id: "academy", name: "أكاديمي", description: "تصميم منظم بشريط جانبي وأرقام", palettes: PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "academy" },
-  { id: "hadith", name: "حديث", description: "تصميم عصري بأشكال هندسية وزوايا", palettes: PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "hadith" },
-  { id: "tabayun", name: "تباين", description: "تباين قوي بين النص والخلفية مع شريط ملوّن", palettes: PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "tabayun" },
-  { id: "shabaka", name: "شبكة", description: "تصميم بخلفية شبكية وعناصر منظمة", palettes: PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "shabaka" },
-  { id: "unwan", name: "عنوان", description: "عنوان ضخم يملأ المساحة مع تفاصيل دقيقة", palettes: PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "unwan" },
+  { id: "tahrir", name: "تحرير", description: "تصميم تحريري بأرقام كبيرة وتباين واضح", palettes: PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "tahrir", category: "medical" },
+  { id: "wadeh", name: "واضح", description: "تصميم نظيف بمساحات واسعة وخط واضح", palettes: PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "wadeh", category: "medical" },
+  { id: "noqta", name: "نقطة", description: "نقطة بصرية مركزية مع عنوان بارز", palettes: PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "noqta", category: "medical" },
+  { id: "itar", name: "إطار", description: "إطار زخرفي حول المحتوى مع خلفية ناعمة", palettes: PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "itar", category: "medical" },
+  { id: "mujaz", name: "موجز", description: "تصميم مختصر بكتلة نصية متمركزة", palettes: PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "mujaz", category: "medical" },
+  { id: "academy", name: "أكاديمي", description: "تصميم منظم بشريط جانبي وأرقام", palettes: PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "academy", category: "medical" },
+  { id: "hadith", name: "حديث", description: "تصميم عصري بأشكال هندسية وزوايا", palettes: PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "hadith", category: "medical" },
+  { id: "tabayun", name: "تباين", description: "تباين قوي بين النص والخلفية مع شريط ملوّن", palettes: PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "tabayun", category: "medical" },
+  { id: "shabaka", name: "شبكة", description: "تصميم بخلفية شبكية وعناصر منظمة", palettes: PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "shabaka", category: "general" },
+  { id: "unwan", name: "عنوان", description: "عنوان ضخم يملأ المساحة مع تفاصيل دقيقة", palettes: PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "unwan", category: "general" },
   // === New styles (style01–style10) ===
-  { id: "hero", name: "بطل", description: "تصميم مركزي بأرقام شفافة وتباين أبيض/أسود", palettes: HERO_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "hero" },
-  { id: "editorial", name: "تحريري", description: "تصميم تحريري بخط سيريف وألوان كريمي/ذهبي", palettes: EDITORIAL_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "editorial" },
-  { id: "split", name: "انقسام", description: "لوحة منقسمة بلون ملوّن ولوحة جانبية", palettes: SPLIT_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "split" },
-  { id: "stacked", name: "مكدّس", description: "تصميم مكدّس أسفل بألوان وردية ناعمة", palettes: STACKED_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "stacked" },
-  { id: "cards", name: "بطاقات", description: "شبكة بطاقات بألوان خضراء وعناصر مرتبة", palettes: CARDS_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "cards" },
-  { id: "rotated", name: "مائل", description: "تصميم مائل بظلال صلبة وألوان مرجانية", palettes: ROTATED_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "rotated" },
-  { id: "terminal", name: "برمجي", description: "تصميم طرفية سوداء بأخضر نيون وخط أحادي", palettes: TERMINAL_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "terminal" },
-  { id: "magazine", name: "مجلة", description: "أعمدة مجلية بخط الآلة الكاتبة وإطار متقطع", palettes: MAGAZINE_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "magazine" },
-  { id: "tilt", name: "قطري", description: "تصميم مائل قطريًا بخلفية متدرجة وزجاجية", palettes: TILT_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "tilt" },
-  { id: "retro", name: "ريترو", description: "تصميم تسعينيات بخطوط قطرية وظلال صلبة", palettes: RETRO_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "retro" },
+  { id: "hero", name: "بطل", description: "تصميم مركزي بأرقام شفافة وتباين أبيض/أسود", palettes: HERO_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "hero", category: "general" },
+  { id: "editorial", name: "تحريري", description: "تصميم تحريري بخط سيريف وألوان كريمي/ذهبي", palettes: EDITORIAL_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "editorial", category: "general" },
+  { id: "split", name: "انقسام", description: "تصميم منقسم بلون ملوّن ولوحة جانبية", palettes: SPLIT_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "split", category: "general" },
+  { id: "stacked", name: "مكدّس", description: "تصميم مكدّس أسفل بألوان وردية ناعمة", palettes: STACKED_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "stacked", category: "general" },
+  { id: "cards", name: "بطاقات", description: "شبكة بطاقات بألوان خضراء وعناصر مرتبة", palettes: CARDS_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "cards", category: "general" },
+  { id: "rotated", name: "مائل", description: "تصميم مائل بظلال صلبة وألوان مرجانية", palettes: ROTATED_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "rotated", category: "general" },
+  { id: "terminal", name: "برمجي", description: "تصميم طرفية سوداء بأخضر نيون وخط أحادي", palettes: TERMINAL_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "terminal", category: "general" },
+  { id: "magazine", name: "مجلة", description: "أعمدة مجلية بخط الآلة الكاتبة وإطار متقطع", palettes: MAGAZINE_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "magazine", category: "general" },
+  { id: "tilt", name: "قطري", description: "تصميم مائل قطريًا بخلفية متدرجة وزجاجية", palettes: TILT_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "tilt", category: "general" },
+  { id: "retro", name: "ريترو", description: "تصميم تسعينيات بخطوط قطرية وظلال صلبة", palettes: RETRO_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "retro", category: "general" },
 ];
+
+export const VISIBLE_TEMPLATES = FEATURE_FLAGS.medicalMode
+  ? TEMPLATE_DEFS.filter((t) => t.category === "medical")
+  : TEMPLATE_DEFS;
 
 export function getTemplate(id: string): Template {
   return TEMPLATE_DEFS.find((t) => t.id === id) ?? TEMPLATE_DEFS[0];

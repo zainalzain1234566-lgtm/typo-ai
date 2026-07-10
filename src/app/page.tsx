@@ -2,50 +2,51 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Sparkles, ArrowLeft, Check, ChevronDown, FileText, Palette, Download, Wand2, Layout, Image as ImageIcon, Type, Save, Hash, Globe, MousePointerClick } from "lucide-react";
+import { Sparkles, ArrowLeft, Check, ChevronDown, FileText, Palette, Download, Wand2, Layout, Image as ImageIcon, Type, Save, Hash, Globe, ShieldCheck, Stethoscope, AlertCircle, BookMarked, Quote } from "lucide-react";
 import { useState } from "react";
 import { MarketingNavbar } from "@/components/layout/marketing-navbar";
 import { Footer } from "@/components/layout/footer";
 import { Button } from "@/components/ui/button";
 import { ScaledSlide } from "@/components/carousel/slide-renderer";
-import { TEMPLATE_DEFS, getPalette } from "@/lib/templates";
+import { VISIBLE_TEMPLATES, getPalette } from "@/lib/templates";
 import type { Slide, BrandKit, BrandKitSettings } from "@/lib/types";
 
-const demoSlide: Slide = { id: "d1", type: "cover", title: "كيف يعمل الذكاء الاصطناعي؟", body: "دليل مبسّط لفهم الأساسيات" };
+const demoSlide: Slide = { id: "d1", type: "cover", title: "أهمية شرب الماء يوميًا", body: "دليل طبي مبسّط" };
 const demoSlides: Slide[] = [
-  { id: "d1", type: "cover", title: "كيف يعمل الذكاء الاصطناعي؟", body: "دليل مبسّط لفهم الأساسيات" },
-  { id: "d2", type: "content", title: "البيانات هي الأساس", body: "يعتمد الذكاء الاصطناعي على كميات ضخمة من البيانات." },
-  { id: "d3", type: "content", title: "التعلم الآلي", body: "النماذج تتعلم الأنماط من البيانات تلقائيًا." },
+  { id: "d1", type: "cover", title: "أهمية شرب الماء يوميًا", body: "دليل طبي مبسّط" },
+  { id: "d2", type: "content", title: "كم كوبًا تحتاج؟", body: "يحتاج البالغون إلى ٢-٣ لتر يوميًا" },
+  { id: "d3", type: "content", title: "علامات الجفاف", body: "صداع، تعب، بول داكن — راجع طبيبك" },
 ];
-const demoBrandKit: BrandKit = { instagramHandle: "@typo.ai", logoDataUrl: null, primaryColor: "#6D5EFC", font: "tajawal" };
-const demoBkSettings: BrandKitSettings = { enabled: false, showLogo: false, showAccountName: false, showSlideNumber: false, placement: "bottom-left" };
+const demoBrandKit: BrandKit = { instagramHandle: "@dr.health", logoDataUrl: null, primaryColor: "#0D9488", font: "tajawal" };
+const demoBkSettings: BrandKitSettings = { enabled: false, showLogo: false, showAccountName: false, showSlideNumber: false, showDisclaimer: true, placement: "bottom-left" };
 
 const features = [
-  { icon: Wand2, title: "كتابة المحتوى بالذكاء الاصطناعي", desc: "حوّل فكرتك إلى شرائح مكتوبة تلقائيًا" },
-  { icon: Layout, title: "قوالب HTML جاهزة", desc: "10 قوالب احترافية قابلة للتخصيص" },
-  { icon: ImageIcon, title: "مقاسات Instagram", desc: "مربع، عمودي، وستوري بدقة عالية" },
-  { icon: Type, title: "تعديل النص بسهولة", desc: "حرّك أعد ترتيب الشرائح كما تريد" },
-  { icon: Palette, title: "هوية بصرية محفوظة", desc: "احفظ شعارك وألوانك لكل المشاريع" },
+  { icon: ShieldCheck, title: "مراجعة طبية تلقائية", desc: "فحص المحتوى طبيًا قبل النشر — يكتشف الادعاءات الخطرة والجرعات الخاطئة" },
+  { icon: Stethoscope, title: "صُنع بواسطة طبيب", desc: "أداة بناها طبيب لضمان الدقة والمصداقية الطبية" },
+  { icon: AlertCircle, title: "تنبيه استشارة الطبيب", desc: "إضافة تلقائية لتنبيه طبي على كل كاروسيل" },
+  { icon: Wand2, title: "كتابة بالذكاء الاصطناعي", desc: "حوّل موضوعك الصحي إلى شرائح مكتوبة تلقائيًا" },
+  { icon: Layout, title: "قوالب احترافية", desc: "قوالب طبية نظيفة بألوان وخطوط عربية" },
   { icon: Download, title: "تصدير PNG وZIP", desc: "نزّل شريحة واحدة أو الكل دفعة واحدة" },
-  { icon: Hash, title: "إنشاء Caption وHashtags", desc: "وصف وهاشتاغات جاهزة للنسخ" },
-  { icon: Globe, title: "دعم كامل للغة العربية", desc: "واجهة عربية وRTL وخطوط متنوعة" },
+  { icon: Hash, title: "Caption وHashtags", desc: "وصف وهاشتاغات جاهزة للنسخ" },
+  { icon: Globe, title: "دعم اللهجات العربية", desc: "فصحى، عراقية، خليجية — اكتب بلهجة جمهورك" },
 ];
 
 const steps = [
-  { icon: MousePointerClick, title: "اكتب الموضوع", desc: "أدخل فكرتك واختر نوع المحتوى" },
-  { icon: Sparkles, title: "خصّص المحتوى", desc: "حدد الجمهور والأسلوب واللغة" },
-  { icon: Layout, title: "اختر القالب", desc: "تصميم جاهز بألوان وخطوط قابلة للتغيير" },
+  { icon: FileText, title: "اكتب الموضوع الصحي", desc: "مثال: أسباب الصداع النصفي" },
+  { icon: Sparkles, title: "خصّص المحتوى", desc: "اختر التخصص، اللهجة، والأسلوب" },
+  { icon: ShieldCheck, title: "مراجعة طبية", desc: "فحص تلقائي لدقة المعلومات" },
   { icon: Download, title: "نزّل التصميم", desc: "صدّر كصور PNG جاهزة للنشر" },
 ];
 
 const faqs = [
-  { q: "هل أحتاج إلى خبرة في التصميم؟", a: "لا، Typo AI مصمم ليكون سهل الاستخدام لأي شخص. كل ما تحتاجه هو فكرتك." },
-  { q: "ما المقاسات المدعومة؟", a: "ندعم ثلاثة مقاسات: منشور مربع 1080×1080، منشور عمودي 1080×1350، وستوري Instagram 1080×1920." },
+  { q: "هل المحتوى الطبي دقيق؟", a: "نعم، يمر كل محتوى بمرحلة مراجعة طبية تلقائية تستخدم الذكاء الاصطناعي لرصد الادعاءات الخطرة، الجرعات الخاطئة، واللغة المطلقة. الأداة صُممت بواسطة طبيب لضمان أعلى مستوى من الدقة." },
+  { q: "هل أحتاج إلى خبرة في التصميم؟", a: "لا، Typo AI مصمم ليكون سهل الاستخدام لأي صانع محتوى صحي. كل ما تحتاجه هو موضوعك." },
+  { q: "ما اللهجات المدعومة؟", a: "ندعم العربية الفصحى، اللهجة العراقية، واللهجة الخليجية — لتصل لجمهورك بالطريقة الأنسب." },
   { q: "هل يمكن تعديل النص بعد إنشائه؟", a: "نعم، يمكنك تعديل جميع النصوص بعد إنشائها من محرر الشرائح." },
-  { q: "هل يمكن تغيير القالب دون فقدان المحتوى؟", a: "نعم، تغيير القالب يغيّر التصميم فقط بينما يبقى المحتوى كما هو." },
+  { q: "هل يضاف تنبيه طبي تلقائيًا؟", a: "نعم، يُضاف تنبيه \"استشر طبيبك\" على كل كاروسيل تلقائيًا، ويمكنك تخصيصه أو إخفاؤه." },
+  { q: "ما المقاسات المدعومة؟", a: "ندعم مقاس المنشور العمودي 1080×1350 (4:5) الأنسب لإنستغرام." },
   { q: "كيف يتم تنزيل الشرائح؟", a: "يمكنك تنزيل كل شريحة كصورة PNG أو تنزيل جميع الشرائح في ملف ZIP واحد." },
   { q: "هل توجد علامة مائية؟", a: "لا، جميع الصور المنزّلة خالية من العلامة المائية." },
-  { q: "هل الخدمة مجانية؟", a: "نعم، الخطة الحالية مجانية تمامًا. سيتم الإعلان عن الخطط المستقبلية لاحقًا." },
 ];
 
 export default function LandingPage() {
@@ -53,7 +54,9 @@ export default function LandingPage() {
     <div className="min-h-screen bg-[#faf9f7]">
       <MarketingNavbar />
       <Hero />
+      <TrustMark />
       <HowItWorks />
+      <MedicalReview />
       <TemplatePreviews />
       <Features />
       <Examples />
@@ -76,15 +79,15 @@ function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="inline-flex items-center gap-2 rounded-full bg-accent-soft px-3 py-1.5 mb-6">
-              <Sparkles className="w-4 h-4 text-accent" />
-              <span className="text-sm font-medium text-accent">مدعوم بالذكاء الاصطناعي</span>
+            <div className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-3 py-1.5 mb-6">
+              <Stethoscope className="w-4 h-4 text-teal-600" />
+              <span className="text-sm font-medium text-teal-700">أداة طبية الصنع — بواسطة طبيب</span>
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-ink leading-tight text-balance">
-              حوّل أي فكرة إلى كاروسيل جاهز للنشر
+              حوّل أي موضوع صحي إلى كاروسيل دقيق وجاهز للنشر
             </h1>
             <p className="mt-5 text-lg text-ink-muted leading-relaxed max-w-md">
-              اكتب موضوعك، حدّد أسلوب المحتوى، واختر القالب. يتولى Typo AI كتابة الشرائح وتجهيزها للتنزيل خلال دقائق.
+              اكتب موضوعك الطبي، حدّد التخصص واللهجة، ويتولى Typo AI كتابة الشرائح وفحصها طبيًا وتجهيزها للتنزيل — بتنبيه استشارة الطبيب مدمج.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link href="/signup">
@@ -96,11 +99,10 @@ function Hero() {
             </div>
             <p className="mt-4 text-sm text-ink-subtle flex items-center gap-2">
               <Check className="w-4 h-4 text-green-600" />
-              لا تحتاج إلى أي خبرة في التصميم
+              مراجعة طبية تلقائية على كل محتوى
             </p>
           </motion.div>
 
-          {/* Hero visual */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -110,7 +112,7 @@ function Hero() {
             <div className="relative rounded-2xl border border-stone-200 bg-white p-5 shadow-lift">
               <div className="mb-3">
                 <div className="rounded-xl border border-stone-200 px-3 py-2.5 text-sm text-ink-muted bg-stone-50">
-                  مثال: كيف يعمل الذكاء الاصطناعي؟
+                  مثال: أسباب الصداع النصفي وعلاجه
                 </div>
                 <div className="mt-2 flex gap-2">
                   <Button size="sm" className="flex-1">توليد المحتوى</Button>
@@ -118,7 +120,7 @@ function Hero() {
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {demoSlides.map((s, i) => {
-                  const tmpl = TEMPLATE_DEFS[i % 3];
+                  const tmpl = VISIBLE_TEMPLATES[i % 3];
                   const pal = getPalette(tmpl.id, "p1");
                   return (
                     <div key={s.id} className="relative" style={{ transform: `translateY(${i * 8}px)`, zIndex: 3 - i }}>
@@ -146,13 +148,40 @@ function Hero() {
   );
 }
 
+function TrustMark() {
+  return (
+    <section className="py-8 border-t border-stone-100 bg-white">
+      <div className="mx-auto max-w-6xl px-4">
+        <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10 text-center">
+          <div className="flex items-center gap-2">
+            <Stethoscope className="w-5 h-5 text-teal-600" />
+            <span className="text-sm font-medium text-ink-muted">صُنع بواسطة طبيب</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-5 h-5 text-teal-600" />
+            <span className="text-sm font-medium text-ink-muted">مراجعة طبية تلقائية</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 text-teal-600" />
+            <span className="text-sm font-medium text-ink-muted">تنبيه استشارة الطبيب</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Globe className="w-5 h-5 text-teal-600" />
+            <span className="text-sm font-medium text-ink-muted">دعم اللهجات العربية</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function HowItWorks() {
   return (
     <section id="how" className="py-14 md:py-20 border-t border-stone-100">
       <div className="mx-auto max-w-6xl px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-extrabold text-ink">كيف يعمل</h2>
-          <p className="mt-3 text-ink-muted">أربع خطوات بسيطة من الفكرة إلى التصميم</p>
+          <p className="mt-3 text-ink-muted">أربع خطوات من الموضوع الصحي إلى التصميم الجاهز</p>
         </div>
         <div className="grid md:grid-cols-4 gap-6">
           {steps.map((step, i) => (
@@ -166,8 +195,8 @@ function HowItWorks() {
             >
               <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-soft">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-accent-soft flex items-center justify-center">
-                    <step.icon className="w-5 h-5 text-accent" />
+                  <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center">
+                    <step.icon className="w-5 h-5 text-teal-600" />
                   </div>
                   <span className="text-2xl font-extrabold text-stone-200">{i + 1}</span>
                 </div>
@@ -182,16 +211,50 @@ function HowItWorks() {
   );
 }
 
+function MedicalReview() {
+  return (
+    <section className="py-14 md:py-20 border-t border-stone-100 bg-teal-50/30">
+      <div className="mx-auto max-w-4xl px-4">
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center gap-2 rounded-full bg-teal-100 px-3 py-1.5 mb-4">
+            <ShieldCheck className="w-4 h-4 text-teal-600" />
+            <span className="text-sm font-medium text-teal-700">الميزة التي لا يملكها المنافسون</span>
+          </div>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-ink">مراجعة طبية تلقائية</h2>
+          <p className="mt-3 text-ink-muted">فحص كل محتوى طبيًا قبل النشر — لا يقدمها Canva أو Silsila</p>
+        </div>
+        <div className="grid md:grid-cols-3 gap-6">
+          <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-soft">
+            <AlertCircle className="w-8 h-8 text-red-500 mb-3" />
+            <h3 className="font-bold text-ink mb-2">رصد الادعاءات الخطرة</h3>
+            <p className="text-sm text-ink-muted">يكشف الادعاءات التشخيصية، الجرعات الخاطئة، وادعاءات الشفاء المطلقة.</p>
+          </div>
+          <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-soft">
+            <Quote className="w-8 h-8 text-amber-500 mb-3" />
+            <h3 className="font-bold text-ink mb-2">تخفيف اللغة المطلقة</h3>
+            <p className="text-sm text-ink-muted">يحوّل «يعالج» إلى «قد يساعد»، و«يجب» إلى «يُنصح بـ» — لغة طبية مسؤولة.</p>
+          </div>
+          <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-soft">
+            <ShieldCheck className="w-8 h-8 text-green-500 mb-3" />
+            <h3 className="font-bold text-ink mb-2">حكم واضح</h3>
+            <p className="text-sm text-ink-muted">يعيد نتيجة: مقبول / يحتاج مراجعة / ممنوع — مع أسباب مفصلة.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function TemplatePreviews() {
   return (
     <section className="py-14 md:py-20 border-t border-stone-100">
       <div className="mx-auto max-w-6xl px-4">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-ink">قوالب احترافية</h2>
-          <p className="mt-3 text-ink-muted">10 قوالب متنوعة لكل أنواع المحتوى</p>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-ink">قوالب طبية احترافية</h2>
+          <p className="mt-3 text-ink-muted">قوالب نظيفة ومناسبة للمحتوى الصحي</p>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          {TEMPLATE_DEFS.slice(0, 10).map((tmpl, i) => {
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {VISIBLE_TEMPLATES.slice(0, 8).map((tmpl, i) => {
             const pal = getPalette(tmpl.id, ["p1", "p2", "p3", "p4"][i % 4]);
             return (
               <div key={tmpl.id} className="rounded-xl overflow-hidden border border-stone-200 bg-white shadow-soft">
@@ -232,7 +295,7 @@ function Features() {
       <div className="mx-auto max-w-6xl px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-extrabold text-ink">مميزات Typo AI</h2>
-          <p className="mt-3 text-ink-muted">كل ما تحتاجه لإنشاء كاروسيل احترافي</p>
+          <p className="mt-3 text-ink-muted">كل ما تحتاجه لإنشاء كاروسيل صحي دقيق واحترافي</p>
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           {features.map((f, i) => (
@@ -244,8 +307,8 @@ function Features() {
               transition={{ delay: (i % 4) * 0.1 }}
               className="rounded-2xl border border-stone-200 bg-white p-5 shadow-soft"
             >
-              <div className="w-10 h-10 rounded-xl bg-accent-soft flex items-center justify-center mb-3">
-                <f.icon className="w-5 h-5 text-accent" />
+              <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center mb-3">
+                <f.icon className="w-5 h-5 text-teal-600" />
               </div>
               <h3 className="font-bold text-ink mb-1">{f.title}</h3>
               <p className="text-sm text-ink-muted leading-relaxed">{f.desc}</p>
@@ -262,16 +325,16 @@ function Examples() {
     <section id="examples" className="py-14 md:py-20 border-t border-stone-100 bg-surface-tinted/50">
       <div className="mx-auto max-w-6xl px-4">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-ink">أمثلة على الكاروسيل</h2>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-ink">أمثلة على الكاروسيل الصحي</h2>
           <p className="mt-3 text-ink-muted">نماذج جاهزة بإعدادات مختلفة</p>
         </div>
         <div className="grid md:grid-cols-3 gap-6">
           {[
-            { tmpl: "tahrir", pal: "p1", title: "كيف يعمل الذكاء الاصطناعي؟", body: "دليل مبسّط" },
-            { tmpl: "tabayun", pal: "p2", title: "5 نصائح للنوم الصحي", body: "نصائح عملية" },
-            { tmpl: "hadith", pal: "p4", title: "ابدأ مشروعك الأول", body: "خطوة بخطوة" },
+            { tmpl: "tahrir", pal: "p1", title: "أسباب الصداع النصفي", body: "دليل مبسّط" },
+            { tmpl: "academy", pal: "p2", title: "٥ علامات لنقص فيتامين د", body: "متى تستشير الطبيب؟" },
+            { tmpl: "wadeh", pal: "p4", title: "خرافة: السكر يسبب فرط الحركة", body: "الحقيقة العلمية" },
           ].map((ex, i) => {
-            const tmpl = TEMPLATE_DEFS.find((t) => t.id === ex.tmpl)!;
+            const tmpl = VISIBLE_TEMPLATES.find((t) => t.id === ex.tmpl)!;
             const pal = getPalette(ex.tmpl, ex.pal);
             const s: Slide = { id: `ex${i}`, type: "cover", title: ex.title, body: ex.body };
             return (
@@ -306,21 +369,21 @@ function WorkflowDemo() {
     <section className="py-14 md:py-20 border-t border-stone-100">
       <div className="mx-auto max-w-6xl px-4">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-ink">رحلة إنشاء المشروع</h2>
-          <p className="mt-3 text-ink-muted">من الفكرة إلى التصدير في دقائق</p>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-ink">رحلة إنشاء المحتوى الصحي</h2>
+          <p className="mt-3 text-ink-muted">من الموضوع إلى التصدير في دقائق</p>
         </div>
         <div className="rounded-2xl border border-stone-200 bg-white p-6 md:p-10 shadow-soft">
           <div className="grid md:grid-cols-4 gap-6">
             {[
-              { step: "01", title: "أدخل الموضوع", desc: "اكتب فكرتك في حقل واحد", icon: FileText },
-              { step: "02", title: "اختر الإعدادات", desc: "النوع، الجمهور، الأسلوب", icon: Sparkles },
-              { step: "03", title: "صدّر النتيجة", desc: "شاهد الشرائح وعدّلها", icon: Save },
+              { step: "01", title: "أدخل الموضوع", desc: "اكتب فكرتك الصحية", icon: FileText },
+              { step: "02", title: "اختر الإعدادات", desc: "التخصص، اللهجة، الأسلوب", icon: Sparkles },
+              { step: "03", title: "مراجعة طبية", desc: "فحص تلقائي للمحتوى", icon: ShieldCheck },
               { step: "04", title: "نزّل التصميم", desc: "PNG أو ZIP جاهز للنشر", icon: Download },
             ].map((item, i) => (
               <div key={i} className="relative">
-                <div className="text-3xl font-extrabold text-accent/20 mb-2">{item.step}</div>
-                <div className="w-10 h-10 rounded-xl bg-accent-soft flex items-center justify-center mb-3">
-                  <item.icon className="w-5 h-5 text-accent" />
+                <div className="text-3xl font-extrabold text-teal-600/20 mb-2">{item.step}</div>
+                <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center mb-3">
+                  <item.icon className="w-5 h-5 text-teal-600" />
                 </div>
                 <h3 className="font-bold text-ink mb-1">{item.title}</h3>
                 <p className="text-sm text-ink-muted">{item.desc}</p>
@@ -346,17 +409,17 @@ function Pricing() {
           <h2 className="text-3xl md:text-4xl font-extrabold text-ink">الأسعار</h2>
           <p className="mt-3 text-ink-muted">ابدأ مجانًا اليوم</p>
         </div>
-        <div className="rounded-2xl border-2 border-accent/30 bg-white p-8 shadow-soft max-w-md mx-auto text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-accent-soft px-3 py-1 mb-4">
-            <Sparkles className="w-4 h-4 text-accent" />
-            <span className="text-sm font-medium text-accent">الخطة الحالية</span>
+        <div className="rounded-2xl border-2 border-teal-500/30 bg-white p-8 shadow-soft max-w-md mx-auto text-center">
+          <div className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-3 py-1 mb-4">
+            <Sparkles className="w-4 h-4 text-teal-600" />
+            <span className="text-sm font-medium text-teal-700">الخطة الحالية</span>
           </div>
           <h3 className="text-2xl font-extrabold text-ink">الخطة المجانية</h3>
           <div className="my-6">
             <span className="text-5xl font-extrabold text-ink">مجانًا</span>
           </div>
           <div className="space-y-3 text-right mb-8">
-            {["إنشاء مشاريع كاروسيل", "الوصول إلى القوالب الحالية", "تنزيل الصور دون علامة مائية", "إنشاء Caption وHashtags", "حفظ المشاريع"].map((f) => (
+            {["إنشاء كاروسيلات طبية", "مراجعة طبية تلقائية", "الوصول للقوالب الطبية", "تنزيل الصور دون علامة مائية", "تنبيه استشارة الطبيب", "إنشاء Caption وHashtags"].map((f) => (
               <div key={f} className="flex items-center gap-3">
                 <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center shrink-0">
                   <Check className="w-3 h-3 text-green-600" strokeWidth={3} />
@@ -415,11 +478,12 @@ function FinalCTA() {
   return (
     <section className="py-14 md:py-20 border-t border-stone-100">
       <div className="mx-auto max-w-4xl px-4">
-        <div className="rounded-3xl bg-accent p-10 md:p-16 text-center">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-white">جاهز لتبدأ؟</h2>
-          <p className="mt-3 text-white/80 text-lg">أنشئ أول كاروسيل لك في دقائق</p>
+        <div className="rounded-3xl bg-teal-600 p-10 md:p-16 text-center">
+          <Stethoscope className="w-10 h-10 text-white/80 mx-auto mb-4" />
+          <h2 className="text-3xl md:text-4xl font-extrabold text-white">جاهز لتنشئ محتوى صحيًا دقيقًا؟</h2>
+          <p className="mt-3 text-white/80 text-lg">أنشئ أول كاروسيل طبي لك في دقائق</p>
           <Link href="/signup" className="inline-block mt-6">
-            <Button size="lg" variant="secondary" className="bg-white text-accent hover:bg-stone-50">ابدأ مجانًا الآن</Button>
+            <Button size="lg" variant="secondary" className="bg-white text-teal-600 hover:bg-stone-50">ابدأ مجانًا الآن</Button>
           </Link>
         </div>
       </div>

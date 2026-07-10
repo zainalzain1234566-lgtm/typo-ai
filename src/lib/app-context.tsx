@@ -31,6 +31,7 @@ export interface AppData {
     logoUrl: string | null;
     primaryColor: string;
     font: string;
+    disclaimerText: string;
   };
   preferences: {
     language: string;
@@ -40,6 +41,7 @@ export interface AppData {
     slideCount: number;
     preferredTemplateId: string | null;
   };
+  telegramEnabled: boolean;
 }
 
 interface AppContextValue extends AppData {
@@ -54,8 +56,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null);
   const [ready, setReady] = useState(false);
   const [stats, setStats] = useState<Stats>({ totalProjects: 0, completedProjects: 0, exportCount: 0, favoriteTemplates: 0 });
-  const [brandKit, setBrandKit] = useState<{ instagramHandle: string; logoUrl: string | null; primaryColor: string; font: string }>({ instagramHandle: "", logoUrl: null, primaryColor: "#6D5EFC", font: "tajawal" });
+  const [brandKit, setBrandKit] = useState<{ instagramHandle: string; logoUrl: string | null; primaryColor: string; font: string; disclaimerText: string }>({ instagramHandle: "", logoUrl: null, primaryColor: "#6D5EFC", font: "tajawal", disclaimerText: "هذا المحتوى للتوعية فقط ولا يغني عن استشارة الطبيب" });
   const [preferences, setPreferences] = useState({ language: "العربية الفصحى", tone: "مبسطة", level: "مبتدئ", size: "portrait", slideCount: 6, preferredTemplateId: null });
+  const [telegramEnabled, setTelegramEnabled] = useState(false);
 
   const loadUserData = useCallback(async (userId: string) => {
     console.log("[APP] loadUserData start", { userId });
@@ -100,6 +103,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         logoUrl,
         primaryColor: bk.primary_color ?? "#6D5EFC",
         font: bk.default_font ?? "tajawal",
+        disclaimerText: bk.disclaimer_text ?? "هذا المحتوى للتوعية فقط ولا يغني عن استشارة الطبيب",
       });
     }
 
@@ -112,6 +116,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         slideCount: prefs.default_slide_count ?? 6,
         preferredTemplateId: prefs.preferred_template_id ?? "tahrir",
       });
+      setTelegramEnabled(!!prefs.telegram_enabled);
     }
 
     if (statsData && typeof statsData === "object") {
@@ -165,6 +170,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     stats,
     brandKit,
     preferences,
+    telegramEnabled,
     supabase,
     refresh,
   };

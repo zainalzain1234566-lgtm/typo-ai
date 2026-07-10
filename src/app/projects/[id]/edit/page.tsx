@@ -141,7 +141,7 @@ export default function EditorPage() {
 
   const currentSlide = project.slides[currentSlideIdx];
   const pal = getPalette(project.settings.templateId, project.settings.paletteId);
-  const brandKitData = { instagramHandle: brandKit.instagramHandle, logoDataUrl: brandKit.logoUrl, primaryColor: brandKit.primaryColor, font: project.settings.font };
+  const brandKitData = { instagramHandle: brandKit.instagramHandle, logoDataUrl: brandKit.logoUrl, primaryColor: brandKit.primaryColor, font: project.settings.font, disclaimerText: brandKit.disclaimerText };
   const tmpl = TEMPLATE_DEFS.find((t) => t.id === project.settings.templateId);
 
   return (
@@ -453,6 +453,10 @@ function BrandDialog({ open, onClose, project, update }: {
             <label className="flex items-center gap-2 cursor-pointer">
               <Checkbox checked={bk.showSlideNumber} onCheckedChange={(v) => setBk({ showSlideNumber: !!v })} />
               <span className="text-sm text-ink-muted">إظهار رقم الشريحة</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <Checkbox checked={bk.showDisclaimer} onCheckedChange={(v) => setBk({ showDisclaimer: !!v })} />
+              <span className="text-sm text-ink-muted">تنبيه استشارة الطبيب</span>
             </label>
             <div>
               <Label>الموضع</Label>

@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Download, Loader2, Check, Copy, ArrowRight, ArrowLeft, Hash, FileText,
-  CheckCircle2, Package, Image as ImageIcon, Pencil, Sparkles,
+  CheckCircle2, Package, Image as ImageIcon, Pencil, Sparkles, Send,
 } from "lucide-react";
 import { AppNavbar } from "@/components/layout/app-navbar";
 import { Button } from "@/components/ui/button";
@@ -16,9 +16,10 @@ import { ScaledSlide, SlideRenderer } from "@/components/carousel/slide-renderer
 import { useApp } from "@/lib/app-context";
 import { useToast } from "@/components/ui/toast";
 import { TEMPLATE_DEFS, getPalette, SIZES } from "@/lib/templates";
-import { exportSlideToPng, downloadDataUrl, exportAllToZip, waitForFonts } from "@/lib/export";
+import { exportSlideToPng, downloadDataUrl, exportAllToZip, slidesToBlobs, waitForFonts } from "@/lib/export";
 import { mapProject } from "@/lib/db-mappers";
 import { updateProjectAction, recordExportAction } from "@/app/actions/projects";
+import { sendToTelegramAction } from "@/app/actions/telegram";
 import { cn } from "@/lib/utils";
 import type { Project } from "@/lib/types";
 
@@ -26,7 +27,7 @@ export default function ExportPage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
-  const { supabase, brandKit } = useApp();
+  const { supabase, brandKit, telegramEnabled } = useApp();
   const projectId = params.id as string;
 
   const [project, setProject] = useState<Project | null>(null);
@@ -34,6 +35,7 @@ export default function ExportPage() {
   const [exportingIdx, setExportingIdx] = useState<number | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [fontsReady, setFontsReady] = useState(false);
+  const [sendingTg, setSendingTg] = useState(false);
   const exportRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const loadProject = useCallback(async () => {
@@ -77,7 +79,7 @@ export default function ExportPage() {
   }
 
   const pal = getPalette(project.settings.templateId, project.settings.paletteId);
-  const brandKitData = { instagramHandle: brandKit.instagramHandle, logoDataUrl: brandKit.logoUrl, primaryColor: brandKit.primaryColor, font: project.settings.font };
+  const brandKitData = { instagramHandle: brandKit.instagramHandle, logoDataUrl: brandKit.logoUrl, primaryColor: brandKit.primaryColor, font: project.settings.font, disclaimerText: brandKit.disclaimerText };
   const tmpl = TEMPLATE_DEFS.find((t) => t.id === project.settings.templateId);
   const sizeLabel = { "1080x1080": "1080×1080", "1080x1350": "1080×1350", "1080x1920": "1080×1920" }[project.settings.size];
 
@@ -109,6 +111,29 @@ export default function ExportPage() {
     setExporting(false);
   };
 
+  const handleSendTelegram = async () => {
+    const validRefs = exportRefs.current.filter((r): r is HTMLDivElement => !!r);
+    if (validRefs.length === 0) return;
+    setSendingTg(true);
+    try {
+      const blobs = await slidesToBlobs(validRefs, project.settings.size);
+      const formData = new FormData();
+      blobs.forEach((blob, i) => {
+        formData.append(`slide-${i}`, blob, `slide-${String(i + 1).padStart(2, "0")}.png`);
+      });
+      const result = await sendToTelegramAction(project.id, formData);
+      if (result.success) {
+        setShowSuccess(true);
+        toast({ type: "success", title: "تم الإرسال إلى تلغرام" });
+      } else {
+        toast({ type: "error", title: result.error ?? "فشل الإرسال" });
+      }
+    } catch {
+      toast({ type: "error", title: "فشل الإرسال", description: "حاول مرة أخرى" });
+    }
+    setSendingTg(false);
+  };
+
   const copyCaption = () => {
     navigator.clipboard.writeText(project.caption);
     toast({ type: "success", title: "تم نسخ الوصف" });
@@ -127,7 +152,7 @@ export default function ExportPage() {
           <div
             key={slide.id}
             ref={(el) => { exportRefs.current[i] = el; }}
-            style={{ width: "1080px", height: `${SIZES.find((s) => s.id === project.settings.size)?.h ?? 1080}px` }}
+            style={{ width: "1080px", height: `${SIZES.find((s) => s.id === project.settings.size)?.h ?? 1080}px`, position: "relative" }}
           >
             <SlideRenderer
               slide={slide}
@@ -141,6 +166,23 @@ export default function ExportPage() {
               total={project.slides.length}
               fontSizeScale={project.settings.fontSizeScale}
             />
+            {project.settings.brandKit.showDisclaimer && (
+              <div style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                padding: "12px 40px",
+                background: "rgba(0,0,0,0.04)",
+                textAlign: "center",
+                fontSize: "16px",
+                color: pal.text,
+                opacity: 0.7,
+                pointerEvents: "none",
+              }}>
+                {brandKitData.disclaimerText || "هذا المحتوى للتوعية فقط ولا يغني عن استشارة الطبيب"}
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -273,6 +315,11 @@ export default function ExportPage() {
           <Button size="lg" onClick={handleExportAll} disabled={exporting || !fontsReady}>
             {exporting ? <><Loader2 className="w-5 h-5 animate-spin" /> جارٍ التصدير...</> : <><Package className="w-5 h-5" /> تنزيل جميع الشرائح ZIP</>}
           </Button>
+          {telegramEnabled && (
+            <Button size="lg" variant="outline" onClick={handleSendTelegram} disabled={sendingTg || !fontsReady}>
+              {sendingTg ? <><Loader2 className="w-5 h-5 animate-spin" /> جارٍ الإرسال...</> : <><Send className="w-5 h-5" /> إرسال إلى تلغرام</>}
+            </Button>
+          )}
           <Button variant="outline" size="lg" onClick={() => router.push(`/projects/${project.id}/edit`)}>
             <Pencil className="w-4 h-4" /> العودة إلى التعديل
           </Button>

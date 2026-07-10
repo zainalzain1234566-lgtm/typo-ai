@@ -3,7 +3,7 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { createProjectSchema, updateProjectSchema, SIZE_MAP } from "@/lib/validation/projects";
-import { getGenerationProvider, type GenerationInput } from "@/lib/services/generation";
+import { getGenerationProvider, type GenerationInput, reviewMedicalContent } from "@/lib/services/generation";
 import { reorderSlidesSchema, updateSlideSchema, createSlideSchema } from "@/lib/validation/slides";
 import type { Database } from "@/types/database";
 import { log, logError } from "@/lib/logger";
@@ -75,8 +75,11 @@ export async function createProjectAction(input: Record<string, unknown>) {
       show_logo: parsed.data.show_logo,
       show_account_name: parsed.data.show_account_name,
       show_slide_number: parsed.data.show_slide_number,
+      show_disclaimer: parsed.data.show_disclaimer,
       logo_position: parsed.data.logo_position,
       account_name_position: parsed.data.account_name_position,
+      specialty_slug: parsed.data.specialty_slug ?? null,
+      requires_medical_review: parsed.data.requires_medical_review,
       status: "in_progress",
     })
     .select()
@@ -92,7 +95,7 @@ export async function createProjectAction(input: Record<string, unknown>) {
   await supabase.rpc("increment_usage", { p_user_id: user.id, p_field: "projects_created" });
 
   // Create generation job
-  const { data: genJob } = await supabase
+  const { data: genJob, error: genJobErr } = await supabase
     .from("generation_jobs")
     .insert({
       user_id: user.id,
@@ -101,6 +104,11 @@ export async function createProjectAction(input: Record<string, unknown>) {
     })
     .select()
     .single();
+
+  if (genJobErr || !genJob) {
+    logError("PROJECT", "gen_job insert failed", genJobErr?.message ?? "no data returned");
+    return { success: false, error: "تعذر إنشاء مهمة التوليد" };
+  }
 
   // Generate content
   await supabase
@@ -140,6 +148,31 @@ export async function createProjectAction(input: Record<string, unknown>) {
       throw new Error(`slides insert: ${slidesError.message}`);
     }
     log("PROJECT", "slides inserted", { count: slideRows.length });
+
+    // ============ Medical accuracy pass ============
+    let reviewVerdict = "pending";
+    try {
+      const apiKey = process.env.AI_API_KEY!;
+      const baseUrl = process.env.AI_BASE_URL || "https://openrouter.ai/api/v1";
+      const model = process.env.AI_MODEL || "deepseek/deepseek-v4-flash";
+      const review = await reviewMedicalContent(generated.slides, apiKey, baseUrl, model);
+      reviewVerdict = review.verdict;
+      log("PROJECT", "medical review", { verdict: review.verdict, flags: review.flags.length });
+
+      await supabase.from("medical_review_results").insert({
+        project_id: project.id,
+        user_id: user.id,
+        verdict: review.verdict,
+        flags: review.flags,
+        summary: review.summary,
+        reviewed_at: new Date().toISOString(),
+      });
+
+      await supabase.from("projects").update({ review_status: review.verdict }).eq("id", project.id);
+    } catch (reviewErr) {
+      const msg = reviewErr instanceof Error ? reviewErr.message : String(reviewErr);
+      logError("PROJECT", "medical review failed", msg);
+    }
 
     // Save caption and hashtags
     await supabase

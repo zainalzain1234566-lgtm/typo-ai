@@ -31,6 +31,18 @@ export async function downloadDataUrl(dataUrl: string, filename: string): Promis
   link.click();
 }
 
+export async function slidesToBlobs(
+  slideElements: HTMLElement[],
+  size: CarouselSize
+): Promise<Blob[]> {
+  const blobs: Blob[] = [];
+  for (const el of slideElements) {
+    const png = await exportSlideToPng(el, size);
+    blobs.push(dataUrlToBlob(png));
+  }
+  return blobs;
+}
+
 export async function exportAllToZip(
   slideElements: HTMLElement[],
   size: CarouselSize

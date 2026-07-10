@@ -1,4 +1,4 @@
-import type { Project, Slide, ProjectSettings, ContentType, ContentLevel, Tone, Language, CarouselSize, CTAOption, FontFamily, Placement, SlideType, ProjectStatus, Folder } from "./types";
+import type { Project, Slide, ProjectSettings, ContentType, ContentLevel, Tone, Language, CarouselSize, CTAOption, FontFamily, Placement, SlideType, ProjectStatus, ReviewStatus, Folder } from "./types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 
@@ -62,14 +62,17 @@ export function mapProject(row: any, slideRows: any[]): Project {
         showLogo: row.show_logo,
         showAccountName: row.show_account_name,
         showSlideNumber: row.show_slide_number,
+        showDisclaimer: row.show_disclaimer ?? true,
         placement: (row.logo_position ?? "bottom-left") as Placement,
       },
+      specialty: row.specialty_slug ?? undefined,
     },
     slides: slideRows.map(mapSlide),
     caption: row.caption ?? "",
     hashtags: row.hashtags ? row.hashtags.split(" ").filter(Boolean) : [],
     status: (row.status === "completed" ? "completed" : "draft") as ProjectStatus,
     favorite: row.is_favorite,
+    reviewStatus: row.review_status as ReviewStatus | undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     exportCount: 0,
@@ -146,9 +149,12 @@ export function projectToCreateInput(project: Project, lookup: TemplateLookup): 
     show_logo: project.settings.brandKit.showLogo,
     show_account_name: project.settings.brandKit.showAccountName,
     show_slide_number: project.settings.brandKit.showSlideNumber,
+    show_disclaimer: project.settings.brandKit.showDisclaimer,
     logo_position: project.settings.brandKit.placement,
     account_name_position: project.settings.brandKit.placement,
     folder_id: project.folderId,
+    specialty_slug: project.settings.specialty ?? null,
+    requires_medical_review: true,
   };
 }
 
@@ -168,6 +174,7 @@ export function projectToUpdateInput(project: Project, lookup: TemplateLookup): 
     show_logo: project.settings.brandKit.showLogo,
     show_account_name: project.settings.brandKit.showAccountName,
     show_slide_number: project.settings.brandKit.showSlideNumber,
+    show_disclaimer: project.settings.brandKit.showDisclaimer,
     logo_position: project.settings.brandKit.placement,
     account_name_position: project.settings.brandKit.placement,
     caption: project.caption,
@@ -175,6 +182,7 @@ export function projectToUpdateInput(project: Project, lookup: TemplateLookup): 
     status: project.status === "completed" ? "completed" : "in_progress",
     is_favorite: project.favorite,
     folder_id: project.folderId,
+    specialty_slug: project.settings.specialty ?? null,
   };
 }
 
@@ -208,6 +216,7 @@ export function createBlankProject(): Project {
         showLogo: false,
         showAccountName: false,
         showSlideNumber: false,
+        showDisclaimer: true,
         placement: "bottom-left",
       },
     },

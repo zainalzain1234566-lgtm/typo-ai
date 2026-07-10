@@ -8,6 +8,7 @@ import {
   Type, BookOpen, Lightbulb, List, GitCompare, Footprints, Heart, BookMarked,
   Users, GraduationCap, MessageSquare, Languages, Square, RectangleVertical,
   RectangleHorizontal, Minus, Palette, Check, Eye, EyeOff, Settings as SettingsIcon,
+  ShieldQuestion, ShieldCheck,
 } from "lucide-react";
 import { AppNavbar } from "@/components/layout/app-navbar";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,8 @@ import { Badge } from "@/components/ui/badge";
 import { ScaledSlide } from "@/components/carousel/slide-renderer";
 import { useApp } from "@/lib/app-context";
 import { useToast } from "@/components/ui/toast";
-import { TEMPLATE_DEFS, getPalette, SIZES, ALL_FONTS } from "@/lib/templates";
+import { TEMPLATE_DEFS, getPalette, SIZES, ALL_FONTS, VISIBLE_TEMPLATES } from "@/lib/templates";
+import { FEATURE_FLAGS } from "@/lib/feature-flags";
 import { PROGRESS_MESSAGES } from "@/lib/services/generation";
 import {
   createBlankProject, useTemplateLookup, projectToCreateInput,
@@ -32,20 +34,40 @@ import {
   addSlideAction, duplicateSlideAction, deleteSlideAction, reorderSlidesAction,
 } from "@/app/actions/projects";
 
-const CONTENT_TYPES: { id: ContentType; icon: any; desc: string }[] = [
-  { id: "تعليمي", icon: BookOpen, desc: "محتوى تعليمي مبسّط" },
-  { id: "قصة", icon: BookMarked, desc: "سرد قصة ملهمة" },
-  { id: "توعوي", icon: Lightbulb, desc: "توعية بمعلومات مهمة" },
-  { id: "قائمة", icon: List, desc: "قائمة منظمة من النقاط" },
-  { id: "خطوات", icon: Footprints, desc: "خطوات متتابعة" },
+const ALL_CONTENT_TYPES: { id: ContentType; icon: any; desc: string }[] = [
+  { id: "توعوي", icon: Lightbulb, desc: "توعية صحية" },
+  { id: "تفكيك الخرافات", icon: ShieldQuestion, desc: "تصحيح خرافات طبية" },
+  { id: "شرح مرض", icon: BookOpen, desc: "شرح حالة طبية" },
+  { id: "خطوات", icon: Footprints, desc: "خطوات عملية" },
   { id: "نصائح", icon: Heart, desc: "نصائح وإرشادات" },
+  { id: "تعليمي", icon: Type, desc: "محتوى تعليمي مبسّط" },
+  { id: "قصة", icon: BookMarked, desc: "سرد قصة ملهمة" },
+  { id: "قائمة", icon: List, desc: "قائمة منظمة من النقاط" },
   { id: "مقارنة", icon: GitCompare, desc: "مقارنة بين خيارين" },
   { id: "شرح مفهوم", icon: Type, desc: "تبسيط مفهوم معقد" },
 ];
-const TONES: Tone[] = ["مبسطة", "احترافية", "ودية", "رسمية", "تحفيزية", "قصصية", "مباشرة", "أكاديمية"];
-const LANGUAGES: Language[] = ["العربية الفصحى", "اللهجة العراقية", "اللهجة الخليجية", "اللهجة المصرية", "الإنجليزية"];
+const CONTENT_TYPES = FEATURE_FLAGS.medicalMode
+  ? ALL_CONTENT_TYPES.slice(0, 5)
+  : ALL_CONTENT_TYPES;
+const ALL_TONES: Tone[] = ["مبسطة", "احترافية", "ودية", "رسمية", "تحفيزية", "قصصية", "مباشرة", "أكاديمية"];
+const ALL_LANGUAGES: Language[] = ["العربية الفصحى", "اللهجة العراقية", "اللهجة الخليجية", "اللهجة المصرية", "الإنجليزية"];
+const LANGUAGES = FEATURE_FLAGS.medicalMode
+  ? ALL_LANGUAGES.slice(0, 3)
+  : ALL_LANGUAGES;
+const TONES = ALL_TONES;
 const LEVELS: ContentLevel[] = ["مبتدئ", "متوسط", "متقدم"];
 const CTAS: CTAOption[] = ["بدون CTA", "احفظ المنشور", "شارك المنشور", "تابع الحساب", "اكتب رأيك"];
+
+const SPECIALTIES = [
+  { slug: "general", name: "طب عام" },
+  { slug: "dentistry", name: "طب الأسنان" },
+  { slug: "dermatology", name: "الجلدية" },
+  { slug: "nutrition", name: "التغذية" },
+  { slug: "pediatrics", name: "طب الأطفال" },
+  { slug: "cardiology", name: "أمراض القلب" },
+  { slug: "neurology", name: "الأعصاب" },
+  { slug: "mental_health", name: "الصحة النفسية" },
+];
 
 const STEPS = [
   { title: "الموضوع", num: "1" },
@@ -297,12 +319,32 @@ function Step1Topic({ project, update, updateSettings }: {
           <Label htmlFor="topic">موضوع المحتوى</Label>
           <Input
             id="topic"
-            placeholder="مثال: كيف يعمل الذكاء الاصطناعي؟"
+            placeholder="مثال: أسباب الصداع النصفي"
             value={project.title}
             onChange={(e) => update({ title: e.target.value })}
             autoFocus
           />
         </div>
+
+        {FEATURE_FLAGS.medicalMode && (
+          <div>
+            <Label>التخصص الطبي</Label>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {SPECIALTIES.map((sp) => (
+                <button
+                  key={sp.slug}
+                  onClick={() => updateSettings({ specialty: sp.slug })}
+                  className={cn(
+                    "px-4 py-2 rounded-xl text-sm font-medium border transition-all cursor-pointer",
+                    project.settings.specialty === sp.slug ? "border-teal-500 bg-teal-50 text-teal-700" : "border-stone-200 bg-white text-ink-muted hover:bg-stone-50"
+                  )}
+                >
+                  {sp.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div>
           <Label>نوع المحتوى</Label>
@@ -462,7 +504,7 @@ function Step3Size({ project, updateSettings, generating, genMessage, genProgres
         <div>
           <Label>المقاس</Label>
           <div className="grid grid-cols-3 gap-4 mt-2">
-            {SIZES.map((s) => {
+            {SIZES.filter((s) => !FEATURE_FLAGS.medicalMode || s.id === "1080x1350").map((s) => {
               const Icon = sizeIcons[s.id as CarouselSize] ?? Square;
               const active = project.settings.size === s.id;
               const ratioH = s.h / s.w;
@@ -560,10 +602,10 @@ function Step4Template({ project, updateSettings, brandKit }: {
   updateSettings: (u: Partial<Project["settings"]>) => void;
   brandKit: any;
 }) {
-  const tmpl = TEMPLATE_DEFS.find((t) => t.id === project.settings.templateId) ?? TEMPLATE_DEFS[0];
+  const tmpl = VISIBLE_TEMPLATES.find((t) => t.id === project.settings.templateId) ?? VISIBLE_TEMPLATES[0];
   const pal = getPalette(project.settings.templateId, project.settings.paletteId);
   const previewSlide = project.slides[0] ?? { id: "p", type: "cover" as SlideType, title: project.title, body: "" };
-  const brandKitData = { instagramHandle: brandKit.instagramHandle, logoDataUrl: brandKit.logoUrl, primaryColor: brandKit.primaryColor, font: project.settings.font };
+  const brandKitData = { instagramHandle: brandKit.instagramHandle, logoDataUrl: brandKit.logoUrl, primaryColor: brandKit.primaryColor, font: project.settings.font, disclaimerText: brandKit.disclaimerText };
 
   return (
     <div>
@@ -574,7 +616,7 @@ function Step4Template({ project, updateSettings, brandKit }: {
         <div className="lg:col-span-3 order-1">
           <h3 className="text-sm font-bold text-ink mb-3">القوالب</h3>
           <div className="space-y-2 max-h-[500px] overflow-y-auto thin-scrollbar pr-1">
-            {TEMPLATE_DEFS.map((t) => {
+            {VISIBLE_TEMPLATES.map((t) => {
               const p = getPalette(t.id, project.settings.paletteId);
               const active = project.settings.templateId === t.id;
               return (
@@ -708,6 +750,10 @@ function Step4Template({ project, updateSettings, brandKit }: {
                   <Checkbox checked={project.settings.brandKit.showSlideNumber} onCheckedChange={(v) => updateSettings({ brandKit: { ...project.settings.brandKit, showSlideNumber: !!v } })} />
                   <span className="text-sm text-ink-muted">إظهار رقم الشريحة</span>
                 </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox checked={project.settings.brandKit.showDisclaimer} onCheckedChange={(v) => updateSettings({ brandKit: { ...project.settings.brandKit, showDisclaimer: !!v } })} />
+                  <span className="text-sm text-ink-muted">تنبيه استشارة الطبيب</span>
+                </label>
                 <div>
                   <span className="text-xs text-ink-muted block mb-1">موضعه</span>
                   <div className="grid grid-cols-2 gap-1">
@@ -834,6 +880,31 @@ function Step5Review({ project, update, setProject, dbProjectId, onRefresh }: {
         <Button variant="outline" size="sm" onClick={copyAll}><Copy className="w-4 h-4" /> نسخ الكل</Button>
       </div>
 
+      {project.reviewStatus === "blocked" && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 mb-4 flex items-start gap-3">
+          <ShieldQuestion className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-red-800">المراجعة الطبية: ممنوع</p>
+            <p className="text-sm text-red-600">قد يحتوي المحتوى على معلومات غير آمنة. راجع الشرائح بعناية قبل النشر.</p>
+          </div>
+        </div>
+      )}
+      {project.reviewStatus === "needs_review" && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 mb-4 flex items-start gap-3">
+          <ShieldQuestion className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-amber-800">المراجعة الطبية: يحتاج مراجعة</p>
+            <p className="text-sm text-amber-600">بعض الادعاءات قد تحتاج تعديلًا. راجع الشرائح قبل النشر.</p>
+          </div>
+        </div>
+      )}
+      {project.reviewStatus === "pass" && (
+        <div className="rounded-2xl border border-green-200 bg-green-50 p-4 mb-4 flex items-center gap-3">
+          <ShieldCheck className="w-5 h-5 text-green-600 shrink-0" />
+          <p className="font-medium text-green-800">المراجعة الطبية: مقبول ✓</p>
+        </div>
+      )}
+
       <div className="space-y-4">
         {slides.map((slide, i) => (
           <div key={slide.id} className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
@@ -896,7 +967,7 @@ function Step6Export({ project }: { project: Project }) {
             font={project.settings.font}
             size={project.settings.size}
             brandKitSettings={project.settings.brandKit}
-            brandKitData={{ instagramHandle: "@typo.ai", logoDataUrl: null, primaryColor: "#6D5EFC", font: project.settings.font }}
+            brandKitData={{ instagramHandle: "@typo.ai", logoDataUrl: null, primaryColor: "#6D5EFC", font: project.settings.font, disclaimerText: "هذا المحتوى للتوعية فقط ولا يغني عن استشارة الطبيب" }}
             index={0}
             total={project.slides.length}
             fontSizeScale={project.settings.fontSizeScale}
@@ -908,7 +979,7 @@ function Step6Export({ project }: { project: Project }) {
         <div className="flex justify-between"><span className="text-ink-muted">اسم المشروع</span><span className="font-medium text-ink">{project.title}</span></div>
         <div className="flex justify-between"><span className="text-ink-muted">عدد الشرائح</span><span className="font-medium text-ink">{project.slides.length}</span></div>
         <div className="flex justify-between"><span className="text-ink-muted">المقاس</span><span className="font-medium text-ink">{({ "1080x1080": "1080×1080", "1080x1350": "1080×1350", "1080x1920": "1080×1920" } as Record<string, string>)[project.settings.size]}</span></div>
-        <div className="flex justify-between"><span className="text-ink-muted">القالب</span><span className="font-medium text-ink">{TEMPLATE_DEFS.find((t) => t.id === project.settings.templateId)?.name}</span></div>
+        <div className="flex justify-between"><span className="text-ink-muted">القالب</span><span className="font-medium text-ink">{VISIBLE_TEMPLATES.find((t) => t.id === project.settings.templateId)?.name}</span></div>
         <div className="flex justify-between"><span className="text-ink-muted">الخط</span><span className="font-medium text-ink">{ALL_FONTS.find((f) => f.id === project.settings.font)?.name}</span></div>
       </div>
 

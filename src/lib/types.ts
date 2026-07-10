@@ -11,7 +11,8 @@ export interface Slide {
 }
 
 export type ContentType =
-  | "تعليمي" | "قصة" | "توعوي" | "قائمة" | "خطوات" | "نصائح" | "مقارنة" | "شرح مفهوم";
+  | "تعليمي" | "قصة" | "توعوي" | "قائمة" | "خطوات" | "نصائح" | "مقارنة" | "شرح مفهوم"
+  | "تفكيك الخرافات" | "شرح مرض";
 
 export type Audience = string;
 
@@ -44,6 +45,7 @@ export interface BrandKit {
   logoDataUrl: string | null;
   primaryColor: string;
   font: FontFamily;
+  disclaimerText?: string;
 }
 
 export interface BrandKitSettings {
@@ -51,6 +53,7 @@ export interface BrandKitSettings {
   showLogo: boolean;
   showAccountName: boolean;
   showSlideNumber: boolean;
+  showDisclaimer: boolean;
   placement: Placement;
 }
 
@@ -61,6 +64,7 @@ export interface Template {
   palettes: Palette[];
   fonts: FontFamily[];
   component: string; // template key for renderer
+  category?: "medical" | "general";
 }
 
 export interface ProjectSettings {
@@ -77,9 +81,13 @@ export interface ProjectSettings {
   font: FontFamily;
   fontSizeScale: number;
   brandKit: BrandKitSettings;
+  specialty?: string;
+  source?: string;
 }
 
 export type ProjectStatus = "draft" | "completed";
+
+export type ReviewStatus = "pending" | "pass" | "needs_review" | "blocked";
 
 export interface Project {
   id: string;
@@ -91,6 +99,7 @@ export interface Project {
   hashtags: string[];
   status: ProjectStatus;
   favorite: boolean;
+  reviewStatus?: ReviewStatus;
   createdAt: string;
   updatedAt: string;
   exportCount: number;

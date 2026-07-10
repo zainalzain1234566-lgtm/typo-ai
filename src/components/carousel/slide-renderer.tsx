@@ -102,6 +102,24 @@ export function ScaledSlide({ width = 400, ...slideProps }: SlideRenderProps & {
         className="absolute top-0 right-0"
       >
         <SlideRenderer {...slideProps} />
+        {slideProps.brandKitSettings.showDisclaimer && (
+          <div style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            padding: "12px 40px",
+            background: "rgba(0,0,0,0.04)",
+            textAlign: "center",
+            fontSize: "16px",
+            color: slideProps.palette.text,
+            opacity: 0.7,
+            fontFamily: fontMap[slideProps.font] ?? "var(--font-tajawal)",
+            pointerEvents: "none",
+          }}>
+            {slideProps.brandKitData.disclaimerText || "هذا المحتوى للتوعية فقط ولا يغني عن استشارة الطبيب"}
+          </div>
+        )}
       </div>
     </div>
   );

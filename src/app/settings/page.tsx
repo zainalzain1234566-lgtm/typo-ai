@@ -5,23 +5,27 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   User as UserIcon, Lock, Palette, Sliders, Trash2, Upload, Check, AlertTriangle,
-  Instagram, Type as TypeIcon, RotateCcw,
+  Instagram, Type as TypeIcon, RotateCcw, Send, Loader2,
 } from "lucide-react";
 import { AppNavbar } from "@/components/layout/app-navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog } from "@/components/ui/dialog";
 import { ScaledSlide } from "@/components/carousel/slide-renderer";
 import { useApp } from "@/lib/app-context";
 import { useToast } from "@/components/ui/toast";
-import { TEMPLATE_DEFS, getPalette, ALL_FONTS, SIZES } from "@/lib/templates";
+import { TEMPLATE_DEFS, getPalette, ALL_FONTS, SIZES, VISIBLE_TEMPLATES } from "@/lib/templates";
 import { FONT_FE_TO_DB, SIZE_FE_TO_DB } from "@/lib/db-mappers";
+import { FEATURE_FLAGS } from "@/lib/feature-flags";
 import { cn } from "@/lib/utils";
 import type { FontFamily, Tone, Language, ContentLevel, CarouselSize, Slide, BrandKitSettings } from "@/lib/types";
 import {
   updateProfileAction, updateBrandKitAction, updatePreferencesAction, deleteAccountAction,
 } from "@/app/actions/auth";
+import { testTelegramAction } from "@/app/actions/telegram";
 import { createClient } from "@/lib/supabase/client";
 
 const SECTIONS = [
@@ -29,15 +33,18 @@ const SECTIONS = [
   { id: "password", label: "كلمة المرور", icon: Lock },
   { id: "brand", label: "الهوية البصرية", icon: Palette },
   { id: "defaults", label: "الإعدادات الافتراضية", icon: Sliders },
+  { id: "telegram", label: "تلغرام", icon: Send },
   { id: "delete", label: "حذف الحساب", icon: Trash2 },
 ];
 
-const TONES: Tone[] = ["مبسطة", "احترافية", "ودية", "رسمية", "تحفيزية", "قصصية", "مباشرة", "أكاديمية"];
-const LANGUAGES: Language[] = ["العربية الفصحى", "اللهجة العراقية", "اللهجة الخليجية", "اللهجة المصرية", "الإنجليزية"];
+const ALL_TONES: Tone[] = ["مبسطة", "احترافية", "ودية", "رسمية", "تحفيزية", "قصصية", "مباشرة", "أكاديمية"];
+const ALL_LANGUAGES: Language[] = ["العربية الفصحى", "اللهجة العراقية", "اللهجة الخليجية", "اللهجة المصرية", "الإنجليزية"];
+const TONES = ALL_TONES;
+const LANGUAGES = FEATURE_FLAGS.medicalMode ? ALL_LANGUAGES.slice(0, 3) : ALL_LANGUAGES;
 const LEVELS: ContentLevel[] = ["مبتدئ", "متوسط", "متقدم"];
 
 const demoSlide: Slide = { id: "s", type: "cover", title: "معاينة الهوية", body: "نص تجريبي للمعاينة" };
-const demoBkSettings: BrandKitSettings = { enabled: true, showLogo: true, showAccountName: true, showSlideNumber: true, placement: "bottom-left" };
+const demoBkSettings: BrandKitSettings = { enabled: true, showLogo: true, showAccountName: true, showSlideNumber: true, showDisclaimer: true, placement: "bottom-left" };
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -59,6 +66,8 @@ export default function SettingsPage() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [primaryColor, setPrimaryColor] = useState("#6D5EFC");
   const [brandFont, setBrandFont] = useState<FontFamily>("tajawal");
+  const [disclaimerText, setDisclaimerText] = useState("هذا المحتوى للتوعية فقط ولا يغني عن استشارة الطبيب");
+  const [showDisclaimer, setShowDisclaimer] = useState(true);
 
   const [defLang, setDefLang] = useState<Language>("العربية الفصحى");
   const [defTone, setDefTone] = useState<Tone>("مبسطة");
@@ -66,6 +75,11 @@ export default function SettingsPage() {
   const [defSize, setDefSize] = useState<CarouselSize>("1080x1350");
   const [defSlideCount, setDefSlideCount] = useState(6);
   const [defTemplate, setDefTemplate] = useState("tahrir");
+
+  const [tgToken, setTgToken] = useState("");
+  const [tgChatId, setTgChatId] = useState("");
+  const [tgEnabled, setTgEnabled] = useState(false);
+  const [tgTesting, setTgTesting] = useState(false);
 
   useEffect(() => {
     if (user) { setName(user.name); setAvatarUrl(user.avatarUrl); }
@@ -75,6 +89,7 @@ export default function SettingsPage() {
     setLogoUrl(brandKit.logoUrl);
     setPrimaryColor(brandKit.primaryColor);
     setBrandFont(brandKit.font as FontFamily);
+    setDisclaimerText(brandKit.disclaimerText ?? "هذا المحتوى للتوعية فقط ولا يغني عن استشارة الطبيب");
   }, [brandKit]);
   useEffect(() => {
     if (preferences) {
@@ -86,6 +101,23 @@ export default function SettingsPage() {
       setDefSlideCount(preferences.slideCount);
     }
   }, [preferences]);
+
+  // Load telegram settings from DB (not in context — token stays server-side)
+  useEffect(() => {
+    if (!user) return;
+    const supabase = createClient();
+    supabase.from("user_preferences")
+      .select("telegram_bot_token, telegram_chat_id, telegram_enabled")
+      .eq("user_id", user.id)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setTgToken(data.telegram_bot_token ?? "");
+          setTgChatId(data.telegram_chat_id ?? "");
+          setTgEnabled(!!data.telegram_enabled);
+        }
+      });
+  }, [user]);
 
   if (!ready) return null;
   if (!user) return null;
@@ -141,6 +173,8 @@ export default function SettingsPage() {
       logo_path: logoPath ?? undefined,
       primary_color: primaryColor,
       default_font: FONT_FE_TO_DB[brandFont],
+      disclaimer_text: disclaimerText,
+      show_disclaimer: showDisclaimer,
     });
     if (result.success) {
       refresh();
@@ -170,6 +204,32 @@ export default function SettingsPage() {
     });
     if (result.success) toast({ type: "success", title: "تم حفظ الإعدادات الافتراضية" });
     else toast({ type: "error", title: result.error ?? "تعذر الحفظ" });
+  };
+
+  const saveTelegram = async () => {
+    const result = await updatePreferencesAction({
+      telegram_bot_token: tgToken || null,
+      telegram_chat_id: tgChatId || null,
+      telegram_enabled: tgEnabled,
+    });
+    if (result.success) {
+      refresh();
+      toast({ type: "success", title: "تم حفظ إعدادات تلغرام" });
+    } else {
+      toast({ type: "error", title: result.error ?? "تعذر الحفظ" });
+    }
+  };
+
+  const testTelegram = async () => {
+    if (!tgToken || !tgChatId) {
+      toast({ type: "error", title: "أدخل الرمز ومعرّف المحادثة أولاً" });
+      return;
+    }
+    setTgTesting(true);
+    const result = await testTelegramAction(tgToken, tgChatId);
+    if (result.success) toast({ type: "success", title: "تم الإرسال! تحقق من تلغرام" });
+    else toast({ type: "error", title: result.error ?? "فشل الاتصال" });
+    setTgTesting(false);
   };
 
   const handleDelete = async () => {
@@ -305,6 +365,19 @@ export default function SettingsPage() {
                           ))}
                         </div>
                       </div>
+                      <div>
+                        <Label>تنبيه طبي</Label>
+                        <label className="flex items-center gap-2 cursor-pointer mb-2">
+                          <Checkbox checked={showDisclaimer} onCheckedChange={(v) => setShowDisclaimer(!!v)} />
+                          <span className="text-sm text-ink-muted">إظهار تنبيه استشارة الطبيب على كل كاروسيل</span>
+                        </label>
+                        <Textarea
+                          value={disclaimerText}
+                          onChange={(e) => setDisclaimerText(e.target.value)}
+                          placeholder="نص التنبيه الطبي"
+                          rows={2}
+                        />
+                      </div>
                       <Button onClick={saveBrandKit}><Check className="w-4 h-4" /> حفظ الهوية</Button>
                     </div>
                     <div className="flex items-center justify-center bg-stone-50 rounded-xl p-4">
@@ -316,7 +389,7 @@ export default function SettingsPage() {
                         font={brandFont}
                         size="1080x1080"
                         brandKitSettings={demoBkSettings}
-                        brandKitData={{ instagramHandle: igHandle, logoDataUrl: logoUrl, primaryColor, font: brandFont }}
+                        brandKitData={{ instagramHandle: igHandle, logoDataUrl: logoUrl, primaryColor, font: brandFont, disclaimerText }}
                         index={0}
                         total={1}
                       />
@@ -350,7 +423,7 @@ export default function SettingsPage() {
                       <div>
                         <Label>المقاس</Label>
                         <select value={defSize} onChange={(e) => setDefSize(e.target.value as CarouselSize)} className="w-full h-11 rounded-xl border border-stone-200 bg-white px-3 text-sm text-ink cursor-pointer">
-                          {SIZES.map((s) => <option key={s.id} value={s.id}>{s.label} ({s.ratio})</option>)}
+                          {SIZES.filter((s) => !FEATURE_FLAGS.medicalMode || s.id === "1080x1350").map((s) => <option key={s.id} value={s.id}>{s.label} ({s.ratio})</option>)}
                         </select>
                       </div>
                       <div>
@@ -364,7 +437,7 @@ export default function SettingsPage() {
                       <div>
                         <Label>القالب المفضل</Label>
                         <select value={defTemplate} onChange={(e) => setDefTemplate(e.target.value)} className="w-full h-11 rounded-xl border border-stone-200 bg-white px-3 text-sm text-ink cursor-pointer">
-                          {TEMPLATE_DEFS.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                          {VISIBLE_TEMPLATES.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
                         </select>
                       </div>
                     </div>
@@ -372,6 +445,46 @@ export default function SettingsPage() {
                       <Button onClick={saveDefaults}><Check className="w-4 h-4" /> حفظ</Button>
                       <Button variant="outline" onClick={() => { setDefLang("العربية الفصحى"); setDefTone("مبسطة"); setDefLevel("مبتدئ"); setDefSize("1080x1350"); setDefSlideCount(6); setDefTemplate("tahrir"); toast({ type: "info", title: "تمت الاستعادة" }); }}>
                         <RotateCcw className="w-4 h-4" /> استعادة الإعدادات الافتراضية
+                      </Button>
+                    </div>
+                  </div>
+                </SectionCard>
+              )}
+
+              {active === "telegram" && (
+                <SectionCard title="تلغرام" desc="اربط بوت تلغرام لإرسال الشرائح مباشرة إلى حسابك">
+                  <div className="space-y-4 max-w-lg">
+                    <div className="rounded-xl bg-stone-50 border border-stone-200 p-4 text-sm text-ink-muted">
+                      <p className="font-medium text-ink mb-1">كيفية الإعداد:</p>
+                      <p>1. أنشئ بوت من <span className="font-mono">@BotFather</span> واحصل على الرمز</p>
+                      <p>2. أرسل رسالة للبوت ثم احصل على معرّف المحادثة من <span className="font-mono">@userinfobot</span></p>
+                    </div>
+                    <div>
+                      <Label>رمز البوت (Bot Token)</Label>
+                      <Input
+                        type="password"
+                        value={tgToken}
+                        onChange={(e) => setTgToken(e.target.value)}
+                        placeholder="123456:ABC-DEF..."
+                      />
+                    </div>
+                    <div>
+                      <Label>معرّف المحادثة (Chat ID)</Label>
+                      <Input
+                        value={tgChatId}
+                        onChange={(e) => setTgChatId(e.target.value)}
+                        placeholder="123456789"
+                      />
+                    </div>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <Checkbox checked={tgEnabled} onCheckedChange={(v) => setTgEnabled(!!v)} />
+                      <span className="text-sm text-ink-muted">تفعيل الإرسال إلى تلغرام</span>
+                    </label>
+                    <div className="flex gap-2">
+                      <Button onClick={saveTelegram}><Check className="w-4 h-4" /> حفظ</Button>
+                      <Button variant="outline" onClick={testTelegram} disabled={tgTesting}>
+                        {tgTesting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                        اختبار الاتصال
                       </Button>
                     </div>
                   </div>

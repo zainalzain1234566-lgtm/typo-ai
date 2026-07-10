@@ -6,6 +6,7 @@ const COLORS = {
   SLIDE: "\x1b[34m",     // blue
   EXPORT: "\x1b[32m",   // green
   SETTINGS: "\x1b[33m", // yellow
+  TELEGRAM: "\x1b[94m", // bright blue
   MW: "\x1b[90m",        // gray
   ERROR: "\x1b[31m",     // red
   RESET: "\x1b[0m",

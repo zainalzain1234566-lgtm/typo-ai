@@ -6,7 +6,7 @@ import { TEMPLATE_DEFS, getPalette } from "@/lib/templates";
 import type { Slide, BrandKit, BrandKitSettings } from "@/lib/types";
 
 const demoBrandKit: BrandKit = { instagramHandle: "@typo.ai", logoDataUrl: null, primaryColor: "#6D5EFC", font: "tajawal" };
-const demoBkSettings: BrandKitSettings = { enabled: false, showLogo: false, showAccountName: false, showSlideNumber: false, placement: "bottom-left" };
+const demoBkSettings: BrandKitSettings = { enabled: false, showLogo: false, showAccountName: false, showSlideNumber: false, showDisclaimer: true, placement: "bottom-left" };
 
 const slides: Slide[] = [
   { id: "a1", type: "cover", title: "كيف يعمل الذكاء الاصطناعي؟", body: "دليل مبسّط" },

@@ -9,6 +9,9 @@ export const updateBrandKitSchema = z.object({
     .optional()
     .nullable(),
   default_font: z.enum(["tajawal", "cairo", "ibm-plex-sans-arabic"]).optional(),
+  disclaimer_text: z.string().max(300).optional().nullable(),
+  show_disclaimer: z.boolean().optional(),
+  default_specialty: z.string().nullable().optional(),
 });
 export type UpdateBrandKitInput = z.infer<typeof updateBrandKitSchema>;
 
@@ -19,6 +22,9 @@ export const updatePreferencesSchema = z.object({
   default_size: z.enum(["square", "portrait", "story"]).optional(),
   default_slide_count: z.number().int().min(2).max(10).optional(),
   preferred_template_id: z.string().uuid().nullable().optional(),
+  telegram_bot_token: z.string().nullable().optional(),
+  telegram_chat_id: z.string().nullable().optional(),
+  telegram_enabled: z.boolean().optional(),
 });
 export type UpdatePreferencesInput = z.infer<typeof updatePreferencesSchema>;
 
