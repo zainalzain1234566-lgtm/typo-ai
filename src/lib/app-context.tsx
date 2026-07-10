@@ -1,0 +1,179 @@
+"use client";
+
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/client";
+
+// ============= Types (matching frontend expectations) =============
+
+export interface AppUser {
+  id: string;
+  name: string;
+  email: string;
+  verified: boolean;
+  avatarUrl: string | null;
+}
+
+export interface Stats {
+  totalProjects: number;
+  completedProjects: number;
+  exportCount: number;
+  favoriteTemplates: number;
+}
+
+export interface AppData {
+  user: AppUser | null;
+  isAuthenticated: boolean;
+  ready: boolean;
+  stats: Stats;
+  brandKit: {
+    instagramHandle: string;
+    logoUrl: string | null;
+    primaryColor: string;
+    font: string;
+  };
+  preferences: {
+    language: string;
+    tone: string;
+    level: string;
+    size: string;
+    slideCount: number;
+    preferredTemplateId: string | null;
+  };
+}
+
+interface AppContextValue extends AppData {
+  supabase: SupabaseClient;
+  refresh: () => Promise<void>;
+}
+
+const AppContext = createContext<AppContextValue | null>(null);
+
+export function AppProvider({ children }: { children: ReactNode }) {
+  const supabase = createClient();
+  const [user, setUser] = useState<AppUser | null>(null);
+  const [ready, setReady] = useState(false);
+  const [stats, setStats] = useState<Stats>({ totalProjects: 0, completedProjects: 0, exportCount: 0, favoriteTemplates: 0 });
+  const [brandKit, setBrandKit] = useState<{ instagramHandle: string; logoUrl: string | null; primaryColor: string; font: string }>({ instagramHandle: "", logoUrl: null, primaryColor: "#6D5EFC", font: "tajawal" });
+  const [preferences, setPreferences] = useState({ language: "العربية الفصحى", tone: "مبسطة", level: "مبتدئ", size: "portrait", slideCount: 6, preferredTemplateId: null });
+
+  const loadUserData = useCallback(async (userId: string) => {
+    console.log("[APP] loadUserData start", { userId });
+    // Load profile
+    const { data: profile, error: profileErr } = await supabase.from("profiles").select("*").eq("id", userId).single();
+    if (profileErr) console.error("[APP] profile load error", profileErr.message);
+    // Load brand kit
+    const { data: bk, error: bkErr } = await supabase.from("brand_kits").select("*").eq("user_id", userId).single();
+    if (bkErr) console.error("[APP] brand_kit load error", bkErr.message);
+    // Load preferences
+    const { data: prefs, error: prefsErr } = await supabase.from("user_preferences").select("*").eq("user_id", userId).single();
+    if (prefsErr) console.error("[APP] user_preferences load error", prefsErr.message);
+    // Load stats
+    const { data: statsData, error: statsErr } = await supabase.rpc("get_dashboard_stats");
+    if (statsErr) console.error("[APP] get_dashboard_stats error", statsErr.message);
+    console.log("[APP] loadUserData loaded", { hasProfile: !!profile, hasBK: !!bk, hasPrefs: !!prefs, hasStats: !!statsData });
+
+    if (profile) {
+      let avatarUrl: string | null = null;
+      if (profile.avatar_path) {
+        const { data: urlData } = await supabase.storage.from("avatars").createSignedUrl(profile.avatar_path, 3600);
+        avatarUrl = urlData?.signedUrl ?? null;
+      }
+
+      setUser({
+        id: userId,
+        name: profile.display_name,
+        email: "", // email comes from auth, not profile
+        verified: true,
+        avatarUrl,
+      });
+    }
+
+    if (bk) {
+      let logoUrl: string | null = null;
+      if (bk.logo_path) {
+        const { data: urlData } = await supabase.storage.from("brand-logos").createSignedUrl(bk.logo_path, 3600);
+        logoUrl = urlData?.signedUrl ?? null;
+      }
+      setBrandKit({
+        instagramHandle: bk.instagram_username ?? "",
+        logoUrl,
+        primaryColor: bk.primary_color ?? "#6D5EFC",
+        font: bk.default_font,
+      });
+    }
+
+    if (prefs) {
+      setPreferences({
+        language: prefs.default_language,
+        tone: prefs.default_tone,
+        level: prefs.default_level,
+        size: prefs.default_size,
+        slideCount: prefs.default_slide_count,
+        preferredTemplateId: prefs.preferred_template_id,
+      });
+    }
+
+    if (statsData && typeof statsData === "object") {
+      const s = statsData as Record<string, number>;
+      setStats({
+        totalProjects: s.total_projects ?? 0,
+        completedProjects: s.completed_projects ?? 0,
+        exportCount: s.export_count ?? 0,
+        favoriteTemplates: s.favorite_templates ?? 0,
+      });
+    }
+  }, [supabase]);
+
+  const refresh = useCallback(async () => {
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (authUser) {
+      await loadUserData(authUser.id);
+      setUser((prev) => prev ? { ...prev, email: authUser.email ?? "" } : { id: authUser.id, name: "", email: authUser.email ?? "", verified: true, avatarUrl: null });
+    } else {
+      setUser(null);
+    }
+  }, [supabase, loadUserData]);
+
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("[APP] auth event", event, { hasSession: !!session });
+      if (event === "SIGNED_IN" && session?.user) {
+        if (mounted) {
+          setUser({ id: session.user.id, name: session.user.user_metadata?.display_name ?? "", email: session.user.email ?? "", verified: true, avatarUrl: null });
+          await loadUserData(session.user.id);
+        }
+      } else if (event === "SIGNED_OUT") {
+        if (mounted) setUser(null);
+      }
+    });
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        setUser({ id: session.user.id, name: session.user.user_metadata?.display_name ?? "", email: session.user.email ?? "", verified: true, avatarUrl: null });
+        await loadUserData(session.user.id);
+      }
+      if (mounted) setReady(true);
+    });
+    return () => { mounted = false; };
+  }, [supabase, loadUserData]);
+
+  const value: AppContextValue = {
+    user,
+    isAuthenticated: !!user,
+    ready,
+    stats,
+    brandKit,
+    preferences,
+    supabase,
+    refresh,
+  };
+
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+}
+
+export function useApp() {
+  const ctx = useContext(AppContext);
+  if (!ctx) throw new Error("useApp must be used within AppProvider");
+  return ctx;
+}
