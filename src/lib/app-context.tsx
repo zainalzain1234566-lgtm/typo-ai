@@ -99,18 +99,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
         instagramHandle: bk.instagram_username ?? "",
         logoUrl,
         primaryColor: bk.primary_color ?? "#6D5EFC",
-        font: bk.default_font,
+        font: bk.default_font ?? "tajawal",
       });
     }
 
     if (prefs) {
       setPreferences({
-        language: prefs.default_language,
-        tone: prefs.default_tone,
-        level: prefs.default_level,
-        size: prefs.default_size,
-        slideCount: prefs.default_slide_count,
-        preferredTemplateId: prefs.preferred_template_id,
+        language: prefs.default_language ?? "العربية الفصحى",
+        tone: prefs.default_tone ?? "مبسطة",
+        level: prefs.default_level ?? "مبتدئ",
+        size: prefs.default_size ?? "portrait",
+        slideCount: prefs.default_slide_count ?? 6,
+        preferredTemplateId: prefs.preferred_template_id ?? "tahrir",
       });
     }
 

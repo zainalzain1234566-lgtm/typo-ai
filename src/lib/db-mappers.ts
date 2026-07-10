@@ -139,7 +139,7 @@ export function projectToCreateInput(project: Project, lookup: TemplateLookup): 
     cta_type: project.settings.cta === "بدون CTA" ? null : project.settings.cta,
     template_id: tmpl.id,
     palette_id: paletteId,
-    font_family: FONT_FE_TO_DB[project.settings.font],
+    font_family: FONT_FE_TO_DB[project.settings.font] ?? "tajawal",
     use_brand_kit: project.settings.brandKit.enabled,
     show_logo: project.settings.brandKit.showLogo,
     show_account_name: project.settings.brandKit.showAccountName,
