@@ -1,7 +1,7 @@
 "use client";
 
 import { forwardRef, useRef, useState, useEffect, type ForwardRefExoticComponent, type RefAttributes } from "react";
-import type { Slide, Palette, FontFamily, BrandKitSettings, CarouselSize, Placement, BrandKit as BrandKitData, SlideType } from "@/lib/types";
+import type { Slide, Palette, FontFamily, BrandKitSettings, CarouselSize, Placement, BrandKit as BrandKitData, SlideType, MedicalProps } from "@/lib/types";
 import { SIZES, ALL_FONTS } from "@/lib/templates";
 
 interface SlideRenderProps {
@@ -15,6 +15,7 @@ interface SlideRenderProps {
   index: number;
   total: number;
   fontSizeScale?: number;
+  medical?: MedicalProps;
 }
 
 const fontMap: Record<FontFamily, string> = {
@@ -31,6 +32,17 @@ const decorFont = {
 };
 
 const fs = (px: number, scale = 1) => `${Math.round(px * scale)}px`;
+
+const SPECIALTY_LABELS: Record<string, string> = {
+  general: "طب عام",
+  dentistry: "طب الأسنان",
+  dermatology: "الجلدية",
+  nutrition: "التغذية",
+  pediatrics: "طب الأطفال",
+  cardiology: "أمراض القلب",
+  neurology: "الأعصاب",
+  mental_health: "الصحة النفسية",
+};
 
 // ============= Main Slide Renderer =============
 
@@ -59,6 +71,11 @@ export const SlideRenderer = forwardRef<HTMLDivElement, SlideRenderProps>(functi
     magazine: Magazine,
     tilt: Tilt,
     retro: Retro,
+    "clinical-clean": ClinicalClean,
+    "numbered-steps": NumberedSteps,
+    "myth-fact": MythFact,
+    "editorial-health": EditorialHealth,
+    "bold-statement": BoldStatement,
   };
   const Renderer = renderers[templateId] ?? Tahrir;
   return <Renderer {...props} ref={ref} />;
@@ -103,22 +120,12 @@ export function ScaledSlide({ width = 400, ...slideProps }: SlideRenderProps & {
       >
         <SlideRenderer {...slideProps} />
         {slideProps.brandKitSettings.showDisclaimer && (
-          <div style={{
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            padding: "12px 40px",
-            background: "rgba(0,0,0,0.04)",
-            textAlign: "center",
-            fontSize: "16px",
-            color: slideProps.palette.text,
-            opacity: 0.7,
-            fontFamily: fontMap[slideProps.font] ?? "var(--font-tajawal)",
-            pointerEvents: "none",
-          }}>
-            {slideProps.brandKitData.disclaimerText || "هذا المحتوى للتوعية فقط ولا يغني عن استشارة الطبيب"}
-          </div>
+          <DisclaimerFooter
+            variant="overlay"
+            text={slideProps.brandKitData.disclaimerText || ""}
+            palette={slideProps.palette}
+            font={slideProps.font}
+          />
         )}
       </div>
     </div>
@@ -242,6 +249,102 @@ function BaseSlide({ children, palette, font, slide, settings, data, index, tota
         placement={settings.placement}
         fontSizeScale={fontSizeScale}
       />
+    </div>
+  );
+}
+
+// ============= Shared Medical Subcomponents =============
+
+export function DisclaimerFooter({ text, palette, font, fontSizeScale = 1, variant }: {
+  text: string; palette: Palette; font: FontFamily; fontSizeScale?: number;
+  variant: "overlay" | "inline";
+}) {
+  const content = text || "هذا المحتوى للتوعية فقط ولا يغني عن استشارة الطبيب";
+  if (variant === "overlay") {
+    return (
+      <div style={{
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        padding: "12px 40px",
+        background: "rgba(0,0,0,0.04)",
+        textAlign: "center",
+        fontSize: "16px",
+        color: palette.text,
+        opacity: 0.7,
+        fontFamily: fontMap[font],
+        pointerEvents: "none",
+      }}>
+        {content}
+      </div>
+    );
+  }
+  return (
+    <div style={{
+      textAlign: "center",
+      fontSize: fs(18, fontSizeScale),
+      color: palette.text,
+      opacity: 0.55,
+      fontFamily: fontMap[font],
+      padding: "8px 0",
+      marginTop: "auto",
+    }}>
+      {content}
+    </div>
+  );
+}
+
+function PhysicianMark({ specialty, palette, font, fontSizeScale = 1 }: {
+  specialty?: string; palette: Palette; font: FontFamily; fontSizeScale?: number;
+}) {
+  if (!specialty) return null;
+  const label = SPECIALTY_LABELS[specialty];
+  if (!label) return null;
+  return (
+    <div style={{
+      display: "inline-flex",
+      alignItems: "center",
+      gap: "8px",
+      padding: "8px 20px",
+      borderRadius: "100px",
+      backgroundColor: palette.accent + "18",
+      border: `1px solid ${palette.accent}40`,
+      fontFamily: fontMap[font],
+      fontSize: fs(22, fontSizeScale),
+      fontWeight: 600,
+      color: palette.accent,
+    }}>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2v20M2 12h20" />
+      </svg>
+      <span>من إعداد طبيب</span>
+      <span style={{ opacity: 0.6, fontSize: fs(18, fontSizeScale) }}>•</span>
+      <span>{label}</span>
+    </div>
+  );
+}
+
+function SourceBadge({ source, palette, font, fontSizeScale = 1 }: {
+  source?: string; palette: Palette; font: FontFamily; fontSizeScale?: number;
+}) {
+  if (!source) return null;
+  return (
+    <div style={{
+      display: "inline-flex",
+      alignItems: "center",
+      gap: "6px",
+      padding: "6px 16px",
+      borderRadius: "8px",
+      backgroundColor: palette.secondary,
+      fontFamily: fontMap[font],
+      fontSize: fs(20, fontSizeScale),
+      fontWeight: 500,
+      color: palette.text,
+      opacity: 0.85,
+    }}>
+      <span style={{ opacity: 0.6 }}>المصدر:</span>
+      <span>{source}</span>
     </div>
   );
 }
@@ -1621,6 +1724,660 @@ const Unwan = forwardRef<HTMLDivElement, SlideRenderProps>(function Unwan(
               <span key={i} style={{ flex: 1, height: "6px", borderRadius: "3px", backgroundColor: i === index ? palette.accent : palette.secondary }} />
             ))}
           </div>
+        </div>
+      </BaseSlide>
+    </div>
+  );
+});
+
+// ============= Medical Spec Templates =============
+
+// ============= Clinical Clean =============
+
+const ClinicalClean = forwardRef<HTMLDivElement, SlideRenderProps>(function ClinicalClean(
+  { slide, palette, font, size, brandKitSettings, brandKitData, index, total, fontSizeScale = 1, medical }, ref
+) {
+  const isCover = slide.type === "cover";
+  const isEnding = slide.type === "ending";
+  const padding = "80px 72px";
+  return (
+    <div ref={ref} style={{ width: "100%", height: "100%" }}>
+      <BaseSlide slide={slide} palette={palette} font={font} settings={brandKitSettings} data={brandKitData} index={index} total={total} fontSizeScale={fontSizeScale}>
+        <div dir="rtl" style={{ padding, height: "100%", display: "flex", flexDirection: "column", justifyContent: isCover ? "center" : "flex-start", paddingTop: isCover ? undefined : "80px", gap: "24px" }}>
+          {isCover && medical?.specialty && (
+            <div style={{ position: "absolute", top: "72px", right: "72px" }}>
+              <PhysicianMark specialty={medical.specialty} palette={palette} font={font} fontSizeScale={fontSizeScale} />
+            </div>
+          )}
+          {!isCover && !isEnding && (
+            <span style={{ fontSize: fs(24, fontSizeScale), fontWeight: 600, color: palette.accent, letterSpacing: "1px", alignSelf: "flex-start" }}>
+              {String(index).padStart(2, "0")} — شريحة
+            </span>
+          )}
+          <h1 style={{
+            fontSize: fs(isCover ? 68 : 52, fontSizeScale),
+            fontWeight: 700,
+            lineHeight: 1.3,
+            margin: 0,
+            fontFamily: fontMap.ibm,
+            textAlign: "right",
+            maxWidth: "90%",
+          }}>
+            {slide.title}
+          </h1>
+          <div style={{ width: fs(80, fontSizeScale), height: "4px", backgroundColor: palette.accent, borderRadius: "2px" }} />
+          {slide.body && (
+            <p style={{
+              fontSize: fs(34, fontSizeScale),
+              lineHeight: 1.7,
+              color: palette.text,
+              opacity: 0.8,
+              margin: 0,
+              maxWidth: "88%",
+              fontWeight: 400,
+            }}>
+              {slide.body}
+            </p>
+          )}
+          {!isCover && medical?.source && (
+            <div style={{ marginTop: "8px" }}>
+              <SourceBadge source={medical.source} palette={palette} font={font} fontSizeScale={fontSizeScale} />
+            </div>
+          )}
+          {isEnding && (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "24px", marginTop: "40px" }}>
+              {medical?.specialty && (
+                <PhysicianMark specialty={medical.specialty} palette={palette} font={font} fontSizeScale={fontSizeScale} />
+              )}
+              {slide.ctaText && (
+                <span style={{
+                  display: "inline-block",
+                  padding: "16px 40px",
+                  backgroundColor: palette.accent,
+                  color: "#ffffff",
+                  fontSize: fs(30, fontSizeScale),
+                  fontWeight: 700,
+                  borderRadius: "100px",
+                }}>
+                  {slide.ctaText}
+                </span>
+              )}
+            </div>
+          )}
+          {brandKitSettings.showDisclaimer && !isCover && (
+            <DisclaimerFooter variant="inline" text={brandKitData.disclaimerText || ""} palette={palette} font={font} fontSizeScale={fontSizeScale} />
+          )}
+        </div>
+      </BaseSlide>
+    </div>
+  );
+});
+
+// ============= Numbered Steps =============
+
+const NumberedSteps = forwardRef<HTMLDivElement, SlideRenderProps>(function NumberedSteps(
+  { slide, palette, font, size, brandKitSettings, brandKitData, index, total, fontSizeScale = 1, medical }, ref
+) {
+  const isCover = slide.type === "cover";
+  const isEnding = slide.type === "ending";
+  const stepItems = !isCover && !isEnding && slide.body ? slide.body.split("\n").filter((l) => l.trim()) : [];
+  const isList = stepItems.length > 1;
+  return (
+    <div ref={ref} style={{ width: "100%", height: "100%" }}>
+      <BaseSlide slide={slide} palette={palette} font={font} settings={brandKitSettings} data={brandKitData} index={index} total={total} fontSizeScale={fontSizeScale}>
+        <div dir="rtl" style={{ padding: "80px 72px", height: "100%", display: "flex", flexDirection: "column", gap: "20px" }}>
+          {isCover && (
+            <>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" }}>
+                <span style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "10px 28px",
+                  borderRadius: "100px",
+                  backgroundColor: palette.secondary,
+                  fontSize: fs(26, fontSizeScale),
+                  fontWeight: 700,
+                  color: palette.accent,
+                  fontFamily: fontMap.cairo,
+                }}>
+                  {total - 2} خطوات
+                </span>
+                {medical?.specialty && (
+                  <PhysicianMark specialty={medical.specialty} palette={palette} font={font} fontSizeScale={fontSizeScale} />
+                )}
+              </div>
+              <h1 style={{
+                fontSize: fs(72, fontSizeScale),
+                fontWeight: 900,
+                lineHeight: 1.2,
+                margin: 0,
+                fontFamily: fontMap.cairo,
+                textAlign: "right",
+              }}>
+                {slide.title}
+              </h1>
+              {slide.body && (
+                <p style={{ fontSize: fs(34, fontSizeScale), lineHeight: 1.6, opacity: 0.7, margin: 0, maxWidth: "85%" }}>
+                  {slide.body}
+                </p>
+              )}
+            </>
+          )}
+          {!isCover && !isEnding && (
+            <>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: "32px" }}>
+                <span style={{
+                  fontSize: fs(isList ? 100 : 140, fontSizeScale),
+                  fontWeight: 900,
+                  color: palette.secondary,
+                  lineHeight: 1,
+                  fontFamily: fontMap.cairo,
+                  flexShrink: 0,
+                  minWidth: fs(isList ? 100 : 140, fontSizeScale),
+                  textAlign: "center",
+                }}>
+                  {index}
+                </span>
+                <div style={{ flex: 1, paddingTop: fs(20, fontSizeScale) }}>
+                  {isList ? (
+                    <>
+                      <h2 style={{ fontSize: fs(40, fontSizeScale), fontWeight: 700, margin: "0 0 16px 0", lineHeight: 1.3 }}>
+                        {slide.title}
+                      </h2>
+                      <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "12px" }}>
+                        {stepItems.map((item, i) => (
+                          <li key={i} style={{ fontSize: fs(30, fontSizeScale), lineHeight: 1.5, display: "flex", gap: "12px", alignItems: "baseline" }}>
+                            <span style={{ color: palette.accent, fontWeight: 700, flexShrink: 0 }}>{i + 1}.</span>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  ) : (
+                    <>
+                      <h2 style={{ fontSize: fs(48, fontSizeScale), fontWeight: 700, margin: "0 0 16px 0", lineHeight: 1.3 }}>
+                        {slide.title}
+                      </h2>
+                      <p style={{ fontSize: fs(32, fontSizeScale), lineHeight: 1.6, opacity: 0.8, margin: 0 }}>
+                        {slide.body}
+                      </p>
+                    </>
+                  )}
+                  {medical?.source && (
+                    <div style={{ marginTop: "16px" }}>
+                      <SourceBadge source={medical.source} palette={palette} font={font} fontSizeScale={fontSizeScale} />
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: "6px", marginTop: "auto" }}>
+                {Array.from({ length: Math.max(total - 2, 1) }, (_, i) => (
+                  <span key={i} style={{ flex: 1, height: "6px", borderRadius: "3px", backgroundColor: i === index - 1 ? palette.accent : palette.secondary }} />
+                ))}
+              </div>
+            </>
+          )}
+          {isEnding && (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: "24px" }}>
+              {slide.ctaText && (
+                <span style={{
+                  display: "inline-block",
+                  padding: "18px 48px",
+                  backgroundColor: palette.accent,
+                  color: "#ffffff",
+                  fontSize: fs(32, fontSizeScale),
+                  fontWeight: 700,
+                  borderRadius: "16px",
+                }}>
+                  {slide.ctaText}
+                </span>
+              )}
+              {medical?.specialty && (
+                <PhysicianMark specialty={medical.specialty} palette={palette} font={font} fontSizeScale={fontSizeScale} />
+              )}
+            </div>
+          )}
+          {brandKitSettings.showDisclaimer && !isCover && (
+            <DisclaimerFooter variant="inline" text={brandKitData.disclaimerText || ""} palette={palette} font={font} fontSizeScale={fontSizeScale} />
+          )}
+        </div>
+      </BaseSlide>
+    </div>
+  );
+});
+
+// ============= Myth vs Fact =============
+
+const MythFact = forwardRef<HTMLDivElement, SlideRenderProps>(function MythFact(
+  { slide, palette, font, size, brandKitSettings, brandKitData, index, total, fontSizeScale = 1, medical }, ref
+) {
+  const isCover = slide.type === "cover";
+  const isEnding = slide.type === "ending";
+
+  const mythColor = palette.accent;
+  const factColor = palette.secondary;
+
+  const bodyLines = slide.body ? slide.body.split("\n").map((l) => l.trim()).filter(Boolean) : [];
+  const mythText = bodyLines.find((l) => l.startsWith("خرافة:") || l.startsWith("خرافة："))?.replace(/^خرافة[:：]\s*/, "");
+  const factText = bodyLines.find((l) => l.startsWith("حقيقة:") || l.startsWith("حقيقة："))?.replace(/^حقيقة[:：]\s*/, "");
+  const isSplit = mythText && factText;
+  const regularBody = !isSplit ? slide.body : null;
+
+  const MythBadge = () => (
+    <div style={{
+      display: "inline-flex",
+      alignItems: "center",
+      gap: "10px",
+      padding: "8px 24px",
+      borderRadius: "100px",
+      backgroundColor: mythColor + "20",
+      fontFamily: fontMap.cairo,
+      fontSize: fs(30, fontSizeScale),
+      fontWeight: 800,
+      color: mythColor,
+    }}>
+      <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "28px", height: "28px", borderRadius: "50%", backgroundColor: mythColor, color: "#fff", fontSize: fs(20, fontSizeScale), fontWeight: 900 }}>✕</span>
+      خرافة
+    </div>
+  );
+
+  const FactBadge = () => (
+    <div style={{
+      display: "inline-flex",
+      alignItems: "center",
+      gap: "10px",
+      padding: "8px 24px",
+      borderRadius: "100px",
+      backgroundColor: factColor + "20",
+      fontFamily: fontMap.cairo,
+      fontSize: fs(30, fontSizeScale),
+      fontWeight: 800,
+      color: factColor,
+    }}>
+      <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "28px", height: "28px", borderRadius: "50%", backgroundColor: factColor, color: "#fff", fontSize: fs(20, fontSizeScale), fontWeight: 900 }}>✓</span>
+      حقيقة
+    </div>
+  );
+
+  return (
+    <div ref={ref} style={{ width: "100%", height: "100%" }}>
+      <BaseSlide slide={slide} palette={palette} font={font} settings={brandKitSettings} data={brandKitData} index={index} total={total} fontSizeScale={fontSizeScale}>
+        <div dir="rtl" style={{ padding: "80px 72px", height: "100%", display: "flex", flexDirection: "column", gap: "24px" }}>
+          {isCover && (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: "32px", textAlign: "center" }}>
+              <div style={{
+                width: "100px", height: "100px", borderRadius: "50%",
+                backgroundColor: mythColor + "18", display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: fs(56, fontSizeScale), color: mythColor, fontWeight: 900,
+              }}>
+                ✕
+              </div>
+              <h1 style={{
+                fontSize: fs(64, fontSizeScale),
+                fontWeight: 800,
+                lineHeight: 1.25,
+                margin: 0,
+                fontFamily: fontMap.ibm,
+                maxWidth: "85%",
+              }}>
+                {slide.title}
+              </h1>
+              <span style={{ fontSize: fs(28, fontSizeScale), fontWeight: 600, color: factColor }}>
+                الحقيقة بالداخل ↓
+              </span>
+              {medical?.specialty && (
+                <PhysicianMark specialty={medical.specialty} palette={palette} font={font} fontSizeScale={fontSizeScale} />
+              )}
+            </div>
+          )}
+          {!isCover && !isEnding && (
+            <>
+              {isSplit ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: "32px", height: "100%", justifyContent: "center" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                    <MythBadge />
+                    <p style={{
+                      fontSize: fs(40, fontSizeScale),
+                      fontWeight: 600,
+                      lineHeight: 1.4,
+                      margin: 0,
+                      color: palette.text,
+                      opacity: 0.5,
+                      textDecoration: "line-through",
+                      fontFamily: fontMap.ibm,
+                    }}>
+                      {mythText}
+                    </p>
+                  </div>
+                  <div style={{ height: "2px", backgroundColor: palette.text, opacity: 0.1 }} />
+                  <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                    <FactBadge />
+                    <p style={{
+                      fontSize: fs(40, fontSizeScale),
+                      fontWeight: 600,
+                      lineHeight: 1.4,
+                      margin: 0,
+                      color: palette.text,
+                      fontFamily: fontMap.ibm,
+                    }}>
+                      {factText}
+                    </p>
+                    {medical?.source && (
+                      <SourceBadge source={medical.source} palette={palette} font={font} fontSizeScale={fontSizeScale} />
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "20px", height: "100%", justifyContent: "center" }}>
+                  {slide.title.includes("خرافة") || slide.title.includes("خرافه") ? <MythBadge /> : slide.title.includes("حقيقة") || slide.title.includes("حقيقه") ? <FactBadge /> : null}
+                  <h2 style={{
+                    fontSize: fs(48, fontSizeScale),
+                    fontWeight: 600,
+                    lineHeight: 1.4,
+                    margin: 0,
+                    fontFamily: fontMap.ibm,
+                  }}>
+                    {slide.title}
+                  </h2>
+                  {regularBody && (
+                    <p style={{ fontSize: fs(34, fontSizeScale), lineHeight: 1.6, opacity: 0.8, margin: 0 }}>
+                      {regularBody}
+                    </p>
+                  )}
+                  {medical?.source && (
+                    <SourceBadge source={medical.source} palette={palette} font={font} fontSizeScale={fontSizeScale} />
+                  )}
+                </div>
+              )}
+            </>
+          )}
+          {isEnding && (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: "24px" }}>
+              <div style={{ width: "80px", height: "80px", borderRadius: "50%", backgroundColor: factColor + "20", display: "flex", alignItems: "center", justifyContent: "center", fontSize: fs(44, fontSizeScale), color: factColor, fontWeight: 900 }}>✓</div>
+              {slide.ctaText && (
+                <span style={{
+                  display: "inline-block",
+                  padding: "18px 48px",
+                  backgroundColor: palette.accent,
+                  color: "#ffffff",
+                  fontSize: fs(30, fontSizeScale),
+                  fontWeight: 700,
+                  borderRadius: "16px",
+                }}>
+                  {slide.ctaText}
+                </span>
+              )}
+              {medical?.specialty && (
+                <PhysicianMark specialty={medical.specialty} palette={palette} font={font} fontSizeScale={fontSizeScale} />
+              )}
+            </div>
+          )}
+          {brandKitSettings.showDisclaimer && !isCover && (
+            <DisclaimerFooter variant="inline" text={brandKitData.disclaimerText || ""} palette={palette} font={font} fontSizeScale={fontSizeScale} />
+          )}
+        </div>
+      </BaseSlide>
+    </div>
+  );
+});
+
+// ============= Editorial Health =============
+
+const EditorialHealth = forwardRef<HTMLDivElement, SlideRenderProps>(function EditorialHealth(
+  { slide, palette, font, size, brandKitSettings, brandKitData, index, total, fontSizeScale = 1, medical }, ref
+) {
+  const isCover = slide.type === "cover";
+  const isEnding = slide.type === "ending";
+  const paragraphs = slide.body ? slide.body.split("\n").filter((l) => l.trim()) : [];
+  return (
+    <div ref={ref} style={{ width: "100%", height: "100%" }}>
+      <BaseSlide slide={slide} palette={palette} font={font} settings={brandKitSettings} data={brandKitData} index={index} total={total} fontSizeScale={fontSizeScale}>
+        <div dir="rtl" style={{ padding: "80px 100px", height: "100%", display: "flex", flexDirection: "column", gap: "20px", maxWidth: "900px", marginRight: "auto", marginLeft: "auto" }}>
+          {isCover && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "28px", justifyContent: "center", height: "100%" }}>
+              {medical?.specialty && (
+                <div style={{ alignSelf: "flex-start" }}>
+                  <PhysicianMark specialty={medical.specialty} palette={palette} font={font} fontSizeScale={fontSizeScale} />
+                </div>
+              )}
+              <span style={{
+                fontSize: fs(24, fontSizeScale),
+                fontWeight: 600,
+                color: palette.accent,
+                letterSpacing: "2px",
+              }}>
+                {String(index).padStart(2, "0")} — مقال صحي
+              </span>
+              <h1 style={{
+                fontSize: fs(62, fontSizeScale),
+                fontWeight: 800,
+                lineHeight: 1.3,
+                margin: 0,
+                fontFamily: fontMap.ibm,
+                maxWidth: "90%",
+              }}>
+                {slide.title}
+              </h1>
+              <div style={{ width: fs(60, fontSizeScale), height: "3px", backgroundColor: palette.accent, borderRadius: "2px" }} />
+              {slide.body && (
+                <p style={{
+                  fontSize: fs(34, fontSizeScale),
+                  lineHeight: 1.75,
+                  color: palette.text,
+                  opacity: 0.75,
+                  margin: 0,
+                  maxWidth: "80%",
+                }}>
+                  {slide.body}
+                </p>
+              )}
+            </div>
+          )}
+          {!isCover && !isEnding && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "20px", justifyContent: "flex-start", paddingTop: "40px" }}>
+              <span style={{
+                fontSize: fs(24, fontSizeScale),
+                fontWeight: 600,
+                color: palette.accent,
+                letterSpacing: "2px",
+              }}>
+                {String(index).padStart(2, "0")}
+              </span>
+              <h2 style={{
+                fontSize: fs(52, fontSizeScale),
+                fontWeight: 800,
+                lineHeight: 1.3,
+                margin: 0,
+                fontFamily: fontMap.ibm,
+                maxWidth: "95%",
+              }}>
+                {slide.title}
+              </h2>
+              <div style={{ width: fs(40, fontSizeScale), height: "2px", backgroundColor: palette.accent, opacity: 0.5, borderRadius: "1px" }} />
+              {paragraphs.map((para, i) => (
+                <p key={i} style={{
+                  fontSize: fs(34, fontSizeScale),
+                  lineHeight: 1.75,
+                  color: palette.text,
+                  opacity: 0.8,
+                  margin: 0,
+                  maxWidth: "85%",
+                }}>
+                  {para}
+                </p>
+              ))}
+              {medical?.source && (
+                <div style={{ marginTop: "8px" }}>
+                  <SourceBadge source={medical.source} palette={palette} font={font} fontSizeScale={fontSizeScale} />
+                </div>
+              )}
+            </div>
+          )}
+          {isEnding && (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: "28px" }}>
+              <div style={{ width: fs(40, fontSizeScale), height: "3px", backgroundColor: palette.accent, borderRadius: "2px" }} />
+              {slide.ctaText && (
+                <span style={{
+                  fontSize: fs(42, fontSizeScale),
+                  fontWeight: 700,
+                  color: palette.accent,
+                  fontFamily: fontMap.ibm,
+                  textAlign: "center",
+                }}>
+                  {slide.ctaText}
+                </span>
+              )}
+              <div style={{
+                fontSize: fs(28, fontSizeScale),
+                fontWeight: 600,
+                color: palette.text,
+                opacity: 0.6,
+                fontFamily: fontMap[font],
+              }}>
+                {brandKitData.instagramHandle}
+              </div>
+              {medical?.specialty && (
+                <PhysicianMark specialty={medical.specialty} palette={palette} font={font} fontSizeScale={fontSizeScale} />
+              )}
+            </div>
+          )}
+          {brandKitSettings.showDisclaimer && !isCover && (
+            <DisclaimerFooter variant="inline" text={brandKitData.disclaimerText || ""} palette={palette} font={font} fontSizeScale={fontSizeScale} />
+          )}
+        </div>
+      </BaseSlide>
+    </div>
+  );
+});
+
+// ============= Bold Statement =============
+
+const BoldStatement = forwardRef<HTMLDivElement, SlideRenderProps>(function BoldStatement(
+  { slide, palette, font, size, brandKitSettings, brandKitData, index, total, fontSizeScale = 1, medical }, ref
+) {
+  const isCover = slide.type === "cover";
+  const isEnding = slide.type === "ending";
+
+  const isStat = !isCover && !isEnding && /^\d+/.test(slide.title);
+  const statNumber = isStat ? slide.title.match(/^\d+/)?.[0] : null;
+  const statLabel = isStat ? slide.title.replace(/^\d+/, "").trim() : null;
+
+  return (
+    <div ref={ref} style={{ width: "100%", height: "100%" }}>
+      <BaseSlide slide={slide} palette={palette} font={font} settings={brandKitSettings} data={brandKitData} index={index} total={total} fontSizeScale={fontSizeScale}>
+        <div dir="rtl" style={{ padding: "80px 72px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", gap: "24px" }}>
+          {isCover && (
+            <>
+              {medical?.specialty && (
+                <div style={{ position: "absolute", top: "72px", left: "72px" }}>
+                  <PhysicianMark specialty={medical.specialty} palette={palette} font={font} fontSizeScale={fontSizeScale} />
+                </div>
+              )}
+              <h1 style={{
+                fontSize: fs(84, fontSizeScale),
+                fontWeight: 900,
+                lineHeight: 1.15,
+                margin: 0,
+                fontFamily: fontMap.ibm,
+                textAlign: "right",
+                maxWidth: "95%",
+              }}>
+                {slide.title}
+              </h1>
+              {slide.body && (
+                <p style={{
+                  fontSize: fs(32, fontSizeScale),
+                  lineHeight: 1.4,
+                  opacity: 0.7,
+                  margin: 0,
+                  maxWidth: "70%",
+                }}>
+                  {slide.body}
+                </p>
+              )}
+            </>
+          )}
+          {!isCover && !isEnding && (
+            <>
+              {isStat && statNumber && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <span style={{
+                    fontSize: fs(140, fontSizeScale),
+                    fontWeight: 900,
+                    lineHeight: 1,
+                    color: palette.accent,
+                    fontFamily: fontMap.ibm,
+                  }}>
+                    {statNumber}
+                  </span>
+                  {statLabel && (
+                    <span style={{
+                      fontSize: fs(44, fontSizeScale),
+                      fontWeight: 700,
+                      lineHeight: 1.2,
+                      fontFamily: fontMap.ibm,
+                      maxWidth: "90%",
+                    }}>
+                      {statLabel}
+                    </span>
+                  )}
+                </div>
+              )}
+              {!isStat && (
+                <h2 style={{
+                  fontSize: fs(72, fontSizeScale),
+                  fontWeight: 800,
+                  lineHeight: 1.2,
+                  margin: 0,
+                  fontFamily: fontMap.ibm,
+                  textAlign: "right",
+                  maxWidth: "95%",
+                }}>
+                  {slide.title}
+                </h2>
+              )}
+              {slide.body && (
+                <p style={{
+                  fontSize: fs(32, fontSizeScale),
+                  lineHeight: 1.4,
+                  opacity: 0.7,
+                  margin: 0,
+                  maxWidth: "75%",
+                }}>
+                  {slide.body}
+                </p>
+              )}
+              {medical?.source && (
+                <div style={{ marginTop: "8px" }}>
+                  <SourceBadge source={medical.source} palette={palette} font={font} fontSizeScale={fontSizeScale} />
+                </div>
+              )}
+            </>
+          )}
+          {isEnding && (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: "28px" }}>
+              {slide.ctaText && (
+                <div style={{
+                  display: "inline-block",
+                  padding: "24px 56px",
+                  backgroundColor: palette.accent,
+                  color: "#FFFFFF",
+                  fontSize: fs(40, fontSizeScale),
+                  fontWeight: 900,
+                  borderRadius: "0",
+                  fontFamily: fontMap.ibm,
+                }}>
+                  {slide.ctaText}
+                </div>
+              )}
+              {medical?.specialty && (
+                <PhysicianMark specialty={medical.specialty} palette={palette} font={font} fontSizeScale={fontSizeScale} />
+              )}
+            </div>
+          )}
+          {brandKitSettings.showDisclaimer && !isCover && (
+            <DisclaimerFooter variant="inline" text={brandKitData.disclaimerText || ""} palette={palette} font={font} fontSizeScale={fontSizeScale} />
+          )}
         </div>
       </BaseSlide>
     </div>

@@ -638,6 +638,7 @@ function Step4Template({ project, updateSettings, brandKit }: {
                       size="1080x1080"
                       brandKitSettings={project.settings.brandKit}
                       brandKitData={brandKitData}
+                      medical={{ specialty: project.settings.specialty, source: project.settings.source }}
                       index={0}
                       total={project.slides.length || 1}
                       fontSizeScale={project.settings.fontSizeScale}
@@ -662,6 +663,7 @@ function Step4Template({ project, updateSettings, brandKit }: {
             size={project.settings.size}
             brandKitSettings={project.settings.brandKit}
             brandKitData={brandKitData}
+            medical={{ specialty: project.settings.specialty, source: project.settings.source }}
             index={0}
             total={project.slides.length || 1}
             fontSizeScale={project.settings.fontSizeScale}
@@ -968,6 +970,7 @@ function Step6Export({ project }: { project: Project }) {
             size={project.settings.size}
             brandKitSettings={project.settings.brandKit}
             brandKitData={{ instagramHandle: "@typo.ai", logoDataUrl: null, primaryColor: "#6D5EFC", font: project.settings.font, disclaimerText: "هذا المحتوى للتوعية فقط ولا يغني عن استشارة الطبيب" }}
+            medical={{ specialty: project.settings.specialty, source: project.settings.source }}
             index={0}
             total={project.slides.length}
             fontSizeScale={project.settings.fontSizeScale}

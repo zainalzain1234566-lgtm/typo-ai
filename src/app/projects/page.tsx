@@ -355,6 +355,7 @@ function ProjectCard({ project, folders, onOpen, onDuplicate, onDelete, onExport
               size={project.settings.size}
               brandKitSettings={project.settings.brandKit}
               brandKitData={{ instagramHandle: "@typo.ai", logoDataUrl: null, primaryColor: "#6D5EFC", font: project.settings.font }}
+              medical={{ specialty: project.settings.specialty, source: project.settings.source }}
               index={0}
               total={project.slides.length}
               fontSizeScale={project.settings.fontSizeScale}

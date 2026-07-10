@@ -86,6 +86,43 @@ const RETRO_PALETTES: Palette[] = [
   { id: "p4", name: "برتقالي", background: "#ffd000", text: "#111111", accent: "#ff00a0", secondary: "#00a0ff" },
 ];
 
+// ============= Medical Spec Template Palettes =============
+
+const CLINICAL_CLEAN_PALETTES: Palette[] = [
+  { id: "p1", name: "أزرق طبي", background: "#FFFFFF", text: "#0F2A3F", accent: "#2E86C1", secondary: "#6B7C8C" },
+  { id: "p2", name: "أخضر ناعم", background: "#F7FAFC", text: "#14342B", accent: "#2E9E7B", secondary: "#5E7A72" },
+  { id: "p3", name: "كحلي هادئ", background: "#FFFFFF", text: "#1A1A2E", accent: "#4A5CC7", secondary: "#7A7F99" },
+  { id: "p4", name: "محايد دافئ", background: "#FBF9F6", text: "#2B2B2B", accent: "#C0392B", secondary: "#8A7F7A" },
+];
+
+const MYTH_FACT_PALETTES: Palette[] = [
+  { id: "p1", name: "أبيض", background: "#FFFFFF", text: "#1B1B1B", accent: "#E74C3C", secondary: "#27AE60" },
+  { id: "p2", name: "وردي ناعم", background: "#FDF6F5", text: "#2A1A1A", accent: "#D64545", secondary: "#2E9E7B" },
+  { id: "p3", name: "داكن", background: "#0F1626", text: "#F2F4F8", accent: "#FF6B6B", secondary: "#4ADE80" },
+  { id: "p4", name: "تركواز", background: "#F7F9FC", text: "#16324F", accent: "#E4572E", secondary: "#17A398" },
+];
+
+const NUMBERED_STEPS_PALETTES: Palette[] = [
+  { id: "p1", name: "أزرق", background: "#FFFFFF", text: "#14213D", accent: "#2E86C1", secondary: "#DCEBF7" },
+  { id: "p2", name: "أخضر", background: "#F6FBF9", text: "#12312A", accent: "#17A398", secondary: "#D2EFE9" },
+  { id: "p3", name: "برتقالي", background: "#FFF8F0", text: "#2B1E12", accent: "#E67E22", secondary: "#FBE7D0" },
+  { id: "p4", name: "داكن", background: "#1A1A2E", text: "#EDEDF5", accent: "#7C83FD", secondary: "#2E2E52" },
+];
+
+const EDITORIAL_HEALTH_PALETTES: Palette[] = [
+  { id: "p1", name: "رملي دافئ", background: "#FBF7F0", text: "#2E2A26", accent: "#C77D4A", secondary: "#F0E6D8" },
+  { id: "p2", name: "أخضر مريمي", background: "#F4F8F5", text: "#23342B", accent: "#5A8F6E", secondary: "#E1EDE5" },
+  { id: "p3", name: "وردي ناعم", background: "#FFF6F5", text: "#3A2A2A", accent: "#D98A8A", secondary: "#F6E4E4" },
+  { id: "p4", name: "تحريري داكن", background: "#20242B", text: "#EDE9E3", accent: "#E0A458", secondary: "#2C3138" },
+];
+
+const BOLD_STATEMENT_PALETTES: Palette[] = [
+  { id: "p1", name: "ذهبي داكن", background: "#0E1116", text: "#FFFFFF", accent: "#FFD166", secondary: "#1a1d24" },
+  { id: "p2", name: "أزرق كامل", background: "#2E86C1", text: "#FFFFFF", accent: "#0B3D5C", secondary: "#2563a0" },
+  { id: "p3", name: "أبيض وأحمر", background: "#F2F4F8", text: "#14213D", accent: "#E63946", secondary: "#dfe3ec" },
+  { id: "p4", name: "أخضر عميق", background: "#16302B", text: "#EAF4EF", accent: "#2CC28E", secondary: "#1a3f37" },
+];
+
 export const TEMPLATE_DEFS: Template[] = [
   { id: "tahrir", name: "تحرير", description: "تصميم تحريري بأرقام كبيرة وتباين واضح", palettes: PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "tahrir", category: "medical" },
   { id: "wadeh", name: "واضح", description: "تصميم نظيف بمساحات واسعة وخط واضح", palettes: PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "wadeh", category: "medical" },
@@ -95,6 +132,12 @@ export const TEMPLATE_DEFS: Template[] = [
   { id: "academy", name: "أكاديمي", description: "تصميم منظم بشريط جانبي وأرقام", palettes: PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "academy", category: "medical" },
   { id: "hadith", name: "حديث", description: "تصميم عصري بأشكال هندسية وزوايا", palettes: PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "hadith", category: "medical" },
   { id: "tabayun", name: "تباين", description: "تباين قوي بين النص والخلفية مع شريط ملوّن", palettes: PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "tabayun", category: "medical" },
+  // === Medical spec templates ===
+  { id: "clinical-clean", name: "طببي نظيف", description: "تصميم مؤسسي نظيف وموثوق بمساحات واسعة وخطوط رفيعة", palettes: CLINICAL_CLEAN_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "clinical-clean", category: "medical" },
+  { id: "numbered-steps", name: "خطوات مرقمة", description: "أرقام كبيرة كمرساة بصرية لخطوات وإجراءات قابلة للتنفيذ", palettes: NUMBERED_STEPS_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "numbered-steps", category: "medical" },
+  { id: "myth-fact", name: "خرافة وحقيقة", description: "نظام بصحيح لتفكيك الخرافات بإشارات صح والخطأ المتضادة", palettes: MYTH_FACT_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "myth-fact", category: "medical" },
+  { id: "editorial-health", name: "صحي تحريري", description: "تصميم مجلات دافئ بصفحات راقية ومحتوى إنساني", palettes: EDITORIAL_HEALTH_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "editorial-health", category: "medical" },
+  { id: "bold-statement", name: "بيان جريء", description: "تباين عالي ورسالة واحدة قوية في كل شريحة", palettes: BOLD_STATEMENT_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "bold-statement", category: "medical" },
   { id: "shabaka", name: "شبكة", description: "تصميم بخلفية شبكية وعناصر منظمة", palettes: PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "shabaka", category: "general" },
   { id: "unwan", name: "عنوان", description: "عنوان ضخم يملأ المساحة مع تفاصيل دقيقة", palettes: PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "unwan", category: "general" },
   // === New styles (style01–style10) ===

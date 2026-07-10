@@ -67,6 +67,11 @@ export interface Template {
   category?: "medical" | "general";
 }
 
+export interface MedicalProps {
+  specialty?: string;
+  source?: string;
+}
+
 export interface ProjectSettings {
   contentType: ContentType;
   audience: Audience;

@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { ScaledSlide, SlideRenderer } from "@/components/carousel/slide-renderer";
+import { ScaledSlide, SlideRenderer, DisclaimerFooter } from "@/components/carousel/slide-renderer";
 import { useApp } from "@/lib/app-context";
 import { useToast } from "@/components/ui/toast";
 import { TEMPLATE_DEFS, getPalette, SIZES } from "@/lib/templates";
@@ -162,26 +162,18 @@ export default function ExportPage() {
               size={project.settings.size}
               brandKitSettings={project.settings.brandKit}
               brandKitData={brandKitData}
+              medical={{ specialty: project.settings.specialty, source: project.settings.source }}
               index={i}
               total={project.slides.length}
               fontSizeScale={project.settings.fontSizeScale}
             />
             {project.settings.brandKit.showDisclaimer && (
-              <div style={{
-                position: "absolute",
-                bottom: 0,
-                left: 0,
-                right: 0,
-                padding: "12px 40px",
-                background: "rgba(0,0,0,0.04)",
-                textAlign: "center",
-                fontSize: "16px",
-                color: pal.text,
-                opacity: 0.7,
-                pointerEvents: "none",
-              }}>
-                {brandKitData.disclaimerText || "هذا المحتوى للتوعية فقط ولا يغني عن استشارة الطبيب"}
-              </div>
+              <DisclaimerFooter
+                variant="overlay"
+                text={brandKitData.disclaimerText || ""}
+                palette={pal}
+                font={project.settings.font}
+              />
             )}
           </div>
         ))}
@@ -256,6 +248,7 @@ export default function ExportPage() {
                 size={project.settings.size}
                 brandKitSettings={project.settings.brandKit}
                 brandKitData={brandKitData}
+                medical={{ specialty: project.settings.specialty, source: project.settings.source }}
                 index={i}
                 total={project.slides.length}
                 fontSizeScale={project.settings.fontSizeScale}
