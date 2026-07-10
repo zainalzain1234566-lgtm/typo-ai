@@ -147,7 +147,7 @@ export default function EditorPage() {
   return (
     <div className="min-h-screen bg-[#faf9f7]">
       <AppNavbar />
-      <div className="mx-auto max-w-7xl px-4 py-4">
+      <div className="mx-auto max-w-7xl px-4 py-4 pb-24 lg:pb-4">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
           <div className="flex items-center gap-3">
             <input
@@ -182,6 +182,7 @@ export default function EditorPage() {
                 size={project.settings.size}
                 brandKitSettings={project.settings.brandKit}
                 brandKitData={brandKitData}
+                fontSizeScale={project.settings.fontSizeScale}
                 index={i}
                 total={project.slides.length}
               />
@@ -243,7 +244,7 @@ export default function EditorPage() {
           </div>
 
           <div className="lg:col-span-6">
-            <div className="rounded-2xl border border-stone-200 bg-white p-6 flex flex-col items-center justify-center min-h-[500px]">
+            <div className="rounded-2xl border border-stone-200 bg-white p-6 flex flex-col items-center justify-center min-h-[500px] overflow-hidden">
               {currentSlide && (
                 <div className="flex flex-col items-center">
                   <ScaledSlide
@@ -257,6 +258,7 @@ export default function EditorPage() {
                     brandKitData={brandKitData}
                     index={currentSlideIdx}
                     total={project.slides.length}
+                    fontSizeScale={project.settings.fontSizeScale}
                   />
                   <div className="flex items-center gap-4 mt-4">
                     <Button variant="outline" size="icon" disabled={currentSlideIdx === 0} onClick={() => setCurrentSlideIdx(currentSlideIdx - 1)}>
@@ -351,7 +353,7 @@ function TemplateDialog({ open, onClose, project, update, brandKitData }: {
 
   return (
     <Dialog open={open} onClose={onClose} title="تغيير القالب" description="اختر قالبًا جديدًا. لن يتأثر المحتوى.">
-      <div className="grid grid-cols-3 gap-3 max-h-[400px] overflow-y-auto thin-scrollbar">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[400px] overflow-y-auto thin-scrollbar">
         {TEMPLATE_DEFS.map((t) => {
           const p = getPalette(t.id, project.settings.paletteId);
           const active = project.settings.templateId === t.id;
@@ -373,6 +375,7 @@ function TemplateDialog({ open, onClose, project, update, brandKitData }: {
                   brandKitData={brandKitData}
                   index={0}
                   total={project.slides.length}
+                  fontSizeScale={project.settings.fontSizeScale}
                 />
               )}
               <div className="px-2 py-1 text-center">
@@ -467,6 +470,25 @@ function BrandDialog({ open, onClose, project, update }: {
             </div>
           </div>
         )}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <Label>حجم الخط</Label>
+            <span className="text-sm font-medium text-accent">{Math.round(project.settings.fontSizeScale * 100)}%</span>
+          </div>
+          <input
+            type="range"
+            min={0.8}
+            max={1.3}
+            step={0.05}
+            value={project.settings.fontSizeScale}
+            onChange={(e) => update({ settings: { ...project.settings, fontSizeScale: parseFloat(e.target.value) } })}
+            className="w-full h-2 rounded-full appearance-none cursor-pointer bg-stone-200 accent-[#6D5EFC]"
+          />
+          <div className="flex justify-between mt-1">
+            <span className="text-xs text-ink-subtle">صغير</span>
+            <span className="text-xs text-ink-subtle">كبير</span>
+          </div>
+        </div>
         <Button className="w-full" onClick={onClose}>تم</Button>
       </div>
     </Dialog>

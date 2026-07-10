@@ -122,7 +122,7 @@ export async function createProjectAction(input: Record<string, unknown>) {
     };
 
     const generated = await provider.generate(genInput);
-    log("PROJECT", "content generated", { slides: generated.slides.length, provider: process.env.AI_GENERATION_MODE || "mock" });
+    log("PROJECT", "content generated", { slides: generated.slides.length, provider: "external" });
 
     // Insert slides
     const slideRows = generated.slides.map((s, i) => ({
@@ -320,24 +320,24 @@ export async function addSlideAction(projectId: string, afterPosition: number, t
   // Check project ownership and slide count
   const { data: project } = await supabase
     .from("projects")
-    .select("slide_count, topic, content_type")
+    .select("slide_count, topic, content_type, language, tone, content_level, target_audience, cta_type")
     .eq("id", projectId)
     .eq("user_id", user.id)
     .single();
   if (!project) return { success: false, error: "المشروع غير موجود" };
   if (project.slide_count >= 10) return { success: false, error: "وصلت للحد الأقصى (10 شرائح)" };
 
-  // Generate content for new slide
+  // Generate content for new slide using the project's real settings
   const provider = getGenerationProvider();
   const generated = await provider.generate({
     topic: topic || project.topic,
     contentType: contentType || project.content_type,
-    targetAudience: "",
-    level: "مبتدئ",
-    tone: "مبسطة",
-    language: "العربية الفصحى",
+    targetAudience: project.target_audience ?? "",
+    level: project.content_level,
+    tone: project.tone,
+    language: project.language,
     slideCount: 3,
-    ctaType: null,
+    ctaType: project.cta_type,
   });
 
   // Find the ending slide position to insert before it

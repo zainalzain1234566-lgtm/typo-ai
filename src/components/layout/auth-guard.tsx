@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { useApp } from "@/lib/auth-context";
+import { useApp } from "@/lib/app-context";
 
 const protectedRoutes = ["/projects", "/settings"];
 const authRoutes = ["/login", "/signup", "/verify-email", "/forgot-password", "/reset-password"];

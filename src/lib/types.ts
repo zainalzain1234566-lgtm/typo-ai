@@ -75,6 +75,7 @@ export interface ProjectSettings {
   templateId: string;
   paletteId: string;
   font: FontFamily;
+  fontSizeScale: number;
   brandKit: BrandKitSettings;
 }
 
@@ -98,35 +99,6 @@ export interface Project {
 export interface Folder {
   id: string;
   name: string;
-}
-
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  password: string;
-  verified: boolean;
-  avatarDataUrl: string | null;
-  createdAt: string;
-}
-
-export interface ExportRecord {
-  id: string;
-  projectId: string;
-  projectTitle: string;
-  slideCount: number;
-  size: CarouselSize;
-  exportedAt: string;
-}
-
-export interface AppData {
-  users: User[];
-  currentUserId: string | null;
-  projects: Project[];
-  folders: Folder[];
-  brandKit: BrandKit;
-  exportRecords: ExportRecord[];
-  favoriteTemplates: string[];
 }
 
 export interface Stats {

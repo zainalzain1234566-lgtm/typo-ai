@@ -122,7 +122,7 @@ export default function ExportPage() {
     <div className="min-h-screen bg-[#faf9f7]">
       <AppNavbar />
 
-      <div style={{ position: "absolute", left: "-99999px", top: 0, pointerEvents: "none" }}>
+      <div style={{ position: "fixed", left: "-99999px", top: 0, width: 0, height: 0, overflow: "hidden", pointerEvents: "none" }} aria-hidden="true">
         {project.slides.map((slide, i) => (
           <div
             key={slide.id}
@@ -139,6 +139,7 @@ export default function ExportPage() {
               brandKitData={brandKitData}
               index={i}
               total={project.slides.length}
+              fontSizeScale={project.settings.fontSizeScale}
             />
           </div>
         ))}
@@ -176,7 +177,7 @@ export default function ExportPage() {
         </AnimatePresence>
 
         <div className="mb-6">
-          <h1 className="text-3xl font-extrabold text-ink">تصدير المشروع</h1>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-ink">تصدير المشروع</h1>
           <p className="mt-1 text-ink-muted">نزّل الشرائح وانسخ الوصف والهاشتاغات</p>
         </div>
 
@@ -215,6 +216,7 @@ export default function ExportPage() {
                 brandKitData={brandKitData}
                 index={i}
                 total={project.slides.length}
+                fontSizeScale={project.settings.fontSizeScale}
               />
               <div className="mt-3 flex items-center justify-between">
                 <span className="text-sm font-medium text-ink-muted">{i + 1} / {project.slides.length}</span>

@@ -152,7 +152,7 @@ export default function ProjectsPage() {
       <div className="mx-auto max-w-7xl px-4 py-8">
         <div className="flex items-start justify-between flex-wrap gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-extrabold text-ink">مشاريعي</h1>
+            <h1 className="text-2xl md:text-3xl font-extrabold text-ink">مشاريعي</h1>
             <p className="mt-1 text-ink-muted">أنشئ محتوى جديدًا أو أكمل العمل على مشاريعك السابقة.</p>
           </div>
           <Button size="lg" onClick={() => router.push("/projects/new")}>
@@ -196,7 +196,7 @@ export default function ProjectsPage() {
                   {f.name}
                 </button>
                 <Dropdown
-                  trigger={<button className="p-1.5 text-ink-subtle hover:text-ink cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"><MoreVertical className="w-3.5 h-3.5" /></button>}
+                  trigger={<button className="p-1.5 text-ink-subtle hover:text-ink cursor-pointer opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"><MoreVertical className="w-3.5 h-3.5" /></button>}
                 >
                   <DropdownItem onClick={() => { setFolderDialog({ mode: "edit", id: f.id, name: f.name }); setFolderName(f.name); }}>
                     <Pencil className="w-4 h-4" /> إعادة تسمية
@@ -348,6 +348,7 @@ function ProjectCard({ project, folders, onOpen, onDuplicate, onDelete, onExport
               brandKitData={{ instagramHandle: "@typo.ai", logoDataUrl: null, primaryColor: "#6D5EFC", font: project.settings.font }}
               index={0}
               total={project.slides.length}
+              fontSizeScale={project.settings.fontSizeScale}
             />
           ) : (
             <div className="aspect-square flex items-center justify-center text-ink-subtle">

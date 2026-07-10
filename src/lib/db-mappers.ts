@@ -56,6 +56,7 @@ export function mapProject(row: any, slideRows: any[]): Project {
       templateId: templateSlug,
       paletteId,
       font: FONT_DB_TO_FE[row.font_family] ?? "tajawal",
+      fontSizeScale: row.font_size_scale ?? 1.0,
       brandKit: {
         enabled: row.use_brand_kit,
         showLogo: row.show_logo,
@@ -140,6 +141,7 @@ export function projectToCreateInput(project: Project, lookup: TemplateLookup): 
     template_id: tmpl.id,
     palette_id: paletteId,
     font_family: FONT_FE_TO_DB[project.settings.font] ?? "tajawal",
+    font_size_scale: project.settings.fontSizeScale,
     use_brand_kit: project.settings.brandKit.enabled,
     show_logo: project.settings.brandKit.showLogo,
     show_account_name: project.settings.brandKit.showAccountName,
@@ -161,6 +163,7 @@ export function projectToUpdateInput(project: Project, lookup: TemplateLookup): 
     template_id: tmpl.id,
     palette_id: paletteId,
     font_family: FONT_FE_TO_DB[project.settings.font],
+    font_size_scale: project.settings.fontSizeScale,
     use_brand_kit: project.settings.brandKit.enabled,
     show_logo: project.settings.brandKit.showLogo,
     show_account_name: project.settings.brandKit.showAccountName,
@@ -199,6 +202,7 @@ export function createBlankProject(): Project {
       templateId: "tahrir",
       paletteId: "p1",
       font: "tajawal",
+      fontSizeScale: 1.0,
       brandKit: {
         enabled: false,
         showLogo: false,

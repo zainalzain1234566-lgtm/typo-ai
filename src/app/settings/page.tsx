@@ -184,11 +184,11 @@ export default function SettingsPage() {
     <div className="min-h-screen bg-[#faf9f7]">
       <AppNavbar />
       <div className="mx-auto max-w-5xl px-4 py-8">
-        <h1 className="text-3xl font-extrabold text-ink mb-6">الإعدادات</h1>
+        <h1 className="text-2xl md:text-3xl font-extrabold text-ink mb-6">الإعدادات</h1>
 
         <div className="grid lg:grid-cols-4 gap-6">
           <div className="lg:col-span-1">
-            <div className="rounded-2xl border border-stone-200 bg-white p-2 space-y-1 sticky top-20">
+            <div className="rounded-2xl border border-stone-200 bg-white p-2 space-y-1 lg:sticky lg:top-20 flex lg:flex-col overflow-x-auto no-scrollbar">
               {SECTIONS.map((s) => (
                 <button
                   key={s.id}

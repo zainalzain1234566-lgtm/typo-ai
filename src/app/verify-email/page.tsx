@@ -90,11 +90,11 @@ export default function VerifyEmailPage() {
             أرسلنا رمز التحقق إلى <span className="font-medium text-ink">{email || "بريدك"}</span>
           </p>
           {error && <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
-          <div className="mt-6 flex gap-2 justify-center" dir="ltr">
+          <div className="mt-6 grid grid-cols-6 gap-2" dir="ltr">
             {code.map((c, i) => (
               <Input key={i} ref={(el) => { inputsRef.current[i] = el; }} type="text" inputMode="numeric" maxLength={1} value={c}
                 onChange={(e) => handleInput(i, e.target.value)} onKeyDown={(e) => handleKeyDown(i, e)} onPaste={handlePaste}
-                className="w-12 h-14 text-center text-xl font-bold" />
+                className="w-full h-12 sm:h-14 text-center text-lg sm:text-xl font-bold" />
             ))}
           </div>
           <div className="mt-6 space-y-3">

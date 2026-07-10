@@ -20,7 +20,7 @@ export default function PricingPage() {
       <MarketingNavbar />
       <div className="mx-auto max-w-4xl px-4 py-16">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-extrabold text-ink">الأسعار</h1>
+          <h1 className="text-3xl md:text-4xl font-extrabold text-ink">الأسعار</h1>
           <p className="mt-3 text-ink-muted">ابدأ مجانًا اليوم</p>
         </div>
         <div className="rounded-2xl border-2 border-accent/30 bg-white p-8 shadow-soft max-w-md mx-auto text-center">

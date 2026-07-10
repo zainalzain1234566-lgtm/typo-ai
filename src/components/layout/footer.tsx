@@ -11,7 +11,7 @@ export function Footer() {
               منصة عربية لإنشاء كاروسيل Instagram بسهولة دون خبرة في التصميم.
             </p>
           </div>
-          <div className="flex gap-12">
+          <div className="flex gap-8 sm:gap-12">
             <div>
               <h4 className="text-sm font-bold text-ink mb-3">المنتج</h4>
               <div className="flex flex-col gap-2">

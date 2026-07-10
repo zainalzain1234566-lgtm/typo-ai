@@ -254,7 +254,7 @@ function WizardContent() {
           </motion.div>
         </AnimatePresence>
 
-        <div className="flex items-center justify-between mt-8 pt-6 border-t border-stone-200">
+        <div className="flex items-center justify-between mt-8 pt-6 border-t border-stone-200 flex-wrap gap-3">
           {step > 1 ? (
             <Button variant="outline" onClick={() => setStep(step - 1)}>
               <ArrowRight className="w-4 h-4" /> السابق
@@ -265,7 +265,7 @@ function WizardContent() {
               التالي <ArrowLeft className="w-4 h-4" />
             </Button>
           ) : (
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <Button variant="outline" onClick={handleSaveAndEdit} disabled={saving || !dbProjectId}>
                 حفظ وتعديل
               </Button>
@@ -598,6 +598,7 @@ function Step4Template({ project, updateSettings, brandKit }: {
                       brandKitData={brandKitData}
                       index={0}
                       total={project.slides.length || 1}
+                      fontSizeScale={project.settings.fontSizeScale}
                     />
                     <div className="flex-1 flex items-center px-3 text-right">
                       <span className={cn("text-sm font-medium", active ? "text-accent" : "text-ink")}>{t.name}</span>
@@ -609,7 +610,7 @@ function Step4Template({ project, updateSettings, brandKit }: {
           </div>
         </div>
 
-        <div className="lg:col-span-6 order-2 flex flex-col items-center justify-center bg-stone-50 rounded-2xl p-6 min-h-[400px]">
+        <div className="lg:col-span-6 order-2 flex flex-col items-center justify-center bg-stone-50 rounded-2xl p-6 min-h-[400px] overflow-hidden">
           <ScaledSlide
             width={350}
             slide={previewSlide}
@@ -621,6 +622,7 @@ function Step4Template({ project, updateSettings, brandKit }: {
             brandKitData={brandKitData}
             index={0}
             total={project.slides.length || 1}
+            fontSizeScale={project.settings.fontSizeScale}
           />
         </div>
 
@@ -663,6 +665,26 @@ function Step4Template({ project, updateSettings, brandKit }: {
                   {f.name}
                 </button>
               ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-bold text-ink">حجم الخط</h3>
+              <span className="text-sm font-medium text-accent">{Math.round(project.settings.fontSizeScale * 100)}%</span>
+            </div>
+            <input
+              type="range"
+              min={0.8}
+              max={1.3}
+              step={0.05}
+              value={project.settings.fontSizeScale}
+              onChange={(e) => updateSettings({ fontSizeScale: parseFloat(e.target.value) })}
+              className="w-full h-2 rounded-full appearance-none cursor-pointer bg-stone-200 accent-[#6D5EFC]"
+            />
+            <div className="flex justify-between mt-1">
+              <span className="text-xs text-ink-subtle">صغير</span>
+              <span className="text-xs text-ink-subtle">كبير</span>
             </div>
           </div>
 
@@ -815,8 +837,8 @@ function Step5Review({ project, update, setProject, dbProjectId, onRefresh }: {
       <div className="space-y-4">
         {slides.map((slide, i) => (
           <div key={slide.id} className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
-            <div className="flex items-center gap-3 mb-3">
-              <GripVertical className="w-5 h-5 text-stone-300" />
+            <div className="flex items-center gap-3 mb-3 flex-wrap">
+              <GripVertical className="w-5 h-5 text-stone-300 shrink-0" />
               <Badge className={cn(
                 slide.type === "cover" ? "bg-accent-soft text-accent" : slide.type === "ending" ? "bg-green-100 text-green-700" : "bg-stone-100 text-ink-muted"
               )}>
@@ -825,12 +847,12 @@ function Step5Review({ project, update, setProject, dbProjectId, onRefresh }: {
               <span className="text-xs text-ink-subtle">{i + 1} / {slides.length}</span>
               <div className="flex-1" />
               {slide.type !== "cover" && slide.type !== "ending" && (
-                <>
+                <div className="flex items-center gap-1">
                   <button onClick={() => moveSlide(slide.id, "up")} disabled={i === 1} className="p-1.5 text-ink-subtle hover:text-ink disabled:opacity-30 cursor-pointer"><ArrowRight className="w-4 h-4" /></button>
                   <button onClick={() => moveSlide(slide.id, "down")} disabled={i === slides.length - 2} className="p-1.5 text-ink-subtle hover:text-ink disabled:opacity-30 cursor-pointer"><ArrowLeft className="w-4 h-4" /></button>
                   <button onClick={() => handleDuplicateSlide(slide.id)} className="p-1.5 text-ink-subtle hover:text-ink cursor-pointer"><Copy className="w-4 h-4" /></button>
                   <button onClick={() => handleDeleteSlide(slide.id)} className="p-1.5 text-red-400 hover:text-red-600 cursor-pointer"><Trash2 className="w-4 h-4" /></button>
-                </>
+                </div>
               )}
             </div>
             <div className="space-y-3">
@@ -877,6 +899,7 @@ function Step6Export({ project }: { project: Project }) {
             brandKitData={{ instagramHandle: "@typo.ai", logoDataUrl: null, primaryColor: "#6D5EFC", font: project.settings.font }}
             index={0}
             total={project.slides.length}
+            fontSizeScale={project.settings.fontSizeScale}
           />
         )}
       </div>

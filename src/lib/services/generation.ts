@@ -26,50 +26,6 @@ export interface GenerationProvider {
   generate(input: GenerationInput): Promise<GeneratedCarousel>;
 }
 
-// ============= Mock Provider =============
-
-export class MockGenerationProvider implements GenerationProvider {
-  async generate(input: GenerationInput): Promise<GeneratedCarousel> {
-    await new Promise((r) => setTimeout(r, 2000));
-
-    const { topic, contentType, ctaType, slideCount } = input;
-    const contentCount = slideCount - 2;
-    const slides: GeneratedSlide[] = [];
-
-    slides.push({
-      slide_type: "cover",
-      title: topic,
-      body: coverSubtitle(contentType),
-    });
-
-    const blocks = buildContent(topic, contentType, Math.max(1, contentCount));
-    for (let i = 0; i < contentCount; i++) {
-      const block = blocks[i % blocks.length];
-      slides.push({ slide_type: "content", title: block.title, body: block.body });
-    }
-
-    if (ctaType === "بدون CTA" || !ctaType) {
-      slides.push({
-        slide_type: "summary",
-        title: "خلاصة",
-        body: `تعرّفنا على أهم جوانب ${topic}. ابدأ بالتطبيق اليوم ولا تؤجّل.`,
-      });
-    } else {
-      slides.push({
-        slide_type: "cta",
-        title: ctaTitle(ctaType),
-        body: ctaBody(ctaType, topic),
-        cta_text: ctaType,
-      });
-    }
-
-    const caption = captionIntro(contentType, topic) + "\n\n" + captionAsk(ctaType);
-    const hashtags = generateHashtags(topic, contentType);
-
-    return { slides, caption, hashtags };
-  }
-}
-
 // ============= External AI Provider =============
 
 export class ExternalAIProvider implements GenerationProvider {
@@ -141,19 +97,16 @@ export class ExternalAIProvider implements GenerationProvider {
 // ============= Factory =============
 
 export function getGenerationProvider(): GenerationProvider {
-  const mode = process.env.AI_GENERATION_MODE || "mock";
-  if (mode === "provider" && process.env.AI_API_KEY) {
-    return new ExternalAIProvider();
+  if (!process.env.AI_API_KEY) {
+    throw new Error("AI_API_KEY is not set. Add it to .env.local");
   }
-  return new MockGenerationProvider();
+  return new ExternalAIProvider();
 }
 
 // ============= Validation =============
 
 function extractJSON(content: string): string {
-  // Strip markdown code fences
   let cleaned = content.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
-  // If still has extra text, find the JSON object boundaries
   const firstBrace = cleaned.indexOf("{");
   const lastBrace = cleaned.lastIndexOf("}");
   if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
@@ -165,7 +118,7 @@ function extractJSON(content: string): string {
 function validateAIResponse(raw: any): GeneratedCarousel {
   if (!raw.slides || !Array.isArray(raw.slides)) throw new Error("Invalid AI response: missing slides");
 
-  const slides: GeneratedSlide[] = raw.slides.map((s: any, i: number) => ({
+  const slides: GeneratedSlide[] = raw.slides.map((s: any, _i: number) => ({
     slide_type: ["cover", "content", "summary", "cta"].includes(s.slide_type) ? s.slide_type : "content",
     title: String(s.title || "").slice(0, 300),
     body: String(s.body || "").slice(0, 2000),
@@ -179,164 +132,61 @@ function validateAIResponse(raw: any): GeneratedCarousel {
   };
 }
 
-const SYSTEM_PROMPT = `You are an Arabic content creator specializing in Instagram carousels. Generate carousel content in Arabic. Return JSON with: slides array (each with slide_type: cover/content/summary/cta, title, body, cta_text), caption string, hashtags array. The first slide must be cover, the last must be summary or cta.`;
+const SYSTEM_PROMPT = `أنت كاتب محتوى محترف متخصص في كاروسيلات إنستغرام باللغة العربية.
+مهمتك: إنشاء محتوى كاروسيل جذاب ومتناسق بناءً على المواصفات المحددة.
+
+قواعد صارمة:
+1. اكتب كل المحتوى (العناوين، النصوص، الـ caption، الـ hashtags) باللهجة أو اللغة المحددة فقط. لا تخلط بين اللهجات.
+2. إذا كانت اللغة "العربية الفصحى" استخدم العربية الفصحى. إذا كانت "اللهجة المصرية" اكتب بلهجة مصرية. إذا كانت "اللهجة العراقية" اكتب بلهجة عراقية. وهكذا.
+3. التزم بنوع المحتوى المحدد في بنية الشرائح وطريقة عرض المعلومات.
+4. التزم بالنبرة المحددة في كل النصوص.
+5. كل شريحة يجب أن يكون لها عنوان قصير وجذاب ونص واضح.
+6. الشريحة الأولى غلاف (cover): عنوان رئيسي لافت + جملة تشويقية.
+7. الشريحة الأخيرة ملخص (summary) أو دعوة لاتخاذ إجراء (cta).
+
+أرجع JSON فقط بالصيغة التالية:
+{
+  "slides": [
+    { "slide_type": "cover|content|summary|cta", "title": "...", "body": "...", "cta_text": "..." }
+  ],
+  "caption": "...",
+  "hashtags": ["...", "..."]
+}`;
+
+const CONTENT_TYPE_INSTRUCTIONS: Record<string, string> = {
+  "تعليمي": "نوع المحتوى: تعليمي. ابدأ بفكرة بسيطة ثم اشرح تدريجيًا. كل شريحة تبني على ما قبلها. استخدم أمثلة توضيحية ملموسة.",
+  "قصة": "نوع المحتوى: قصة. ابنِ سردًا قصصيًا: تمهيد → صراع → حل. كل شريحة جزء من القصة. اجعل القارئ يريد التمرير للشريحة التالية.",
+  "توعوي": "نوع المحتوى: توعوي. ابدأ بحقيقة أو إحصائية لافتة. اشرح الآثار والمخاطر. اختم بدعوة للتوعية أو تغيير سلوك.",
+  "قائمة": "نوع المحتوى: قائمة. كل شريحة = عنصر واحد مرقم في القائمة. عنوان العنصر في الأعلى والشرح تحته. اجعل العناصر قصيرة ومباشرة.",
+  "خطوات": "نوع المحتوى: خطوات. كل شريحة = خطوة واحدة بالترتيب. رقم الخطوة واضح. ابدأ بالخطوة الأولى وانتهق بالأخيرة.",
+  "نصائح": "نوع المحتوى: نصائح. كل شريحة = نصيحة واحدة عملية وقابلة للتطبيق. اجعل النصيحة محددة وليست عامة.",
+  "مقارنة": "نوع المحتوى: مقارنة. قارن بين شيئين أو أكثر. كل شريحة تقارن جانبًا محددًا (مثلاً: السعر، المميزات، العيوب). اذكر الطرفين في كل شريحة بشكل واضح.",
+  "شرح مفهوم": "نوع المحتوى: شرح مفهوم. عرّف المفهوم → اشرحه بمثال بسيط → طبّقه على حالة واقعية. اجعل المفهوم المعقد سهل الفهم.",
+};
 
 function buildPrompt(input: GenerationInput): string {
-  return `Create an Instagram carousel in Arabic about: "${input.topic}"
-Content type: ${input.contentType}
-Target audience: ${input.targetAudience}
-Level: ${input.level}
-Tone: ${input.tone}
-Language: ${input.language}
-Number of slides: ${input.slideCount}
-CTA: ${input.ctaType || "none"}
+  const contentInstr = CONTENT_TYPE_INSTRUCTIONS[input.contentType] || `نوع المحتوى: ${input.contentType}. التزم بطريقة عرض مناسبة لهذا النوع.`;
+  const audienceLine = input.targetAudience
+    ? `الجمهور المستهدف: ${input.targetAudience}`
+    : "";
+  const levelLine = `المستوى: ${input.level}`;
+  const toneLine = `النبرة: ${input.tone}. التزم بهذه النبرة في كل النصوص.`;
+  const langLine = `اللغة/اللهجة: ${input.language}. اكتب كل المحتوى بهذه اللهجة/اللغة فقط.`;
+  const ctaLine = input.ctaType && input.ctaType !== "بدون CTA"
+    ? `دعوة الإجراء: ${input.ctaType}. ضعها في الشريحة الأخيرة.`
+    : "دعوة الإجراء: بدون. الشريحة الأخيرة تكون ملخص (summary).";
 
-Return JSON with slides, caption, and hashtags.`;
-}
+  return `أنشئ كاروسيل إنستغرام عن: "${input.topic}"
 
-// ============= Mock content builders (reused from original mock-ai) =============
+${contentInstr}
+${audienceLine}
+${levelLine}
+${toneLine}
+${langLine}
+عدد الشرائح: ${input.slideCount}
+${ctaLine}
 
-function coverSubtitle(type: string): string {
-  const map: Record<string, string> = {
-    "تعليمي": "دليل شامل ومبسّط", "قصة": "قصة ملهمة", "توعوي": "معلومات تهمّك",
-    "قائمة": "أهم النقاط", "خطوات": "خطوة بخطوة", "نصائح": "نصائح عملية",
-    "مقارنة": "مقارنة شاملة", "شرح مفهوم": "شرح مبسّط",
-  };
-  return map[type] ?? "كاروسيل تعليمي";
-}
-
-function buildContent(topic: string, type: string, count: number): { title: string; body: string }[] {
-  const templates: Record<string, { title: string; body: string }[]> = {
-    "تعليمي": [
-      { title: `ما هو ${topic}؟`, body: `${topic} هو مفهوم أساسي يساعدنا على فهم العالم من حولنا.` },
-      { title: `لماذا يهمّك ${topic}؟`, body: `فهم ${topic} يفتح آفاقًا جديدة في التفكير.` },
-      { title: `أساسيات ${topic}`, body: `يعتمد ${topic} على عدة مبادئ رئيسية.` },
-      { title: `كيف يعمل ${topic}؟`, body: `يعمل ${topic} من خلال آلية منظمة.` },
-      { title: `أمثلة على ${topic}`, body: `نجد ${topic} في العديد من المواقف اليومية.` },
-      { title: `${topic} في المستقبل`, body: `يتطور ${topic} باستمرار وسيكون له دور أكبر.` },
-      { title: `كيف تبدأ مع ${topic}`, body: `ابدأ بفهم الأساسيات ثم طبّقها عمليًا.` },
-      { title: `نصيحة ختامية`, body: `لا تتوقف عن التعلم، فكل سؤال جديد يقودك إلى فهم أعمق.` },
-    ],
-    "قصة": [
-      { title: "البداية", body: `كل شيء بدأ بفكرة بسيطة عن ${topic}.` },
-      { title: "التحدي", body: `سرعان ما ظهرت عقبات حول ${topic}.` },
-      { title: "المحاولة", body: `جرّبنا نهجًا مختلفًا للتعامل مع ${topic}.` },
-      { title: "نقطة التحوّل", body: `اكتشفنا زاوية جديدة لـ${topic}.` },
-      { title: "النجاح", body: `أصبح ${topic} واضحًا وقابلًا للتطبيق.` },
-      { title: "الدرس", body: `علّمنا ${topic} أن الإصرار مفتاح كل إنجاز.` },
-    ],
-    "توعوي": [
-      { title: `هل تعلم عن ${topic}؟`, body: `هناك حقائق مهمة عن ${topic}.` },
-      { title: "العلامات المبكرة", body: `التعرف المبكر على ${topic} يصنع فرقًا.` },
-      { title: "مفاهيم خاطئة", body: `معلومات غير دقيقة حول ${topic} تحتاج تصحيحًا.` },
-      { title: "ماذا تفعل؟", body: `إليك الخطوات الصحيحة للتعامل مع ${topic}.` },
-      { title: "الوقاية", body: `الوقاية من ${topic} أبسط مما تتوقع.` },
-      { title: "انشر الوعي", body: `شارك هذه المعلومات لمساعدة الآخرين.` },
-    ],
-    "قائمة": [
-      { title: "1", body: `أول نقطة حول ${topic}.` },
-      { title: "2", body: `ثانيًا، التطبيق العملي لـ${topic}.` },
-      { title: "3", body: `ثالثًا، تواصل مع مهتمين بـ${topic}.` },
-      { title: "4", body: `رابعًا، خصّص وقتًا لـ${topic}.` },
-      { title: "5", body: `خامسًا، قيّم تقدّمك في ${topic}.` },
-      { title: "6", body: `سادسًا، لا تخف من طرح الأسئلة.` },
-      { title: "7", body: `سابعًا، وثّق رحلتك.` },
-      { title: "8", body: `ثامنًا، احتفل بكل إنجاز.` },
-    ],
-    "خطوات": [
-      { title: `الخطوة 1: التحضير`, body: `اجمع ما تحتاجه عن ${topic}.` },
-      { title: `الخطوة 2: التخطيط`, body: `ضع خطة واضحة لـ${topic}.` },
-      { title: `الخطوة 3: البدء`, body: `ابدأ بأول مهمة في ${topic}.` },
-      { title: `الخطوة 4: التطبيق`, body: `نفّذ خطة ${topic} خطوة بخطوة.` },
-      { title: `الخطوة 5: المراجعة`, body: `راجع ما أنجزته في ${topic}.` },
-      { title: `الخطوة 6: التحسين`, body: `طوّر أسلوبك في ${topic}.` },
-      { title: `الخطوة 7: الإتمام`, body: `أنهِ ${topic} بثقة.` },
-    ],
-    "نصائح": [
-      { title: `ابدأ مبكرًا`, body: `لا تنتظر للبدء مع ${topic}.` },
-      { title: `قسّم المهمة`, body: `قسّم ${topic} إلى أجزاء صغيرة.` },
-      { title: `تعلّم من الأخطاء`, body: `كل خطأ في ${topic} فرصة للتعلم.` },
-      { title: `اطلب المساعدة`, body: `لا تتردد في طلب المساعدة في ${topic}.` },
-      { title: `كن صبورًا`, body: `الإتقان في ${topic} يحتاج وقتًا.` },
-      { title: `استمر`, body: `الاستمرارية في ${topic} أهم من الكمال.` },
-    ],
-    "مقارنة": [
-      { title: `وجه 1 من ${topic}`, body: `الجانب الأول من ${topic} يتميّز بالبساطة.` },
-      { title: `وجه 2 من ${topic}`, body: `الجانب الآخر يوفّر مرونة أكبر.` },
-      { title: `المميزات`, body: `لكل جانب من ${topic} مميزات.` },
-      { title: `العيوب`, body: `فهم عيوب كل جانب من ${topic} يساعدك.` },
-      { title: `التكلفة`, body: `تختلف تكلفة كل خيار من ${topic}.` },
-      { title: `النتيجة`, body: `الخيار الأفضل من ${topic} يعتمد على أهدافك.` },
-    ],
-    "شرح مفهوم": [
-      { title: `تعريف ${topic}`, body: `${topic} هو مفهوم يمكن فهمه بتقسيمه.` },
-      { title: `المكونات`, body: `يتكوّن ${topic} من عناصر أساسية.` },
-      { title: `كيف يعمل؟`, body: `آلية عمل ${topic} منظمة.` },
-      { title: `مثال مبسّط`, body: `تخيّل ${topic} كآلة بسيطة.` },
-      { title: `في الواقع`, body: `نرى ${topic} في تطبيقات يومية.` },
-      { title: `الفائدة`, body: `فهم ${topic} يساعدك على قرارات أفضل.` },
-    ],
-  };
-  const blocks = templates[type] ?? templates["تعليمي"];
-  return blocks.slice(0, count);
-}
-
-function ctaTitle(cta: string): string {
-  const map: Record<string, string> = {
-    "احفظ المنشور": "احفظ هذه النصائح", "شارك المنشور": "شارك مع من يهمّه",
-    "تابع الحساب": "تابعنا للمزيد", "اكتب رأيك": "ما رأيك؟",
-  };
-  return map[cta] ?? "خاتمة";
-}
-
-function ctaBody(cta: string, topic: string): string {
-  const map: Record<string, string> = {
-    "احفظ المنشور": `لا تنسَ حفظ هذا المنشور حول ${topic}.`,
-    "شارك المنشور": `إذا وجدت هذا المحتوى مفيدًا، شاركه.`,
-    "تابع الحساب": `تابعنا للمزيد حول ${topic}.`,
-    "اكتب رأيك": `أخبرنا: ما هي تجربتك مع ${topic}؟`,
-  };
-  return map[cta] ?? `نتمنى أن تكون استفدت.`;
-}
-
-function captionIntro(type: string, topic: string): string {
-  const map: Record<string, string> = {
-    "تعليمي": `تعرف على ${topic} بطريقة مبسّطة! 📚`,
-    "قصة": `قصة ملهمة عن ${topic} 📖`,
-    "توعوي": `معلومات مهمة عن ${topic} 👀`,
-    "قائمة": `أهم ما تحتاج معرفته عن ${topic} ✅`,
-    "خطوات": `دليلك خطوة بخطوة لـ${topic} 🎯`,
-    "نصائح": `نصائح عملية حول ${topic} 💡`,
-    "مقارنة": `مقارنة شاملة حول ${topic} ⚖️`,
-    "شرح مفهوم": `شرح مبسّط لمفهوم ${topic} 🧠`,
-  };
-  return map[type] ?? `محتوى عن ${topic}`;
-}
-
-function captionAsk(cta: string | null): string {
-  const map: Record<string, string> = {
-    "احفظ المنشور": "احفظ المنشور لمراجعته لاحقًا!",
-    "شارك المنشور": "شاركه مع من قد يستفيد!",
-    "تابع الحساب": "تابعنا للمزيد!",
-    "اكتب رأيك": "اكتب رأيك في التعليقات!",
-    "بدون CTA": "",
-  };
-  return cta ? (map[cta] ?? "") : "";
-}
-
-function generateHashtags(topic: string, type: string): string[] {
-  const base = topic.replace(/\s+/g, "_");
-  const typeMap: Record<string, string[]> = {
-    "تعليمي": ["#تعلم", "#محتوى_تعليمي", "#علم"],
-    "قصة": ["#قصص", "#قصة", "#سرد"],
-    "توعوي": ["#توعية", "#معلومة", "#صحة"],
-    "قائمة": ["#قائمة", "#أفضل", "#نصائح"],
-    "خطوات": ["#خطوات", "#دليل", "#كيف"],
-    "نصائح": ["#نصائح", "#إرشادات", "#نصيحة"],
-    "مقارنة": ["#مقارنة", "#فرق", "#أيهم"],
-    "شرح مفهوم": ["#شرح", "#مفهوم", "#تبسيط"],
-  };
-  return [`#${base}`, ...(typeMap[type] ?? ["#محتوى"])];
+أرجع JSON فقط بدون أي نص إضافي.`;
 }
 
 export const PROGRESS_MESSAGES = [

@@ -51,7 +51,7 @@ export default function TemplatesPage() {
       <AppNavbar />
       <div className="mx-auto max-w-7xl px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-extrabold text-ink">القوالب</h1>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-ink">القوالب</h1>
           <p className="mt-2 text-ink-muted">اختر قالبًا لبدء مشروعك أو استعرض التصاميم</p>
         </div>
 
@@ -97,7 +97,7 @@ export default function TemplatesPage() {
                       <span key={p.id} className="w-5 h-5 rounded-full border border-stone-200" style={{ backgroundColor: p.accent }} title={p.name} />
                     ))}
                   </div>
-                  <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                     <Button variant="outline" size="sm" className="flex-1" onClick={() => setPreview(t.id)}>
                       <Eye className="w-4 h-4" /> معاينة
                     </Button>
@@ -132,18 +132,17 @@ export default function TemplatesPage() {
 
             <div>
               <h4 className="text-sm font-bold text-ink mb-3">تصاميم الشرائح</h4>
-              <div className="grid grid-cols-3 gap-4 justify-items-center">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 justify-items-center">
                 {[
                   { slide: demoSlide, label: "الغلاف" },
                   { slide: demoContent, label: "المحتوى" },
                   { slide: demoEnding, label: "الخاتمة / CTA" },
                 ].map(({ slide, label }, i) => {
                   const pal = getPalette(tmpl.id, "p1");
-                  const width = previewSize === "1080x1920" ? 120 : previewSize === "1080x1350" ? 150 : 180;
                   return (
-                    <div key={i} className="text-center">
+                    <div key={i} className="text-center w-full max-w-[200px]">
                       <ScaledSlide
-                        width={width}
+                        width={200}
                         slide={slide}
                         templateId={tmpl.id}
                         palette={pal}

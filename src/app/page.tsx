@@ -148,7 +148,7 @@ function Hero() {
 
 function HowItWorks() {
   return (
-    <section id="how" className="py-20 border-t border-stone-100">
+    <section id="how" className="py-14 md:py-20 border-t border-stone-100">
       <div className="mx-auto max-w-6xl px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-extrabold text-ink">كيف يعمل</h2>
@@ -184,7 +184,7 @@ function HowItWorks() {
 
 function TemplatePreviews() {
   return (
-    <section className="py-20 border-t border-stone-100">
+    <section className="py-14 md:py-20 border-t border-stone-100">
       <div className="mx-auto max-w-6xl px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-extrabold text-ink">قوالب احترافية</h2>
@@ -228,7 +228,7 @@ function TemplatePreviews() {
 
 function Features() {
   return (
-    <section id="features" className="py-20 border-t border-stone-100">
+    <section id="features" className="py-14 md:py-20 border-t border-stone-100">
       <div className="mx-auto max-w-6xl px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-extrabold text-ink">مميزات Typo AI</h2>
@@ -259,7 +259,7 @@ function Features() {
 
 function Examples() {
   return (
-    <section id="examples" className="py-20 border-t border-stone-100 bg-surface-tinted/50">
+    <section id="examples" className="py-14 md:py-20 border-t border-stone-100 bg-surface-tinted/50">
       <div className="mx-auto max-w-6xl px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-extrabold text-ink">أمثلة على الكاروسيل</h2>
@@ -275,7 +275,7 @@ function Examples() {
             const pal = getPalette(ex.tmpl, ex.pal);
             const s: Slide = { id: `ex${i}`, type: "cover", title: ex.title, body: ex.body };
             return (
-              <div key={i} className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft">
+              <div key={i} className="rounded-2xl border border-stone-200 bg-white p-4 shadow-soft overflow-hidden">
                 <ScaledSlide
                   width={300}
                   slide={s}
@@ -303,7 +303,7 @@ function Examples() {
 
 function WorkflowDemo() {
   return (
-    <section className="py-20 border-t border-stone-100">
+    <section className="py-14 md:py-20 border-t border-stone-100">
       <div className="mx-auto max-w-6xl px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-extrabold text-ink">رحلة إنشاء المشروع</h2>
@@ -340,7 +340,7 @@ function WorkflowDemo() {
 
 function Pricing() {
   return (
-    <section className="py-20 border-t border-stone-100">
+    <section className="py-14 md:py-20 border-t border-stone-100">
       <div className="mx-auto max-w-4xl px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-extrabold text-ink">الأسعار</h2>
@@ -378,7 +378,7 @@ function Pricing() {
 function FAQ() {
   const [openIdx, setOpenIdx] = useState<number | null>(0);
   return (
-    <section id="faq" className="py-20 border-t border-stone-100">
+    <section id="faq" className="py-14 md:py-20 border-t border-stone-100">
       <div className="mx-auto max-w-3xl px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-extrabold text-ink">الأسئلة الشائعة</h2>
@@ -413,7 +413,7 @@ function FAQ() {
 
 function FinalCTA() {
   return (
-    <section className="py-20 border-t border-stone-100">
+    <section className="py-14 md:py-20 border-t border-stone-100">
       <div className="mx-auto max-w-4xl px-4">
         <div className="rounded-3xl bg-accent p-10 md:p-16 text-center">
           <h2 className="text-3xl md:text-4xl font-extrabold text-white">جاهز لتبدأ؟</h2>
