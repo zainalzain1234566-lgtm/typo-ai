@@ -77,6 +77,7 @@ export type Database = {
           default_size: string;
           default_slide_count: number;
           preferred_template_id: string | null;
+          content_mode: string;
           telegram_bot_token: string | null;
           telegram_chat_id: string | null;
           telegram_enabled: boolean;
@@ -92,6 +93,7 @@ export type Database = {
           default_size?: string;
           default_slide_count?: number;
           preferred_template_id?: string | null;
+          content_mode?: string;
           telegram_bot_token?: string | null;
           telegram_chat_id?: string | null;
           telegram_enabled?: boolean;
@@ -107,6 +109,7 @@ export type Database = {
           default_size?: string;
           default_slide_count?: number;
           preferred_template_id?: string | null;
+          content_mode?: string;
           telegram_bot_token?: string | null;
           telegram_chat_id?: string | null;
           telegram_enabled?: boolean;

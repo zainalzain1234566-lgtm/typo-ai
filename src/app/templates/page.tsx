@@ -19,9 +19,9 @@ import { DEFAULT_ACCENT_COLOR } from "@/lib/constants";
 
 const demoBrandKit: BrandKit = { instagramHandle: "@typo.ai", logoDataUrl: null, primaryColor: DEFAULT_ACCENT_COLOR, font: "tajawal" };
 const demoBkSettings: BrandKitSettings = { enabled: false, showLogo: false, showAccountName: false, showSlideNumber: false, showDisclaimer: true, placement: "bottom-left" };
-const demoSlide: Slide = { id: "d", type: "cover", title: "أهمية شرب الماء يوميًا", body: "دليل طبي مبسّط" };
-const demoContent: Slide = { id: "d2", type: "content", title: "كم كوبًا تحتاج؟", body: "يحتاج البالغون إلى ٢-٣ لتر يوميًا" };
-const demoEnding: Slide = { id: "d3", type: "ending", title: "استشر طبيبك", body: "هذا المحتوى لا يغني عن الاستشارة الطبية", ctaText: "احفظ المنشور" };
+const demoSlide: Slide = { id: "d", type: "cover", title: "كيف تطور حضورك الرقمي؟", body: "دليل مبسّط لصناعة محتوى أفضل" };
+const demoContent: Slide = { id: "d2", type: "content", title: "ابدأ بفكرة واضحة", body: "حدد ما يريد جمهورك معرفته قبل كتابة المحتوى" };
+const demoEnding: Slide = { id: "d3", type: "ending", title: "شارك الفكرة", body: "حوّل معرفتك إلى محتوى مفيد", ctaText: "احفظ المنشور" };
 
 export default function TemplatesPage() {
   const router = useRouter();

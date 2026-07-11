@@ -17,7 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ScaledSlide } from "@/components/carousel/slide-renderer";
 import { useApp } from "@/lib/app-context";
 import { useToast } from "@/components/ui/toast";
-import { TEMPLATE_DEFS, VISIBLE_TEMPLATES, getPalette, ALL_FONTS } from "@/lib/templates";
+import { TEMPLATE_DEFS, getPalette, ALL_FONTS, templatesForMode } from "@/lib/templates";
 import { DEFAULT_ACCENT_COLOR } from "@/lib/constants";
 import {
   mapProject, useTemplateLookup, projectToUpdateInput, FONT_FE_TO_DB,
@@ -33,7 +33,7 @@ export default function EditorPage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
-  const { supabase, brandKit } = useApp();
+  const { supabase, brandKit, preferences } = useApp();
   const lookup = useTemplateLookup(supabase);
   const projectId = params.id as string;
 
@@ -369,7 +369,7 @@ export default function EditorPage() {
         </div>
       </div>
 
-      <TemplateDialog open={templateDialog} onClose={() => setTemplateDialog(false)} project={project} update={update} brandKitData={brandKitData} />
+      <TemplateDialog open={templateDialog} onClose={() => setTemplateDialog(false)} project={project} update={update} brandKitData={brandKitData} templates={templatesForMode(preferences.contentMode)} />
       <BrandDialog open={brandDialog} onClose={() => setBrandDialog(false)} project={project} update={update} />
 
       <Dialog open={zoomOpen} onClose={() => setZoomOpen(false)} className="max-w-4xl">
@@ -398,19 +398,20 @@ export default function EditorPage() {
 
 // ============= Template Dialog =============
 
-function TemplateDialog({ open, onClose, project, update, brandKitData }: {
+function TemplateDialog({ open, onClose, project, update, brandKitData, templates }: {
   open: boolean;
   onClose: () => void;
   project: Project;
   update: (u: Partial<Project>) => void;
   brandKitData: any;
+  templates: typeof TEMPLATE_DEFS;
 }) {
   const previewSlide = project.slides[0];
 
   return (
     <Dialog open={open} onClose={onClose} title="تغيير القالب" description="اختر قالبًا جديدًا. لن يتأثر المحتوى.">
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[400px] overflow-y-auto thin-scrollbar">
-        {VISIBLE_TEMPLATES.map((t) => {
+        {templates.map((t) => {
           const p = getPalette(t.id, project.settings.paletteId);
           const active = project.settings.templateId === t.id;
           return (

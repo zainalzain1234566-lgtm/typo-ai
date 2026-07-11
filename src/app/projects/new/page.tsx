@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -20,8 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScaledSlide } from "@/components/carousel/slide-renderer";
 import { useApp } from "@/lib/app-context";
 import { useToast } from "@/components/ui/toast";
-import { TEMPLATE_DEFS, getPalette, SIZES, ALL_FONTS, VISIBLE_TEMPLATES } from "@/lib/templates";
-import { FEATURE_FLAGS } from "@/lib/feature-flags";
+import { TEMPLATE_DEFS, getPalette, SIZES, ALL_FONTS, templatesForMode } from "@/lib/templates";
 import { PROGRESS_MESSAGES } from "@/lib/services/generation";
 import {
   createBlankProject, useTemplateLookup, projectToCreateInput,
@@ -30,6 +29,7 @@ import {
 import { friendlyAuthError } from "@/lib/error-messages";
 import { cn } from "@/lib/utils";
 import { DEFAULT_ACCENT_COLOR, DEFAULT_DISCLAIMER_TEXT } from "@/lib/constants";
+import { defaultTemplateForMode } from "@/lib/content-mode";
 import type { Project, Slide, ContentType, Tone, Language, ContentLevel, CarouselSize, CTAOption, FontFamily, Placement, SlideType } from "@/lib/types";
 import {
   createProjectAction, updateProjectAction, updateSlideAction,
@@ -48,14 +48,11 @@ const ALL_CONTENT_TYPES: { id: ContentType; icon: any; desc: string }[] = [
   { id: "مقارنة", icon: GitCompare, desc: "مقارنة بين خيارين" },
   { id: "شرح مفهوم", icon: Type, desc: "تبسيط مفهوم معقد" },
 ];
-const CONTENT_TYPES = FEATURE_FLAGS.medicalMode
-  ? ALL_CONTENT_TYPES.slice(0, 5)
-  : ALL_CONTENT_TYPES;
+const MEDICAL_CONTENT_TYPES = ALL_CONTENT_TYPES.slice(0, 5);
+const GENERAL_CONTENT_TYPES = ALL_CONTENT_TYPES.filter((type) => !["تفكيك الخرافات", "شرح مرض"].includes(type.id));
 const ALL_TONES: Tone[] = ["مبسطة", "احترافية", "ودية", "رسمية", "تحفيزية", "قصصية", "مباشرة", "أكاديمية"];
 const ALL_LANGUAGES: Language[] = ["العربية الفصحى", "اللهجة العراقية", "اللهجة الخليجية", "اللهجة المصرية", "الإنجليزية"];
-const LANGUAGES = FEATURE_FLAGS.medicalMode
-  ? ALL_LANGUAGES.slice(0, 3)
-  : ALL_LANGUAGES;
+const MEDICAL_LANGUAGES = ALL_LANGUAGES.slice(0, 3);
 const TONES = ALL_TONES;
 const LEVELS: ContentLevel[] = ["مبتدئ", "متوسط", "متقدم"];
 const CTAS: CTAOption[] = ["بدون CTA", "احفظ المنشور", "شارك المنشور", "تابع الحساب", "اكتب رأيك"];
@@ -87,10 +84,12 @@ export default function NewProjectWizard() {
 function WizardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { brandKit, supabase } = useApp();
+  const { brandKit, supabase, preferences } = useApp();
   const { toast } = useToast();
   const lookup = useTemplateLookup(supabase);
   const lookupReady = Object.keys(lookup).length > 0;
+  const isMedical = preferences.contentMode === "medical";
+  const modeTemplates = useMemo(() => templatesForMode(preferences.contentMode), [preferences.contentMode]);
 
   const [project, setProject] = useState<Project>(() => {
     const p = createBlankProject();
@@ -108,6 +107,21 @@ function WizardContent() {
   const [genProgress, setGenProgress] = useState(0);
   const [dbProjectId, setDbProjectId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const requestedTemplate = searchParams.get("template");
+    const templateId = requestedTemplate && modeTemplates.some((template) => template.id === requestedTemplate)
+      ? requestedTemplate
+      : defaultTemplateForMode(preferences.contentMode);
+    setProject((prev) => prev.slides.length > 0 || prev.title !== "مشروع بدون عنوان" ? prev : {
+      ...prev,
+      settings: {
+        ...prev.settings,
+        templateId,
+        brandKit: { ...prev.settings.brandKit, showDisclaimer: isMedical },
+      },
+    });
+  }, [preferences.contentMode, isMedical, modeTemplates, searchParams]);
 
   const update = (updates: Partial<typeof project>) => {
     setProject((prev) => ({ ...prev, ...updates }));
@@ -264,18 +278,18 @@ function WizardContent() {
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.2 }}
           >
-            {step === 1 && <Step1Topic project={project} update={update} updateSettings={updateSettings} />}
-            {step === 2 && <Step2Customize project={project} updateSettings={updateSettings} />}
+            {step === 1 && <Step1Topic project={project} update={update} updateSettings={updateSettings} isMedical={isMedical} contentTypes={isMedical ? MEDICAL_CONTENT_TYPES : GENERAL_CONTENT_TYPES} />}
+            {step === 2 && <Step2Customize project={project} updateSettings={updateSettings} languages={isMedical ? MEDICAL_LANGUAGES : ALL_LANGUAGES} />}
             {step === 3 && (
               <Step3Size project={project} updateSettings={updateSettings}
                 generating={generating} genMessage={genMessage} genProgress={genProgress}                 genFailed={genFailed}
                 onGenerate={handleGenerate} onRetry={handleGenerate}
-                lookupReady={lookupReady}
+                lookupReady={lookupReady} isMedical={isMedical}
               />
             )}
-            {step === 4 && <Step4Template project={project} updateSettings={updateSettings} brandKit={brandKit} />}
+            {step === 4 && <Step4Template project={project} updateSettings={updateSettings} brandKit={brandKit} templates={modeTemplates} />}
             {step === 5 && <Step5Review project={project} update={update} setProject={setProject} dbProjectId={dbProjectId} onRefresh={fetchProject} />}
-            {step === 6 && <Step6Export project={project} />}
+            {step === 6 && <Step6Export project={project} templates={modeTemplates} />}
           </motion.div>
         </AnimatePresence>
 
@@ -307,10 +321,12 @@ function WizardContent() {
 
 // ============ STEP 1: Topic ============
 
-function Step1Topic({ project, update, updateSettings }: {
+function Step1Topic({ project, update, updateSettings, isMedical, contentTypes }: {
   project: Project;
   update: (u: Partial<Project>) => void;
   updateSettings: (u: Partial<Project["settings"]>) => void;
+  isMedical: boolean;
+  contentTypes: typeof ALL_CONTENT_TYPES;
 }) {
   return (
     <div className="max-w-2xl mx-auto">
@@ -329,7 +345,7 @@ function Step1Topic({ project, update, updateSettings }: {
           />
         </div>
 
-        {FEATURE_FLAGS.medicalMode && (
+        {isMedical && (
           <div>
             <Label>التخصص الطبي</Label>
             <div className="flex flex-wrap gap-2 mt-2">
@@ -352,7 +368,7 @@ function Step1Topic({ project, update, updateSettings }: {
         <div>
           <Label>نوع المحتوى</Label>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
-            {CONTENT_TYPES.map((ct) => (
+            {contentTypes.map((ct) => (
               <button
                 key={ct.id}
                 onClick={() => updateSettings({ contentType: ct.id })}
@@ -393,9 +409,10 @@ function Step1Topic({ project, update, updateSettings }: {
 
 // ============ STEP 2: Content Customization ============
 
-function Step2Customize({ project, updateSettings }: {
+function Step2Customize({ project, updateSettings, languages }: {
   project: Project;
   updateSettings: (u: Partial<Project["settings"]>) => void;
+  languages: Language[];
 }) {
   return (
     <div className="max-w-2xl mx-auto">
@@ -454,7 +471,7 @@ function Step2Customize({ project, updateSettings }: {
         <div>
           <Label>اللغة</Label>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
-            {LANGUAGES.map((lang) => (
+            {languages.map((lang) => (
               <button
                 key={lang}
                 onClick={() => updateSettings({ language: lang })}
@@ -476,7 +493,7 @@ function Step2Customize({ project, updateSettings }: {
 
 // ============ STEP 3: Size & Slide Count + Generation ============
 
-function Step3Size({ project, updateSettings, generating, genMessage, genProgress, genFailed, onGenerate, onRetry, lookupReady }: {
+function Step3Size({ project, updateSettings, generating, genMessage, genProgress, genFailed, onGenerate, onRetry, lookupReady, isMedical }: {
   project: Project;
   updateSettings: (u: Partial<Project["settings"]>) => void;
   generating: boolean;
@@ -486,6 +503,7 @@ function Step3Size({ project, updateSettings, generating, genMessage, genProgres
   onGenerate: () => void;
   onRetry: () => void;
   lookupReady: boolean;
+  isMedical: boolean;
 }) {
   const router = useRouter();
   const sizeIcons: Record<CarouselSize, any> = {
@@ -508,7 +526,7 @@ function Step3Size({ project, updateSettings, generating, genMessage, genProgres
         <div>
           <Label>المقاس</Label>
           <div className="grid grid-cols-3 gap-4 mt-2">
-            {SIZES.filter((s) => !FEATURE_FLAGS.medicalMode || s.id === "1080x1350").map((s) => {
+            {SIZES.filter((s) => !isMedical || s.id === "1080x1350").map((s) => {
               const Icon = sizeIcons[s.id as CarouselSize] ?? Square;
               const active = project.settings.size === s.id;
               const ratioH = s.h / s.w;
@@ -601,12 +619,13 @@ function Step3Size({ project, updateSettings, generating, genMessage, genProgres
 
 // ============ STEP 4: Template & Brand ============
 
-function Step4Template({ project, updateSettings, brandKit }: {
+function Step4Template({ project, updateSettings, brandKit, templates }: {
   project: Project;
   updateSettings: (u: Partial<Project["settings"]>) => void;
   brandKit: any;
+  templates: typeof TEMPLATE_DEFS;
 }) {
-  const tmpl = VISIBLE_TEMPLATES.find((t) => t.id === project.settings.templateId) ?? VISIBLE_TEMPLATES[0];
+  const tmpl = templates.find((t) => t.id === project.settings.templateId) ?? templates[0];
   const basePal = getPalette(project.settings.templateId, project.settings.paletteId);
   const pal = brandKit.primaryColor && brandKit.primaryColor !== DEFAULT_ACCENT_COLOR ? { ...basePal, accent: brandKit.primaryColor } : basePal;
   const previewSlide = project.slides[0] ?? { id: "p", type: "cover" as SlideType, title: project.title, body: "" };
@@ -621,7 +640,7 @@ function Step4Template({ project, updateSettings, brandKit }: {
         <div className="lg:col-span-3 order-1">
           <h3 className="text-sm font-bold text-ink mb-3">القوالب</h3>
           <div className="space-y-2 max-h-[500px] overflow-y-auto thin-scrollbar pr-1">
-            {VISIBLE_TEMPLATES.map((t) => {
+            {templates.map((t) => {
               const p = getPalette(t.id, project.settings.paletteId);
               const active = project.settings.templateId === t.id;
               return (
@@ -955,7 +974,7 @@ function Step5Review({ project, update, setProject, dbProjectId, onRefresh }: {
 
 // ============ STEP 6: Export Link ============
 
-function Step6Export({ project }: { project: Project }) {
+function Step6Export({ project, templates }: { project: Project; templates: typeof TEMPLATE_DEFS }) {
   const pal = getPalette(project.settings.templateId, project.settings.paletteId);
   const coverSlide = project.slides[0];
 
@@ -987,7 +1006,7 @@ function Step6Export({ project }: { project: Project }) {
         <div className="flex justify-between"><span className="text-ink-muted">اسم المشروع</span><span className="font-medium text-ink">{project.title}</span></div>
         <div className="flex justify-between"><span className="text-ink-muted">عدد الشرائح</span><span className="font-medium text-ink">{project.slides.length}</span></div>
         <div className="flex justify-between"><span className="text-ink-muted">المقاس</span><span className="font-medium text-ink">{({ "1080x1080": "1080×1080", "1080x1350": "1080×1350", "1080x1920": "1080×1920" } as Record<string, string>)[project.settings.size]}</span></div>
-        <div className="flex justify-between"><span className="text-ink-muted">القالب</span><span className="font-medium text-ink">{VISIBLE_TEMPLATES.find((t) => t.id === project.settings.templateId)?.name}</span></div>
+        <div className="flex justify-between"><span className="text-ink-muted">القالب</span><span className="font-medium text-ink">{templates.find((t) => t.id === project.settings.templateId)?.name}</span></div>
         <div className="flex justify-between"><span className="text-ink-muted">الخط</span><span className="font-medium text-ink">{ALL_FONTS.find((f) => f.id === project.settings.font)?.name}</span></div>
       </div>
 

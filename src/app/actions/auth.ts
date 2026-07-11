@@ -12,6 +12,7 @@ export async function signUpAction(formData: FormData) {
     name: formData.get("name"),
     email: formData.get("email"),
     password: formData.get("password"),
+    content_mode: formData.get("content_mode") || "general",
   });
   if (!parsed.success) {
     logError("AUTH", "signUp validation failed", parsed.error.errors[0].message);
@@ -22,7 +23,7 @@ export async function signUpAction(formData: FormData) {
   const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
-    options: { data: { display_name: parsed.data.name } },
+    options: { data: { display_name: parsed.data.name, content_mode: parsed.data.content_mode } },
   });
 
   if (error) {

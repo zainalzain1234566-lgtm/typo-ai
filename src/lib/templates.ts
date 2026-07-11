@@ -1,5 +1,5 @@
 import type { Palette, Template, FontFamily } from "./types";
-import { FEATURE_FLAGS } from "./feature-flags";
+import type { ContentMode } from "./content-mode";
 
 export const PALETTES: Palette[] = [
   { id: "p1", name: "مكمّل", background: "#FAFAF9", text: "#1C1917", accent: "#6D5EFC", secondary: "#E8E6FE" },
@@ -153,9 +153,11 @@ export const TEMPLATE_DEFS: Template[] = [
   { id: "retro", name: "ريترو", description: "تصميم تسعينيات بخطوط قطرية وظلال صلبة", palettes: RETRO_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "retro", category: "general" },
 ];
 
-export const VISIBLE_TEMPLATES = FEATURE_FLAGS.medicalMode
-  ? TEMPLATE_DEFS.filter((t) => t.category === "medical")
-  : TEMPLATE_DEFS;
+export const VISIBLE_TEMPLATES = TEMPLATE_DEFS;
+
+export function templatesForMode(mode: ContentMode): Template[] {
+  return TEMPLATE_DEFS.filter((template) => template.category === mode);
+}
 
 export function getTemplate(id: string): Template {
   return TEMPLATE_DEFS.find((t) => t.id === id) ?? TEMPLATE_DEFS[0];

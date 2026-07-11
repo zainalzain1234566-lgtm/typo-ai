@@ -21,6 +21,7 @@ const schema = z.object({
   email: z.string().min(1, "البريد الإلكتروني مطلوب").email("بريد إلكتروني غير صحيح"),
   password: z.string().min(6, "كلمة المرور يجب أن تكون 6 أحرف على الأقل"),
   confirm: z.string().min(1, "تأكيد كلمة المرور مطلوب"),
+  contentMode: z.enum(["general", "medical"]),
   agree: z.literal(true, { errorMap: () => ({ message: "يجب الموافقة على الشروط" }) }),
 }).refine((d) => d.password === d.confirm, { message: "كلمتا المرور غير متطابقتين", path: ["confirm"] });
 type FormData = z.infer<typeof schema>;
@@ -31,11 +32,12 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { agree: false as any },
+    defaultValues: { agree: false as any, contentMode: "general" },
   });
   const pass = watch("password") ?? "";
+  const contentMode = watch("contentMode");
 
   const reqs = [
     { label: "6 أحرف على الأقل", met: pass.length >= 6 },
@@ -50,7 +52,7 @@ export default function SignupPage() {
     const { error } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
-      options: { data: { display_name: data.name } },
+      options: { data: { display_name: data.name, content_mode: data.contentMode } },
     });
     setLoading(false);
     if (error) {
@@ -77,10 +79,22 @@ export default function SignupPage() {
             )}
 
             <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
+              <input type="hidden" {...register("contentMode")} />
               <div>
                 <Label htmlFor="name">الاسم</Label>
                 <Input id="name" placeholder="اسمك الكامل" {...register("name")} />
                 {errors.name && <p className="text-xs text-red-600 mt-1">{errors.name.message}</p>}
+              </div>
+              <div>
+                <Label>مجال المحتوى</Label>
+                <div className="grid grid-cols-2 gap-2 mt-1.5">
+                  <button type="button" onClick={() => setValue("contentMode", "general")} className={`rounded-xl border-2 px-3 py-3 text-sm font-medium ${contentMode === "general" ? "border-accent bg-accent-soft text-accent" : "border-stone-200 text-ink-muted"}`}>
+                    محتوى عام
+                  </button>
+                  <button type="button" onClick={() => setValue("contentMode", "medical")} className={`rounded-xl border-2 px-3 py-3 text-sm font-medium ${contentMode === "medical" ? "border-teal-500 bg-teal-50 text-teal-700" : "border-stone-200 text-ink-muted"}`}>
+                    محتوى طبي
+                  </button>
+                </div>
               </div>
               <div>
                 <Label htmlFor="email">البريد الإلكتروني</Label>

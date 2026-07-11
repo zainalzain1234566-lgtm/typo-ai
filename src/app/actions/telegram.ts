@@ -32,6 +32,17 @@ export async function sendToTelegramAction(projectId: string, formData: FormData
     return { success: false, error: "لم يتم إعداد تلغرام. راجع الإعدادات." };
   }
 
+  const { data: project } = await supabase
+    .from("projects")
+    .select("requires_medical_review, review_status")
+    .eq("id", projectId)
+    .eq("user_id", config.userId)
+    .single();
+  if (!project) return { success: false, error: "المشروع غير موجود" };
+  if (project.requires_medical_review && project.review_status === "blocked") {
+    return { success: false, error: "المحتوى الطبي محظور حتى تتم مراجعته" };
+  }
+
   const files: File[] = [];
   for (const entry of Array.from(formData.entries())) {
     if (entry[1] instanceof File) files.push(entry[1]);

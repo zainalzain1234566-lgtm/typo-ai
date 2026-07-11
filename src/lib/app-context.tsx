@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect, useCallback, type React
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { DEFAULT_ACCENT_COLOR, DEFAULT_DISCLAIMER_TEXT } from "@/lib/constants";
+import { contentModeFromValue, type ContentMode } from "@/lib/content-mode";
 
 // ============= Types (matching frontend expectations) =============
 
@@ -41,6 +42,7 @@ export interface AppData {
     size: string;
     slideCount: number;
     preferredTemplateId: string | null;
+    contentMode: ContentMode;
   };
   telegramEnabled: boolean;
 }
@@ -58,7 +60,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [stats, setStats] = useState<Stats>({ totalProjects: 0, completedProjects: 0, exportCount: 0, favoriteTemplates: 0 });
   const [brandKit, setBrandKit] = useState<{ instagramHandle: string; logoUrl: string | null; primaryColor: string; font: string; disclaimerText: string }>({ instagramHandle: "", logoUrl: null, primaryColor: DEFAULT_ACCENT_COLOR, font: "tajawal", disclaimerText: DEFAULT_DISCLAIMER_TEXT });
-  const [preferences, setPreferences] = useState({ language: "العربية الفصحى", tone: "مبسطة", level: "مبتدئ", size: "portrait", slideCount: 6, preferredTemplateId: null });
+  const [preferences, setPreferences] = useState({ language: "العربية الفصحى", tone: "مبسطة", level: "مبتدئ", size: "portrait", slideCount: 6, preferredTemplateId: null, contentMode: "general" as ContentMode });
   const [telegramEnabled, setTelegramEnabled] = useState(false);
 
   const loadUserData = useCallback(async (userId: string) => {
@@ -116,6 +118,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         size: prefs.default_size ?? "portrait",
         slideCount: prefs.default_slide_count ?? 6,
         preferredTemplateId: prefs.preferred_template_id ?? "tahrir",
+        contentMode: contentModeFromValue(prefs.content_mode),
       });
       setTelegramEnabled(!!prefs.telegram_enabled);
     }

@@ -4,6 +4,7 @@ export const signupSchema = z.object({
   name: z.string().min(2, "الاسم يجب أن يكون حرفين على الأقل"),
   email: z.string().min(1, "البريد الإلكتروني مطلوب").email("بريد إلكتروني غير صحيح"),
   password: z.string().min(6, "كلمة المرور يجب أن تكون 6 أحرف على الأقل"),
+  content_mode: z.enum(["general", "medical"]).default("general"),
 });
 export type SignupInput = z.infer<typeof signupSchema>;
 

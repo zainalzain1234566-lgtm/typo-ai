@@ -5,7 +5,6 @@ import { revalidatePath } from "next/cache";
 import { createProjectSchema, updateProjectSchema, SIZE_MAP } from "@/lib/validation/projects";
 import { getGenerationProvider, type GenerationInput, reviewMedicalContent } from "@/lib/services/generation";
 import { reorderSlidesSchema, updateSlideSchema } from "@/lib/validation/slides";
-import type { Database } from "@/types/database";
 import { log, logError } from "@/lib/logger";
 import { AI_DEFAULT_BASE_URL, AI_DEFAULT_MODEL } from "@/lib/constants";
 
@@ -26,15 +25,21 @@ export async function createProjectAction(input: Record<string, unknown>) {
   }
 
   const dims = SIZE_MAP[parsed.data.size as keyof typeof SIZE_MAP];
+  const { data: preferences } = await supabase
+    .from("user_preferences")
+    .select("content_mode")
+    .eq("user_id", user.id)
+    .single();
+  const isMedical = preferences?.content_mode === "medical";
 
   // Validate template exists
   const { data: template } = await supabase
     .from("templates")
-    .select("id")
+    .select("id, category")
     .eq("id", parsed.data.template_id)
     .eq("is_active", true)
     .single();
-  if (!template) {
+  if (!template || template.category !== (isMedical ? "medical" : "general")) {
     logError("PROJECT", "template not found", parsed.data.template_id);
     return { success: false, error: "القالب غير موجود" };
   }
@@ -76,11 +81,12 @@ export async function createProjectAction(input: Record<string, unknown>) {
       show_logo: parsed.data.show_logo,
       show_account_name: parsed.data.show_account_name,
       show_slide_number: parsed.data.show_slide_number,
-      show_disclaimer: parsed.data.show_disclaimer,
+      show_disclaimer: isMedical && parsed.data.show_disclaimer,
       logo_position: parsed.data.logo_position,
       account_name_position: parsed.data.account_name_position,
-      specialty_slug: parsed.data.specialty_slug ?? null,
-      requires_medical_review: parsed.data.requires_medical_review,
+      specialty_slug: isMedical ? parsed.data.specialty_slug ?? null : null,
+      requires_medical_review: isMedical,
+      review_status: isMedical ? "pending" : null,
       status: "in_progress",
     })
     .select()
@@ -128,6 +134,7 @@ export async function createProjectAction(input: Record<string, unknown>) {
       language: parsed.data.language,
       slideCount: parsed.data.slide_count,
       ctaType: parsed.data.cta_type,
+      isMedical,
     };
 
     const generated = await provider.generate(genInput);
@@ -151,13 +158,11 @@ export async function createProjectAction(input: Record<string, unknown>) {
     log("PROJECT", "slides inserted", { count: slideRows.length });
 
     // ============ Medical accuracy pass ============
-    let reviewVerdict = "pending";
-    try {
+    if (isMedical) try {
       const apiKey = process.env.AI_API_KEY!;
       const baseUrl = process.env.AI_BASE_URL || AI_DEFAULT_BASE_URL;
       const model = process.env.AI_MODEL || AI_DEFAULT_MODEL;
       const review = await reviewMedicalContent(generated.slides, apiKey, baseUrl, model);
-      reviewVerdict = review.verdict;
       log("PROJECT", "medical review", { verdict: review.verdict, flags: review.flags.length });
 
       await supabase.from("medical_review_results").insert({
@@ -215,7 +220,7 @@ export async function updateProjectAction(input: Record<string, unknown>) {
   const parsed = updateProjectSchema.safeParse(input);
   if (!parsed.success) return { success: false, error: parsed.error.errors[0].message };
 
-  const { id, ...updates } = parsed.data;
+  const { id, review_status: _reviewStatus, ...updates } = parsed.data;
   const { error } = await supabase.from("projects").update(updates).eq("id", id).eq("user_id", user.id);
   if (error) return { success: false, error: "تعذر حفظ المشروع" };
   return { success: true };
@@ -356,7 +361,7 @@ export async function addSlideAction(projectId: string, afterPosition: number, t
   // Check project ownership and slide count
   const { data: project } = await supabase
     .from("projects")
-    .select("slide_count, topic, content_type, language, tone, content_level, target_audience, cta_type")
+    .select("slide_count, topic, content_type, language, tone, content_level, target_audience, cta_type, requires_medical_review")
     .eq("id", projectId)
     .eq("user_id", user.id)
     .single();
@@ -376,6 +381,7 @@ export async function addSlideAction(projectId: string, afterPosition: number, t
       language: project.language,
       slideCount: 3,
       ctaType: project.cta_type,
+      isMedical: project.requires_medical_review,
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -563,6 +569,17 @@ export async function recordExportAction(projectId: string, exportType: "single_
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "غير مصرح" };
+
+  const { data: project } = await supabase
+    .from("projects")
+    .select("requires_medical_review, review_status")
+    .eq("id", projectId)
+    .eq("user_id", user.id)
+    .single();
+  if (!project) return { success: false, error: "المشروع غير موجود" };
+  if (project.requires_medical_review && project.review_status === "blocked") {
+    return { success: false, error: "المحتوى الطبي محظور حتى تتم مراجعته" };
+  }
 
   // Create export record
   const { error: recordError } = await supabase.from("export_records").insert({

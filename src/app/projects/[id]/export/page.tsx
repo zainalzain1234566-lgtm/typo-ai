@@ -84,8 +84,13 @@ export default function ExportPage() {
   const brandKitData = { instagramHandle: brandKit.instagramHandle, logoDataUrl: brandKit.logoUrl, primaryColor: brandKit.primaryColor, font: project.settings.font, disclaimerText: brandKit.disclaimerText };
   const tmpl = TEMPLATE_DEFS.find((t) => t.id === project.settings.templateId);
   const sizeLabel = { "1080x1080": "1080×1080", "1080x1350": "1080×1350", "1080x1920": "1080×1920" }[project.settings.size];
+  const exportBlocked = project.reviewStatus === "blocked";
 
   const handleExportOne = async (idx: number) => {
+    if (exportBlocked) {
+      toast({ type: "error", title: "المحتوى الطبي يحتاج مراجعة قبل التصدير" });
+      return;
+    }
     if (!exportRefs.current[idx]) return;
     setExportingIdx(idx);
     try {
@@ -99,6 +104,10 @@ export default function ExportPage() {
   };
 
   const handleExportAll = async () => {
+    if (exportBlocked) {
+      toast({ type: "error", title: "المحتوى الطبي يحتاج مراجعة قبل التصدير" });
+      return;
+    }
     const validRefs = exportRefs.current.filter((r): r is HTMLDivElement => !!r);
     if (validRefs.length === 0) return;
     setExporting(true);
@@ -114,6 +123,10 @@ export default function ExportPage() {
   };
 
   const handleSendTelegram = async () => {
+    if (exportBlocked) {
+      toast({ type: "error", title: "المحتوى الطبي يحتاج مراجعة قبل الإرسال" });
+      return;
+    }
     const validRefs = exportRefs.current.filter((r): r is HTMLDivElement => !!r);
     if (validRefs.length === 0) return;
     setSendingTg(true);
@@ -238,6 +251,12 @@ export default function ExportPage() {
           </div>
         </div>
 
+        {exportBlocked && (
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-4 mb-6 text-sm text-red-700">
+            هذا المحتوى الطبي محظور من التصدير حتى تتم مراجعته وتعديله.
+          </div>
+        )}
+
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 mb-8">
           {project.slides.map((slide, i) => (
             <div key={slide.id} className="rounded-2xl border border-stone-200 bg-white p-3 shadow-soft">
@@ -261,7 +280,7 @@ export default function ExportPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => handleExportOne(i)}
-                  disabled={exportingIdx === i || !fontsReady}
+                  disabled={exportBlocked || exportingIdx === i || !fontsReady}
                 >
                   {exportingIdx === i ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                   تنزيل PNG
@@ -307,11 +326,11 @@ export default function ExportPage() {
         </div>
 
         <div className="flex flex-wrap gap-3">
-          <Button size="lg" onClick={handleExportAll} disabled={exporting || !fontsReady}>
+          <Button size="lg" onClick={handleExportAll} disabled={exportBlocked || exporting || !fontsReady}>
             {exporting ? <><Loader2 className="w-5 h-5 animate-spin" /> جارٍ التصدير...</> : <><Package className="w-5 h-5" /> تنزيل جميع الشرائح ZIP</>}
           </Button>
           {telegramEnabled && (
-            <Button size="lg" variant="outline" onClick={handleSendTelegram} disabled={sendingTg || !fontsReady}>
+            <Button size="lg" variant="outline" onClick={handleSendTelegram} disabled={exportBlocked || sendingTg || !fontsReady}>
               {sendingTg ? <><Loader2 className="w-5 h-5 animate-spin" /> جارٍ الإرسال...</> : <><Send className="w-5 h-5" /> إرسال إلى تلغرام</>}
             </Button>
           )}

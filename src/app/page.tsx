@@ -11,19 +11,19 @@ import { ScaledSlide } from "@/components/carousel/slide-renderer";
 import { VISIBLE_TEMPLATES, getPalette } from "@/lib/templates";
 import type { Slide, BrandKit, BrandKitSettings } from "@/lib/types";
 
-const demoSlide: Slide = { id: "d1", type: "cover", title: "أهمية شرب الماء يوميًا", body: "دليل طبي مبسّط" };
+const demoSlide: Slide = { id: "d1", type: "cover", title: "كيف تبني حضورك الرقمي؟", body: "دليل مبسّط لصناعة محتوى مؤثر" };
 const demoSlides: Slide[] = [
-  { id: "d1", type: "cover", title: "أهمية شرب الماء يوميًا", body: "دليل طبي مبسّط" },
-  { id: "d2", type: "content", title: "كم كوبًا تحتاج؟", body: "يحتاج البالغون إلى ٢-٣ لتر يوميًا" },
-  { id: "d3", type: "content", title: "علامات الجفاف", body: "صداع، تعب، بول داكن — راجع طبيبك" },
+  { id: "d1", type: "cover", title: "كيف تبني حضورك الرقمي؟", body: "دليل مبسّط لصناعة محتوى مؤثر" },
+  { id: "d2", type: "content", title: "ابدأ بفكرة واضحة", body: "حدد ما يحتاجه جمهورك قبل كتابة المحتوى" },
+  { id: "d3", type: "content", title: "نظّم رسالتك", body: "حوّل الفكرة إلى نقاط سهلة القراءة والمشاركة" },
 ];
 const demoBrandKit: BrandKit = { instagramHandle: "@dr.health", logoDataUrl: null, primaryColor: "#0D9488", font: "tajawal" };
 const demoBkSettings: BrandKitSettings = { enabled: false, showLogo: false, showAccountName: false, showSlideNumber: false, showDisclaimer: true, placement: "bottom-left" };
 
 const features = [
-  { icon: ShieldCheck, title: "مراجعة طبية تلقائية", desc: "فحص المحتوى طبيًا قبل النشر — يكتشف الادعاءات الخطرة والجرعات الخاطئة" },
-  { icon: Stethoscope, title: "صُنع بواسطة طبيب", desc: "أداة بناها طبيب لضمان الدقة والمصداقية الطبية" },
-  { icon: AlertCircle, title: "تنبيه استشارة الطبيب", desc: "إضافة تلقائية لتنبيه طبي على كل كاروسيل" },
+  { icon: ShieldCheck, title: "محتوى منظم", desc: "حوّل فكرتك إلى تسلسل واضح من الشرائح الجاهزة للنشر" },
+  { icon: Stethoscope, title: "مناسب لمجالك", desc: "اختر تجربة محتوى عام أو طبي عند إنشاء حسابك" },
+  { icon: AlertCircle, title: "تحكم كامل", desc: "عدّل النص والتصميم والخطوط قبل تنزيل مشروعك" },
   { icon: Wand2, title: "كتابة بالذكاء الاصطناعي", desc: "حوّل موضوعك الصحي إلى شرائح مكتوبة تلقائيًا" },
   { icon: Layout, title: "قوالب احترافية", desc: "قوالب طبية نظيفة بألوان وخطوط عربية" },
   { icon: Download, title: "تصدير PNG وZIP", desc: "نزّل شريحة واحدة أو الكل دفعة واحدة" },
@@ -32,9 +32,9 @@ const features = [
 ];
 
 const steps = [
-  { icon: FileText, title: "اكتب الموضوع الصحي", desc: "مثال: أسباب الصداع النصفي" },
+  { icon: FileText, title: "اكتب موضوعك", desc: "مثال: كيف تبدأ مشروعًا صغيرًا؟" },
   { icon: Sparkles, title: "خصّص المحتوى", desc: "اختر التخصص، اللهجة، والأسلوب" },
-  { icon: ShieldCheck, title: "مراجعة طبية", desc: "فحص تلقائي لدقة المعلومات" },
+  { icon: ShieldCheck, title: "راجع المحتوى", desc: "عدّل النصوص والتصميم قبل النشر" },
   { icon: Download, title: "نزّل التصميم", desc: "صدّر كصور PNG جاهزة للنشر" },
 ];
 
@@ -84,10 +84,10 @@ function Hero() {
               <span className="text-sm font-medium text-teal-700">أداة طبية الصنع — بواسطة طبيب</span>
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-ink leading-tight text-balance">
-              حوّل أي موضوع صحي إلى كاروسيل دقيق وجاهز للنشر
+              حوّل أي فكرة إلى كاروسيل احترافي وجاهز للنشر
             </h1>
             <p className="mt-5 text-lg text-ink-muted leading-relaxed max-w-md">
-              اكتب موضوعك الطبي، حدّد التخصص واللهجة، ويتولى Typo AI كتابة الشرائح وفحصها طبيًا وتجهيزها للتنزيل — بتنبيه استشارة الطبيب مدمج.
+              اكتب موضوعك، حدّد الجمهور والأسلوب واللهجة، ويتولى Typo AI كتابة الشرائح وتجهيزها للتنزيل.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link href="/signup">
@@ -99,7 +99,7 @@ function Hero() {
             </div>
             <p className="mt-4 text-sm text-ink-subtle flex items-center gap-2">
               <Check className="w-4 h-4 text-green-600" />
-              مراجعة طبية تلقائية على كل محتوى
+              شرائح جاهزة للتعديل والتنزيل
             </p>
           </motion.div>
 
@@ -112,7 +112,7 @@ function Hero() {
             <div className="relative rounded-2xl border border-stone-200 bg-white p-5 shadow-lift">
               <div className="mb-3">
                 <div className="rounded-xl border border-stone-200 px-3 py-2.5 text-sm text-ink-muted bg-stone-50">
-                  مثال: أسباب الصداع النصفي وعلاجه
+                  مثال: كيف تبني علامة تجارية قوية؟
                 </div>
                 <div className="mt-2 flex gap-2">
                   <Link href="/signup" className="flex-1">
@@ -157,15 +157,15 @@ function TrustMark() {
         <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10 text-center">
           <div className="flex items-center gap-2">
             <Stethoscope className="w-5 h-5 text-teal-600" />
-            <span className="text-sm font-medium text-ink-muted">صُنع بواسطة طبيب</span>
+            <span className="text-sm font-medium text-ink-muted">مناسب للمحتوى العام والطبي</span>
           </div>
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-5 h-5 text-teal-600" />
-            <span className="text-sm font-medium text-ink-muted">مراجعة طبية تلقائية</span>
+            <span className="text-sm font-medium text-ink-muted">كتابة بالذكاء الاصطناعي</span>
           </div>
           <div className="flex items-center gap-2">
             <AlertCircle className="w-5 h-5 text-teal-600" />
-            <span className="text-sm font-medium text-ink-muted">تنبيه استشارة الطبيب</span>
+            <span className="text-sm font-medium text-ink-muted">تعديل وتصدير بسهولة</span>
           </div>
           <div className="flex items-center gap-2">
             <Globe className="w-5 h-5 text-teal-600" />
@@ -222,24 +222,24 @@ function MedicalReview() {
             <ShieldCheck className="w-4 h-4 text-teal-600" />
             <span className="text-sm font-medium text-teal-700">الميزة التي لا يملكها المنافسون</span>
           </div>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-ink">مراجعة طبية تلقائية</h2>
-          <p className="mt-3 text-ink-muted">فحص كل محتوى طبيًا قبل النشر — لا يقدمها Canva أو Silsila</p>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-ink">من الفكرة إلى التصميم</h2>
+          <p className="mt-3 text-ink-muted">كل ما تحتاجه لكتابة وتنظيم وتصدير كاروسيل احترافي</p>
         </div>
         <div className="grid md:grid-cols-3 gap-6">
           <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-soft">
             <AlertCircle className="w-8 h-8 text-red-500 mb-3" />
-            <h3 className="font-bold text-ink mb-2">رصد الادعاءات الخطرة</h3>
-            <p className="text-sm text-ink-muted">يكشف الادعاءات التشخيصية، الجرعات الخاطئة، وادعاءات الشفاء المطلقة.</p>
+            <h3 className="font-bold text-ink mb-2">فكرة واضحة</h3>
+            <p className="text-sm text-ink-muted">ابدأ بموضوعك وحدد جمهورك والأسلوب المناسب لرسالتك.</p>
           </div>
           <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-soft">
             <Quote className="w-8 h-8 text-amber-500 mb-3" />
-            <h3 className="font-bold text-ink mb-2">تخفيف اللغة المطلقة</h3>
-            <p className="text-sm text-ink-muted">يحوّل «يعالج» إلى «قد يساعد»، و«يجب» إلى «يُنصح بـ» — لغة طبية مسؤولة.</p>
+            <h3 className="font-bold text-ink mb-2">محتوى متسلسل</h3>
+            <p className="text-sm text-ink-muted">يحوله Typo AI إلى شرائح مترابطة ووصف وهاشتاغات جاهزة.</p>
           </div>
           <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-soft">
             <ShieldCheck className="w-8 h-8 text-green-500 mb-3" />
-            <h3 className="font-bold text-ink mb-2">حكم واضح</h3>
-            <p className="text-sm text-ink-muted">يعيد نتيجة: مقبول / يحتاج مراجعة / ممنوع — مع أسباب مفصلة.</p>
+            <h3 className="font-bold text-ink mb-2">تصميم قابل للتعديل</h3>
+            <p className="text-sm text-ink-muted">اختر القالب والألوان والخط ثم نزّل الصور عندما تصبح جاهزة.</p>
           </div>
         </div>
       </div>
@@ -252,7 +252,7 @@ function TemplatePreviews() {
     <section className="py-14 md:py-20 border-t border-stone-100">
       <div className="mx-auto max-w-6xl px-4">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-ink">قوالب طبية احترافية</h2>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-ink">قوالب احترافية</h2>
           <p className="mt-3 text-ink-muted">قوالب نظيفة ومناسبة للمحتوى الصحي</p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

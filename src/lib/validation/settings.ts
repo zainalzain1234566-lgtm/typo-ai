@@ -22,6 +22,7 @@ export const updatePreferencesSchema = z.object({
   default_size: z.enum(["square", "portrait", "story"]).optional(),
   default_slide_count: z.number().int().min(2).max(10).optional(),
   preferred_template_id: z.string().uuid().nullable().optional(),
+  content_mode: z.enum(["general", "medical"]).optional(),
   telegram_bot_token: z.string().nullable().optional(),
   telegram_chat_id: z.string().nullable().optional(),
   telegram_enabled: z.boolean().optional(),

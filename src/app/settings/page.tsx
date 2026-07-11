@@ -17,9 +17,8 @@ import { Dialog } from "@/components/ui/dialog";
 import { ScaledSlide } from "@/components/carousel/slide-renderer";
 import { useApp } from "@/lib/app-context";
 import { useToast } from "@/components/ui/toast";
-import { TEMPLATE_DEFS, getPalette, ALL_FONTS, SIZES, VISIBLE_TEMPLATES } from "@/lib/templates";
+import { TEMPLATE_DEFS, getPalette, ALL_FONTS, SIZES, templatesForMode } from "@/lib/templates";
 import { FONT_FE_TO_DB, SIZE_FE_TO_DB } from "@/lib/db-mappers";
-import { FEATURE_FLAGS } from "@/lib/feature-flags";
 import { cn } from "@/lib/utils";
 import type { FontFamily, Tone, Language, ContentLevel, CarouselSize, Slide, BrandKitSettings } from "@/lib/types";
 import {
@@ -28,6 +27,7 @@ import {
 import { testTelegramAction, testSavedTelegramAction, getTelegramStatusAction } from "@/app/actions/telegram";
 import { createClient } from "@/lib/supabase/client";
 import { DEFAULT_ACCENT_COLOR, DEFAULT_DISCLAIMER_TEXT } from "@/lib/constants";
+import { contentModeFromValue, type ContentMode } from "@/lib/content-mode";
 
 const SECTIONS = [
   { id: "account", label: "الحساب", icon: UserIcon },
@@ -41,7 +41,7 @@ const SECTIONS = [
 const ALL_TONES: Tone[] = ["مبسطة", "احترافية", "ودية", "رسمية", "تحفيزية", "قصصية", "مباشرة", "أكاديمية"];
 const ALL_LANGUAGES: Language[] = ["العربية الفصحى", "اللهجة العراقية", "اللهجة الخليجية", "اللهجة المصرية", "الإنجليزية"];
 const TONES = ALL_TONES;
-const LANGUAGES = FEATURE_FLAGS.medicalMode ? ALL_LANGUAGES.slice(0, 3) : ALL_LANGUAGES;
+const LANGUAGES = ALL_LANGUAGES;
 const LEVELS: ContentLevel[] = ["مبتدئ", "متوسط", "متقدم"];
 
 const demoSlide: Slide = { id: "s", type: "cover", title: "معاينة الهوية", body: "نص تجريبي للمعاينة" };
@@ -76,6 +76,7 @@ export default function SettingsPage() {
   const [defSize, setDefSize] = useState<CarouselSize>("1080x1350");
   const [defSlideCount, setDefSlideCount] = useState(6);
   const [defTemplate, setDefTemplate] = useState("tahrir");
+  const [contentMode, setContentMode] = useState<ContentMode>("general");
 
   const [tgToken, setTgToken] = useState("");
   const [tgChatId, setTgChatId] = useState("");
@@ -101,6 +102,7 @@ export default function SettingsPage() {
       const sizeMap: Record<string, CarouselSize> = { square: "1080x1080", portrait: "1080x1350", story: "1080x1920" };
       setDefSize(sizeMap[preferences.size] ?? "1080x1350");
       setDefSlideCount(preferences.slideCount);
+      setContentMode(contentModeFromValue(preferences.contentMode));
     }
   }, [preferences]);
 
@@ -198,8 +200,9 @@ export default function SettingsPage() {
       default_level: defLevel,
       default_size: SIZE_FE_TO_DB[defSize],
       default_slide_count: defSlideCount,
+      content_mode: contentMode,
     });
-    if (result.success) toast({ type: "success", title: "تم حفظ الإعدادات الافتراضية" });
+    if (result.success) { await refresh(); toast({ type: "success", title: "تم حفظ الإعدادات الافتراضية" }); }
     else toast({ type: "error", title: result.error ?? "تعذر الحفظ" });
   };
 
@@ -240,6 +243,7 @@ export default function SettingsPage() {
   };
 
   const previewPal = { id: "p1", name: "preview", background: "#FAFAF9", text: "#1C1917", accent: primaryColor, secondary: "#E8E6FE" };
+  const modeTemplates = templatesForMode(contentMode);
 
   return (
     <div className="min-h-screen bg-[#faf9f7]">
@@ -404,6 +408,13 @@ export default function SettingsPage() {
                   <div className="space-y-4">
                     <div className="grid md:grid-cols-2 gap-4">
                       <div>
+                        <Label>مجال المحتوى</Label>
+                        <select value={contentMode} onChange={(e) => setContentMode(e.target.value as ContentMode)} className="w-full h-11 rounded-xl border border-stone-200 bg-white px-3 text-sm text-ink cursor-pointer">
+                          <option value="general">محتوى عام</option>
+                          <option value="medical">محتوى طبي</option>
+                        </select>
+                      </div>
+                      <div>
                         <Label>اللغة</Label>
                         <select value={defLang} onChange={(e) => setDefLang(e.target.value as Language)} className="w-full h-11 rounded-xl border border-stone-200 bg-white px-3 text-sm text-ink cursor-pointer">
                           {LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
@@ -424,7 +435,7 @@ export default function SettingsPage() {
                       <div>
                         <Label>المقاس</Label>
                         <select value={defSize} onChange={(e) => setDefSize(e.target.value as CarouselSize)} className="w-full h-11 rounded-xl border border-stone-200 bg-white px-3 text-sm text-ink cursor-pointer">
-                          {SIZES.filter((s) => !FEATURE_FLAGS.medicalMode || s.id === "1080x1350").map((s) => <option key={s.id} value={s.id}>{s.label} ({s.ratio})</option>)}
+                          {SIZES.filter((s) => contentMode !== "medical" || s.id === "1080x1350").map((s) => <option key={s.id} value={s.id}>{s.label} ({s.ratio})</option>)}
                         </select>
                       </div>
                       <div>
@@ -438,7 +449,7 @@ export default function SettingsPage() {
                       <div>
                         <Label>القالب المفضل</Label>
                         <select value={defTemplate} onChange={(e) => setDefTemplate(e.target.value)} className="w-full h-11 rounded-xl border border-stone-200 bg-white px-3 text-sm text-ink cursor-pointer">
-                          {VISIBLE_TEMPLATES.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                          {modeTemplates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
                         </select>
                       </div>
                     </div>
