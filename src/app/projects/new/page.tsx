@@ -287,9 +287,9 @@ function WizardContent() {
                 lookupReady={lookupReady} isMedical={isMedical}
               />
             )}
-            {step === 4 && <Step4Template project={project} updateSettings={updateSettings} brandKit={brandKit} templates={modeTemplates} />}
+            {step === 4 && <Step4Template project={project} updateSettings={updateSettings} brandKit={brandKit} templates={modeTemplates} isMedical={isMedical} />}
             {step === 5 && <Step5Review project={project} update={update} setProject={setProject} dbProjectId={dbProjectId} onRefresh={fetchProject} />}
-            {step === 6 && <Step6Export project={project} templates={modeTemplates} />}
+            {step === 6 && <Step6Export project={project} templates={modeTemplates} isMedical={isMedical} />}
           </motion.div>
         </AnimatePresence>
 
@@ -619,11 +619,12 @@ function Step3Size({ project, updateSettings, generating, genMessage, genProgres
 
 // ============ STEP 4: Template & Brand ============
 
-function Step4Template({ project, updateSettings, brandKit, templates }: {
+function Step4Template({ project, updateSettings, brandKit, templates, isMedical }: {
   project: Project;
   updateSettings: (u: Partial<Project["settings"]>) => void;
   brandKit: any;
   templates: typeof TEMPLATE_DEFS;
+  isMedical: boolean;
 }) {
   const tmpl = templates.find((t) => t.id === project.settings.templateId) ?? templates[0];
   const basePal = getPalette(project.settings.templateId, project.settings.paletteId);
@@ -662,7 +663,7 @@ function Step4Template({ project, updateSettings, brandKit, templates }: {
                       size="1080x1080"
                       brandKitSettings={project.settings.brandKit}
                       brandKitData={brandKitData}
-                      medical={{ specialty: project.settings.specialty, source: project.settings.source }}
+                      medical={{ isMedical, specialty: project.settings.specialty, source: project.settings.source }}
                       index={0}
                       total={project.slides.length || 1}
                       fontSizeScale={project.settings.fontSizeScale}
@@ -687,7 +688,7 @@ function Step4Template({ project, updateSettings, brandKit, templates }: {
             size={project.settings.size}
             brandKitSettings={project.settings.brandKit}
             brandKitData={brandKitData}
-            medical={{ specialty: project.settings.specialty, source: project.settings.source }}
+            medical={{ isMedical, specialty: project.settings.specialty, source: project.settings.source }}
             index={0}
             total={project.slides.length || 1}
             fontSizeScale={project.settings.fontSizeScale}
@@ -974,7 +975,7 @@ function Step5Review({ project, update, setProject, dbProjectId, onRefresh }: {
 
 // ============ STEP 6: Export Link ============
 
-function Step6Export({ project, templates }: { project: Project; templates: typeof TEMPLATE_DEFS }) {
+function Step6Export({ project, templates, isMedical }: { project: Project; templates: typeof TEMPLATE_DEFS; isMedical: boolean }) {
   const pal = getPalette(project.settings.templateId, project.settings.paletteId);
   const coverSlide = project.slides[0];
 
@@ -994,7 +995,7 @@ function Step6Export({ project, templates }: { project: Project; templates: type
             size={project.settings.size}
             brandKitSettings={project.settings.brandKit}
             brandKitData={{ instagramHandle: "@typo.ai", logoDataUrl: null, primaryColor: DEFAULT_ACCENT_COLOR, font: project.settings.font, disclaimerText: DEFAULT_DISCLAIMER_TEXT }}
-            medical={{ specialty: project.settings.specialty, source: project.settings.source }}
+            medical={{ isMedical, specialty: project.settings.specialty, source: project.settings.source }}
             index={0}
             total={project.slides.length}
             fontSizeScale={project.settings.fontSizeScale}

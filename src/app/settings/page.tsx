@@ -395,6 +395,7 @@ export default function SettingsPage() {
                         size="1080x1080"
                         brandKitSettings={demoBkSettings}
                         brandKitData={{ instagramHandle: igHandle, logoDataUrl: logoUrl, primaryColor, font: brandFont, disclaimerText }}
+                        medical={{ isMedical: contentMode === "medical" }}
                         index={0}
                         total={1}
                       />

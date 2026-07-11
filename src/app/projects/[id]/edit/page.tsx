@@ -204,7 +204,7 @@ export default function EditorPage() {
                 size={project.settings.size}
                 brandKitSettings={project.settings.brandKit}
                 brandKitData={brandKitData}
-                medical={{ specialty: project.settings.specialty, source: project.settings.source }}
+                medical={{ isMedical: project.isMedical, specialty: project.settings.specialty, source: project.settings.source }}
                 fontSizeScale={project.settings.fontSizeScale}
                 index={i}
                 total={project.slides.length}
@@ -239,7 +239,7 @@ export default function EditorPage() {
                         size={project.settings.size}
                         brandKitSettings={project.settings.brandKit}
                         brandKitData={brandKitData}
-                        medical={{ specialty: project.settings.specialty, source: project.settings.source }}
+                        medical={{ isMedical: project.isMedical, specialty: project.settings.specialty, source: project.settings.source }}
                         index={i}
                         total={project.slides.length}
                       />
@@ -286,7 +286,7 @@ export default function EditorPage() {
                       size={project.settings.size}
                       brandKitSettings={project.settings.brandKit}
                       brandKitData={brandKitData}
-                      medical={{ specialty: project.settings.specialty, source: project.settings.source }}
+                      medical={{ isMedical: project.isMedical, specialty: project.settings.specialty, source: project.settings.source }}
                       index={currentSlideIdx}
                       total={project.slides.length}
                       fontSizeScale={project.settings.fontSizeScale}
@@ -384,7 +384,7 @@ export default function EditorPage() {
               size={project.settings.size}
               brandKitSettings={project.settings.brandKit}
               brandKitData={brandKitData}
-              medical={{ specialty: project.settings.specialty, source: project.settings.source }}
+              medical={{ isMedical: project.isMedical, specialty: project.settings.specialty, source: project.settings.source }}
               index={currentSlideIdx}
               total={project.slides.length}
               fontSizeScale={project.settings.fontSizeScale}
@@ -430,7 +430,7 @@ function TemplateDialog({ open, onClose, project, update, brandKitData, template
                   size="1080x1080"
                   brandKitSettings={project.settings.brandKit}
                   brandKitData={brandKitData}
-                  medical={{ specialty: project.settings.specialty, source: project.settings.source }}
+                  medical={{ isMedical: project.isMedical, specialty: project.settings.specialty, source: project.settings.source }}
                   index={0}
                   total={project.slides.length}
                   fontSizeScale={project.settings.fontSizeScale}

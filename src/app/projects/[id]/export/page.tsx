@@ -177,12 +177,12 @@ export default function ExportPage() {
               size={project.settings.size}
               brandKitSettings={project.settings.brandKit}
               brandKitData={brandKitData}
-              medical={{ specialty: project.settings.specialty, source: project.settings.source }}
+              medical={{ isMedical: project.isMedical, specialty: project.settings.specialty, source: project.settings.source }}
               index={i}
               total={project.slides.length}
               fontSizeScale={project.settings.fontSizeScale}
             />
-            {project.settings.brandKit.showDisclaimer && (
+            {project.isMedical && project.settings.brandKit.showDisclaimer && (
               <DisclaimerFooter
                 variant="overlay"
                 text={brandKitData.disclaimerText || ""}
@@ -269,7 +269,7 @@ export default function ExportPage() {
                 size={project.settings.size}
                 brandKitSettings={project.settings.brandKit}
                 brandKitData={brandKitData}
-                medical={{ specialty: project.settings.specialty, source: project.settings.source }}
+                medical={{ isMedical: project.isMedical, specialty: project.settings.specialty, source: project.settings.source }}
                 index={i}
                 total={project.slides.length}
                 fontSizeScale={project.settings.fontSizeScale}

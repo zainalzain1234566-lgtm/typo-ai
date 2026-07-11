@@ -9,3 +9,7 @@ export function contentModeFromValue(value: unknown): ContentMode {
 export function defaultTemplateForMode(mode: ContentMode): string {
   return mode === "medical" ? "tahrir" : "shabaka";
 }
+
+export function shouldShowMedicalDisclaimer(isMedical: boolean, showDisclaimer: boolean): boolean {
+  return isMedical && showDisclaimer;
+}

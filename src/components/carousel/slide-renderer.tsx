@@ -3,6 +3,7 @@
 import { forwardRef, useRef, useState, useEffect, type ForwardRefExoticComponent, type RefAttributes } from "react";
 import type { Slide, Palette, FontFamily, BrandKitSettings, CarouselSize, Placement, BrandKit as BrandKitData, SlideType, MedicalProps } from "@/lib/types";
 import { SIZES, ALL_FONTS } from "@/lib/templates";
+import { shouldShowMedicalDisclaimer } from "@/lib/content-mode";
 
 interface SlideRenderProps {
   slide: Slide;
@@ -119,7 +120,7 @@ export function ScaledSlide({ width = 400, ...slideProps }: SlideRenderProps & {
         className="absolute top-0 right-0"
       >
         <SlideRenderer {...slideProps} />
-        {slideProps.brandKitSettings.showDisclaimer && (
+        {shouldShowMedicalDisclaimer(!!slideProps.medical?.isMedical, slideProps.brandKitSettings.showDisclaimer) && (
           <DisclaimerFooter
             variant="overlay"
             text={slideProps.brandKitData.disclaimerText || ""}
@@ -1804,7 +1805,7 @@ const ClinicalClean = forwardRef<HTMLDivElement, SlideRenderProps>(function Clin
               )}
             </div>
           )}
-          {brandKitSettings.showDisclaimer && !isCover && (
+          {shouldShowMedicalDisclaimer(!!medical?.isMedical, brandKitSettings.showDisclaimer) && !isCover && (
             <DisclaimerFooter variant="inline" text={brandKitData.disclaimerText || ""} palette={palette} font={font} fontSizeScale={fontSizeScale} />
           )}
         </div>
@@ -1937,7 +1938,7 @@ const NumberedSteps = forwardRef<HTMLDivElement, SlideRenderProps>(function Numb
               )}
             </div>
           )}
-          {brandKitSettings.showDisclaimer && !isCover && (
+          {shouldShowMedicalDisclaimer(!!medical?.isMedical, brandKitSettings.showDisclaimer) && !isCover && (
             <DisclaimerFooter variant="inline" text={brandKitData.disclaimerText || ""} palette={palette} font={font} fontSizeScale={fontSizeScale} />
           )}
         </div>
@@ -2112,7 +2113,7 @@ const MythFact = forwardRef<HTMLDivElement, SlideRenderProps>(function MythFact(
               )}
             </div>
           )}
-          {brandKitSettings.showDisclaimer && !isCover && (
+          {shouldShowMedicalDisclaimer(!!medical?.isMedical, brandKitSettings.showDisclaimer) && !isCover && (
             <DisclaimerFooter variant="inline" text={brandKitData.disclaimerText || ""} palette={palette} font={font} fontSizeScale={fontSizeScale} />
           )}
         </div>
@@ -2241,7 +2242,7 @@ const EditorialHealth = forwardRef<HTMLDivElement, SlideRenderProps>(function Ed
               )}
             </div>
           )}
-          {brandKitSettings.showDisclaimer && !isCover && (
+          {shouldShowMedicalDisclaimer(!!medical?.isMedical, brandKitSettings.showDisclaimer) && !isCover && (
             <DisclaimerFooter variant="inline" text={brandKitData.disclaimerText || ""} palette={palette} font={font} fontSizeScale={fontSizeScale} />
           )}
         </div>
@@ -2375,7 +2376,7 @@ const BoldStatement = forwardRef<HTMLDivElement, SlideRenderProps>(function Bold
               )}
             </div>
           )}
-          {brandKitSettings.showDisclaimer && !isCover && (
+          {shouldShowMedicalDisclaimer(!!medical?.isMedical, brandKitSettings.showDisclaimer) && !isCover && (
             <DisclaimerFooter variant="inline" text={brandKitData.disclaimerText || ""} palette={palette} font={font} fontSizeScale={fontSizeScale} />
           )}
         </div>

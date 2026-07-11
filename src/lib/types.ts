@@ -68,6 +68,7 @@ export interface Template {
 }
 
 export interface MedicalProps {
+  isMedical?: boolean;
   specialty?: string;
   source?: string;
 }
@@ -105,6 +106,7 @@ export interface Project {
   status: ProjectStatus;
   favorite: boolean;
   reviewStatus?: ReviewStatus;
+  isMedical: boolean;
   createdAt: string;
   updatedAt: string;
   exportCount: number;
