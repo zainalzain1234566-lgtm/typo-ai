@@ -34,9 +34,11 @@ export default function VerifyEmailPage() {
 
   const handleInput = (i: number, val: string) => {
     if (!/^\d?$/.test(val)) return;
-    const next = [...code];
-    next[i] = val;
-    setCode(next);
+    setCode((prev) => {
+      const next = [...prev];
+      next[i] = val;
+      return next;
+    });
     if (val && i < 5) inputsRef.current[i + 1]?.focus();
   };
 
@@ -98,6 +100,7 @@ export default function VerifyEmailPage() {
             {code.map((c, i) => (
               <Input key={i} ref={(el) => { inputsRef.current[i] = el; }} type="text" inputMode="numeric" maxLength={1} value={c}
                 onChange={(e) => handleInput(i, e.target.value)} onKeyDown={(e) => handleKeyDown(i, e)} onPaste={handlePaste}
+                aria-label={`الرقم ${i + 1} من رمز التحقق`}
                 className="w-full h-12 sm:h-14 text-center text-lg sm:text-xl font-bold" />
             ))}
           </div>

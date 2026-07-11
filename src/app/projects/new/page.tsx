@@ -27,6 +27,7 @@ import {
   createBlankProject, useTemplateLookup, projectToCreateInput,
   projectToUpdateInput, mapProject, mapSlide,
 } from "@/lib/db-mappers";
+import { friendlyAuthError } from "@/lib/error-messages";
 import { cn } from "@/lib/utils";
 import { DEFAULT_ACCENT_COLOR, DEFAULT_DISCLAIMER_TEXT } from "@/lib/constants";
 import type { Project, Slide, ContentType, Tone, Language, ContentLevel, CarouselSize, CTAOption, FontFamily, Placement, SlideType } from "@/lib/types";
@@ -162,7 +163,7 @@ function WizardContent() {
     if (!result.success) {
       console.error("[Generate] createProjectAction failed", result.error);
       setGenFailed(true);
-      setGenMessage(result.error || "فشل التوليد");
+      setGenMessage(result.error ? friendlyAuthError(result.error) : "فشل التوليد");
       setGenerating(false);
       return;
     }
@@ -230,10 +231,11 @@ function WizardContent() {
             {STEPS.map((s, i) => (
               <div key={s.num} className="flex items-center flex-1 last:flex-none">
                 <button
-                  onClick={() => step >= parseInt(s.num) && setStep(parseInt(s.num))}
+                  onClick={() => setStep(parseInt(s.num))}
+                  disabled={step < parseInt(s.num)}
                   className={cn(
-                    "flex items-center gap-2 cursor-pointer transition-colors",
-                    step === parseInt(s.num) ? "text-accent" : step > parseInt(s.num) ? "text-green-600" : "text-ink-subtle"
+                    "flex items-center gap-2 transition-colors",
+                    step === parseInt(s.num) ? "text-accent" : step > parseInt(s.num) ? "text-green-600 cursor-pointer" : "text-ink-subtle cursor-not-allowed opacity-50"
                   )}
                 >
                   <span className={cn(
@@ -485,6 +487,7 @@ function Step3Size({ project, updateSettings, generating, genMessage, genProgres
   onRetry: () => void;
   lookupReady: boolean;
 }) {
+  const router = useRouter();
   const sizeIcons: Record<CarouselSize, any> = {
     "1080x1080": Square,
     "1080x1350": RectangleVertical,
@@ -575,7 +578,7 @@ function Step3Size({ project, updateSettings, generating, genMessage, genProgres
             <p className="text-sm text-red-600 mt-1 font-mono text-right" dir="rtl">{genMessage || "حدث خطأ أثناء إنشاء الشرائح."}</p>
             <div className="flex gap-2 justify-center mt-4">
               <Button onClick={onRetry}><Sparkles className="w-4 h-4" /> إعادة المحاولة</Button>
-              <Button variant="outline" onClick={() => window.history.back()}>العودة إلى الإعدادات</Button>
+              <Button variant="outline" onClick={() => router.push("/settings")}>العودة إلى الإعدادات</Button>
             </div>
           </div>
         )}

@@ -115,7 +115,9 @@ function Hero() {
                   مثال: أسباب الصداع النصفي وعلاجه
                 </div>
                 <div className="mt-2 flex gap-2">
-                  <Button size="sm" className="flex-1">توليد المحتوى</Button>
+                  <Link href="/signup" className="flex-1">
+                    <Button size="sm" className="w-full">توليد المحتوى</Button>
+                  </Link>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-2">

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Plus, Copy, Trash2, ChevronRight, ChevronLeft, Download, Save, GripVertical,
-  Palette, Settings as SettingsIcon, Eye, EyeOff, X, Check, Sparkles, Layers,
+  Palette, Settings as SettingsIcon, Eye, EyeOff, X, Check, Sparkles, Layers, ZoomIn,
 } from "lucide-react";
 import { AppNavbar } from "@/components/layout/app-navbar";
 import { Button } from "@/components/ui/button";
@@ -39,9 +39,10 @@ export default function EditorPage() {
 
   const [project, setProject] = useState<Project | null>(null);
   const [currentSlideIdx, setCurrentSlideIdx] = useState(0);
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [templateDialog, setTemplateDialog] = useState(false);
   const [brandDialog, setBrandDialog] = useState(false);
+  const [zoomOpen, setZoomOpen] = useState(false);
 
   const fetchProject = useCallback(async () => {
     const { data: row } = await supabase
@@ -67,11 +68,30 @@ export default function EditorPage() {
     setSaveStatus("saving");
     const timer = setTimeout(async () => {
       const input = projectToUpdateInput(project, lookup);
-      if (input) await updateProjectAction(input);
+      const lookupLoaded = Object.keys(lookup).length > 0;
+      let ok = true;
+      let errorTitle = "";
+      if (input) {
+        const result = await updateProjectAction(input);
+        if (!result.success) {
+          ok = false;
+          errorTitle = result.error ?? "تعذر حفظ التغييرات، حاول مرة أخرى";
+        }
+      } else if (lookupLoaded) {
+        // lookup is loaded but the current template/palette isn't in it — a genuine save failure, not a loading race
+        ok = false;
+        errorTitle = "تعذر حفظ القالب المحدد";
+      }
+      // slide content saves proceed regardless of project-level (template) save outcome
       for (const slide of project.slides) {
         await updateSlideAction({ id: slide.id, title: slide.title, body: slide.body, cta_text: slide.ctaText ?? null });
       }
-      setSaveStatus("saved");
+      if (ok) {
+        setSaveStatus("saved");
+      } else {
+        setSaveStatus("error");
+        toast({ type: "error", title: errorTitle });
+      }
     }, 800);
     return () => clearTimeout(timer);
   }, [project, lookup]); // eslint-disable-line
@@ -158,7 +178,7 @@ export default function EditorPage() {
               className="text-lg font-bold text-ink bg-transparent border-none outline-none focus:bg-white focus:border focus:border-stone-200 focus:px-2 focus:py-1 focus:rounded-lg transition-all"
             />
             <span className="text-xs text-ink-subtle flex items-center gap-1">
-              {saveStatus === "saving" ? "جارٍ الحفظ..." : saveStatus === "saved" ? <><Check className="w-3 h-3 text-green-600" /> تم الحفظ الآن</> : ""}
+              {saveStatus === "saving" ? "جارٍ الحفظ..." : saveStatus === "saved" ? <><Check className="w-3 h-3 text-green-600" /> تم الحفظ الآن</> : saveStatus === "error" ? <><X className="w-3 h-3 text-red-600" /> تعذر الحفظ</> : ""}
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -251,20 +271,30 @@ export default function EditorPage() {
             <div className="rounded-2xl border border-stone-200 bg-white p-6 flex flex-col items-center justify-center min-h-[500px] overflow-hidden">
               {currentSlide && (
                 <div className="flex flex-col items-center">
-                  <ScaledSlide
-                    width={350}
-                    slide={currentSlide}
-                    templateId={project.settings.templateId}
-                    palette={pal}
-                    font={project.settings.font}
-                    size={project.settings.size}
-                    brandKitSettings={project.settings.brandKit}
-                    brandKitData={brandKitData}
-                    medical={{ specialty: project.settings.specialty, source: project.settings.source }}
-                    index={currentSlideIdx}
-                    total={project.slides.length}
-                    fontSizeScale={project.settings.fontSizeScale}
-                  />
+                  <button
+                    type="button"
+                    onClick={() => setZoomOpen(true)}
+                    style={{ width: 480, maxWidth: "100%" }}
+                    className="relative group cursor-zoom-in rounded-xl"
+                  >
+                    <ScaledSlide
+                      width={480}
+                      slide={currentSlide}
+                      templateId={project.settings.templateId}
+                      palette={pal}
+                      font={project.settings.font}
+                      size={project.settings.size}
+                      brandKitSettings={project.settings.brandKit}
+                      brandKitData={brandKitData}
+                      medical={{ specialty: project.settings.specialty, source: project.settings.source }}
+                      index={currentSlideIdx}
+                      total={project.slides.length}
+                      fontSizeScale={project.settings.fontSizeScale}
+                    />
+                    <div className="absolute inset-0 rounded-xl bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                      <ZoomIn className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow" />
+                    </div>
+                  </button>
                   <div className="flex items-center gap-4 mt-4">
                     <Button variant="outline" size="icon" disabled={currentSlideIdx === 0} onClick={() => setCurrentSlideIdx(currentSlideIdx - 1)}>
                       <ChevronRight className="w-4 h-4" />
@@ -341,6 +371,27 @@ export default function EditorPage() {
 
       <TemplateDialog open={templateDialog} onClose={() => setTemplateDialog(false)} project={project} update={update} brandKitData={brandKitData} />
       <BrandDialog open={brandDialog} onClose={() => setBrandDialog(false)} project={project} update={update} />
+
+      <Dialog open={zoomOpen} onClose={() => setZoomOpen(false)} className="max-w-4xl">
+        {currentSlide && (
+          <div className="flex justify-center">
+            <ScaledSlide
+              width={800}
+              slide={currentSlide}
+              templateId={project.settings.templateId}
+              palette={pal}
+              font={project.settings.font}
+              size={project.settings.size}
+              brandKitSettings={project.settings.brandKit}
+              brandKitData={brandKitData}
+              medical={{ specialty: project.settings.specialty, source: project.settings.source }}
+              index={currentSlideIdx}
+              total={project.slides.length}
+              fontSizeScale={project.settings.fontSizeScale}
+            />
+          </div>
+        )}
+      </Dialog>
     </div>
   );
 }

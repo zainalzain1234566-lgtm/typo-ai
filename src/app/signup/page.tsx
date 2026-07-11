@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AuthVisual } from "@/components/auth/auth-visual";
 import { createClient } from "@/lib/supabase/client";
+import { friendlyAuthError } from "@/lib/error-messages";
 
 const schema = z.object({
   name: z.string().min(2, "الاسم يجب أن يكون حرفين على الأقل"),
@@ -53,7 +54,7 @@ export default function SignupPage() {
     });
     setLoading(false);
     if (error) {
-      setServerError(error.message === "User already registered" ? "هذا البريد مسجل بالفعل" : error.message);
+      setServerError(friendlyAuthError(error.message));
     } else {
       router.push("/verify-email");
     }
@@ -90,7 +91,7 @@ export default function SignupPage() {
                 <Label htmlFor="password">كلمة المرور</Label>
                 <div className="relative">
                   <Input id="password" type={showPass ? "text" : "password"} placeholder="••••••••" {...register("password")} className="pl-10" />
-                  <button type="button" onClick={() => setShowPass((v) => !v)} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-subtle hover:text-ink cursor-pointer">
+                  <button type="button" onClick={() => setShowPass((v) => !v)} aria-label={showPass ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-subtle hover:text-ink cursor-pointer">
                     {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
@@ -112,7 +113,7 @@ export default function SignupPage() {
               <label className="flex items-start gap-2.5 cursor-pointer">
                 <Checkbox {...register("agree")} />
                 <span className="text-sm text-ink-muted leading-relaxed">
-                  أوافق على <Link href="#" className="text-accent hover:underline">الشروط والأحكام</Link> و<Link href="#" className="text-accent hover:underline">سياسة الخصوصية</Link>
+                  أوافق على <Link href="/terms" className="text-accent hover:underline">الشروط والأحكام</Link> و<Link href="/privacy" className="text-accent hover:underline">سياسة الخصوصية</Link>
                 </span>
               </label>
               {errors.agree && <p className="text-xs text-red-600">{errors.agree.message}</p>}

@@ -83,7 +83,7 @@ function LoginContent() {
                 </div>
                 <div className="relative">
                   <Input id="password" type={showPass ? "text" : "password"} placeholder="••••••••" {...register("password")} className="pl-10" />
-                  <button type="button" onClick={() => setShowPass((v) => !v)} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-subtle hover:text-ink cursor-pointer">
+                  <button type="button" onClick={() => setShowPass((v) => !v)} aria-label={showPass ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-subtle hover:text-ink cursor-pointer">
                     {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>

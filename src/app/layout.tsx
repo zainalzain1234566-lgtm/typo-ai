@@ -3,6 +3,7 @@ import { Tajawal, Cairo, IBM_Plex_Sans_Arabic, Playfair_Display, Space_Grotesk, 
 import "./globals.css";
 import { AppProvider } from "@/lib/app-context";
 import { ToastProvider } from "@/components/ui/toast";
+import { AuthGuard } from "@/components/layout/auth-guard";
 
 const tajawal = Tajawal({ subsets: ["arabic", "latin"], weight: ["400", "500", "700", "800"], variable: "--font-tajawal", display: "swap" });
 const cairo = Cairo({ subsets: ["arabic", "latin"], weight: ["400", "600", "700"], variable: "--font-cairo", display: "swap" });
@@ -23,7 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="font-tajawal antialiased">
         <AppProvider>
           <ToastProvider>
-            {children}
+            <AuthGuard>{children}</AuthGuard>
           </ToastProvider>
         </AppProvider>
       </body>

@@ -49,7 +49,12 @@ export function MarketingNavbar() {
           </Link>
         </div>
 
-        <button className="md:hidden text-ink p-2" onClick={() => setOpen((v) => !v)}>
+        <button
+          className="md:hidden text-ink p-2"
+          onClick={() => setOpen((v) => !v)}
+          aria-label={open ? "إغلاق القائمة" : "فتح القائمة"}
+          aria-expanded={open}
+        >
           {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
       </div>
