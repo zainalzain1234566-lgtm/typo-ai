@@ -28,7 +28,7 @@ export default function ExportPage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
-  const { supabase, brandKit, telegramEnabled } = useApp();
+  const { supabase, brandKit, telegramEnabled, preferences } = useApp();
   const projectId = params.id as string;
 
   const [project, setProject] = useState<Project | null>(null);
@@ -177,12 +177,12 @@ export default function ExportPage() {
               size={project.settings.size}
               brandKitSettings={project.settings.brandKit}
               brandKitData={brandKitData}
-              medical={{ isMedical: project.isMedical, specialty: project.settings.specialty, source: project.settings.source }}
+              medical={{ isMedical: preferences.contentMode === "medical", specialty: project.settings.specialty, source: project.settings.source }}
               index={i}
               total={project.slides.length}
               fontSizeScale={project.settings.fontSizeScale}
             />
-            {project.isMedical && project.settings.brandKit.showDisclaimer && (
+            {preferences.contentMode === "medical" && project.settings.brandKit.showDisclaimer && (
               <DisclaimerFooter
                 variant="overlay"
                 text={brandKitData.disclaimerText || ""}
@@ -269,7 +269,7 @@ export default function ExportPage() {
                 size={project.settings.size}
                 brandKitSettings={project.settings.brandKit}
                 brandKitData={brandKitData}
-                medical={{ isMedical: project.isMedical, specialty: project.settings.specialty, source: project.settings.source }}
+                medical={{ isMedical: preferences.contentMode === "medical", specialty: project.settings.specialty, source: project.settings.source }}
                 index={i}
                 total={project.slides.length}
                 fontSizeScale={project.settings.fontSizeScale}

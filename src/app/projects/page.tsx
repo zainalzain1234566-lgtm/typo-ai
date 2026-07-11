@@ -35,7 +35,7 @@ type SortKey = "newest" | "oldest" | "modified" | "name";
 export default function ProjectsPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { supabase, stats, ready } = useApp();
+  const { supabase, stats, ready, preferences } = useApp();
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [folders, setFolders] = useState<FolderType[]>([]);
@@ -280,6 +280,7 @@ export default function ProjectsPage() {
             <ProjectCard
               key={p.id}
               project={p}
+              isMedicalAccount={preferences.contentMode === "medical"}
               folders={folders}
               onOpen={() => router.push(`/projects/${p.id}/edit`)}
               onDuplicate={() => handleDuplicate(p.id)}
@@ -327,7 +328,7 @@ export default function ProjectsPage() {
   );
 }
 
-function ProjectCard({ project, folders, onOpen, onDuplicate, onDelete, onExport, onFavorite, onMove }: {
+function ProjectCard({ project, folders, onOpen, onDuplicate, onDelete, onExport, onFavorite, onMove, isMedicalAccount }: {
   project: Project;
   folders: { id: string; name: string }[];
   onOpen: () => void;
@@ -336,6 +337,7 @@ function ProjectCard({ project, folders, onOpen, onDuplicate, onDelete, onExport
   onExport: () => void;
   onFavorite: () => void;
   onMove: (folderId: string | null) => void;
+  isMedicalAccount: boolean;
 }) {
   const coverSlide = project.slides[0];
   const pal = getPalette(project.settings.templateId, project.settings.paletteId);
@@ -356,7 +358,7 @@ function ProjectCard({ project, folders, onOpen, onDuplicate, onDelete, onExport
               size={project.settings.size}
               brandKitSettings={project.settings.brandKit}
               brandKitData={{ instagramHandle: "@typo.ai", logoDataUrl: null, primaryColor: DEFAULT_ACCENT_COLOR, font: project.settings.font }}
-              medical={{ isMedical: project.isMedical, specialty: project.settings.specialty, source: project.settings.source }}
+              medical={{ isMedical: isMedicalAccount, specialty: project.settings.specialty, source: project.settings.source }}
               index={0}
               total={project.slides.length}
               fontSizeScale={project.settings.fontSizeScale}

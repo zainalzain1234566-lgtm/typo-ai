@@ -204,7 +204,7 @@ export default function EditorPage() {
                 size={project.settings.size}
                 brandKitSettings={project.settings.brandKit}
                 brandKitData={brandKitData}
-                medical={{ isMedical: project.isMedical, specialty: project.settings.specialty, source: project.settings.source }}
+                medical={{ isMedical: preferences.contentMode === "medical", specialty: project.settings.specialty, source: project.settings.source }}
                 fontSizeScale={project.settings.fontSizeScale}
                 index={i}
                 total={project.slides.length}
@@ -239,7 +239,7 @@ export default function EditorPage() {
                         size={project.settings.size}
                         brandKitSettings={project.settings.brandKit}
                         brandKitData={brandKitData}
-                        medical={{ isMedical: project.isMedical, specialty: project.settings.specialty, source: project.settings.source }}
+                        medical={{ isMedical: preferences.contentMode === "medical", specialty: project.settings.specialty, source: project.settings.source }}
                         index={i}
                         total={project.slides.length}
                       />
@@ -286,7 +286,7 @@ export default function EditorPage() {
                       size={project.settings.size}
                       brandKitSettings={project.settings.brandKit}
                       brandKitData={brandKitData}
-                      medical={{ isMedical: project.isMedical, specialty: project.settings.specialty, source: project.settings.source }}
+                      medical={{ isMedical: preferences.contentMode === "medical", specialty: project.settings.specialty, source: project.settings.source }}
                       index={currentSlideIdx}
                       total={project.slides.length}
                       fontSizeScale={project.settings.fontSizeScale}
@@ -369,7 +369,7 @@ export default function EditorPage() {
         </div>
       </div>
 
-      <TemplateDialog open={templateDialog} onClose={() => setTemplateDialog(false)} project={project} update={update} brandKitData={brandKitData} templates={templatesForMode(preferences.contentMode)} />
+      <TemplateDialog open={templateDialog} onClose={() => setTemplateDialog(false)} project={project} update={update} brandKitData={brandKitData} templates={templatesForMode(preferences.contentMode)} isMedicalAccount={preferences.contentMode === "medical"} />
       <BrandDialog open={brandDialog} onClose={() => setBrandDialog(false)} project={project} update={update} />
 
       <Dialog open={zoomOpen} onClose={() => setZoomOpen(false)} className="max-w-4xl">
@@ -384,7 +384,7 @@ export default function EditorPage() {
               size={project.settings.size}
               brandKitSettings={project.settings.brandKit}
               brandKitData={brandKitData}
-              medical={{ isMedical: project.isMedical, specialty: project.settings.specialty, source: project.settings.source }}
+              medical={{ isMedical: preferences.contentMode === "medical", specialty: project.settings.specialty, source: project.settings.source }}
               index={currentSlideIdx}
               total={project.slides.length}
               fontSizeScale={project.settings.fontSizeScale}
@@ -398,13 +398,14 @@ export default function EditorPage() {
 
 // ============= Template Dialog =============
 
-function TemplateDialog({ open, onClose, project, update, brandKitData, templates }: {
+function TemplateDialog({ open, onClose, project, update, brandKitData, templates, isMedicalAccount }: {
   open: boolean;
   onClose: () => void;
   project: Project;
   update: (u: Partial<Project>) => void;
   brandKitData: any;
   templates: typeof TEMPLATE_DEFS;
+  isMedicalAccount: boolean;
 }) {
   const previewSlide = project.slides[0];
 
@@ -430,7 +431,7 @@ function TemplateDialog({ open, onClose, project, update, brandKitData, template
                   size="1080x1080"
                   brandKitSettings={project.settings.brandKit}
                   brandKitData={brandKitData}
-                  medical={{ isMedical: project.isMedical, specialty: project.settings.specialty, source: project.settings.source }}
+                  medical={{ isMedical: isMedicalAccount, specialty: project.settings.specialty, source: project.settings.source }}
                   index={0}
                   total={project.slides.length}
                   fontSizeScale={project.settings.fontSizeScale}
