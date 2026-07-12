@@ -11,6 +11,7 @@ import {
 } from "@/lib/services/generation";
 import { sanitizeTemplateHtml, sanitizeTemplateCss } from "@/lib/services/template-sandbox";
 import { generateCustomTemplateSchema, editCustomTemplateSchema } from "@/lib/validation/custom-templates";
+import { AI_DEFAULT_MODEL } from "@/lib/constants";
 
 function sanitizeResult(result: TemplateGenerationResult): TemplateGenerationResult {
   return {
@@ -19,6 +20,7 @@ function sanitizeResult(result: TemplateGenerationResult): TemplateGenerationRes
     htmlContent: sanitizeTemplateHtml(result.htmlContent),
     htmlEnding: sanitizeTemplateHtml(result.htmlEnding),
     aiMessage: result.aiMessage,
+    usage: result.usage,
   };
 }
 
@@ -28,10 +30,68 @@ async function requireUser() {
   return { supabase, user };
 }
 
-// One-shot AI carousel generator: no DB writes anywhere in this file.
-// The user gives topic/colors/slideCount/size, gets real content + a
-// from-scratch AI-designed visual system fused together, and the result
-// is downloaded or sent — nothing is persisted as a reusable "template".
+type DesignerAccess = {
+  plan: "free" | "paid";
+  subscriptionStatus: "inactive" | "active" | "expired" | "canceled";
+  freeUsesRemaining: number;
+  creditBalanceMicroUsd: number;
+  subscriptionExpiresAt: string | null;
+};
+
+async function getAccess(supabase: Awaited<ReturnType<typeof createClient>>): Promise<DesignerAccess | null> {
+  const { data, error } = await (supabase.rpc as any)("get_template_designer_access");
+  return error ? null : data as DesignerAccess;
+}
+
+function resolvedModel(model?: string) {
+  return model ?? process.env.AI_MODEL ?? AI_DEFAULT_MODEL;
+}
+
+function providerCost(...costs: Array<number | null | undefined>) {
+  if (costs.some((cost) => cost === null || cost === undefined)) throw new Error("AI provider did not return usage cost");
+  return costs.reduce<number>((total, cost) => total + Number(cost), 0);
+}
+
+function usagePayload(...usage: Array<TemplateGenerationResult["usage"] | undefined>) {
+  return usage.filter(Boolean).map((item) => ({
+    requestId: item!.requestId,
+    model: item!.model,
+    promptTokens: item!.promptTokens,
+    completionTokens: item!.completionTokens,
+    costMicroUsd: item!.costMicroUsd,
+  }));
+}
+
+export async function getTemplateDesignerAccessAction() {
+  const { supabase, user } = await requireUser();
+  if (!user) return { success: false, error: "غير مصرح" };
+  const data = await getAccess(supabase);
+  return data ? { success: true, data } : { success: false, error: "تعذر تحميل حالة الاشتراك" };
+}
+
+export async function getMyCustomTemplatesAction() {
+  const { supabase, user } = await requireUser();
+  if (!user) return { success: false, error: "غير مصرح" };
+  const { data, error } = await (supabase.from("custom_templates") as any)
+    .select("id, name, settings, created_at, updated_at, custom_template_versions(version_number, created_at)")
+    .order("updated_at", { ascending: false });
+  return error ? { success: false, error: "تعذر تحميل القوالب" } : { success: true, data };
+}
+
+export async function getCustomTemplateAction(templateId: string) {
+  const { supabase, user } = await requireUser();
+  if (!user) return { success: false, error: "غير مصرح" };
+  const { data, error } = await (supabase.from("custom_templates") as any)
+    .select("id, name, settings, custom_template_versions(version_number, css, html_cover, html_content, html_ending, raw_slides, ai_message, source, created_at)")
+    .eq("id", templateId)
+    .single();
+  if (error || !data) return { success: false, error: "القالب غير موجود" };
+  const versions = [...(data.custom_template_versions ?? [])].sort((a: any, b: any) => a.version_number - b.version_number);
+  return { success: true, data: { ...data, custom_template_versions: versions } };
+}
+
+// AI carousel generation reserves an allowed trial or credit balance,
+// then saves each successful design as a reusable custom template.
 
 export async function generateTemplateAction(input: Record<string, unknown>) {
   log("CUSTOM_TEMPLATE", "generate attempt");
@@ -45,6 +105,14 @@ export async function generateTemplateAction(input: Record<string, unknown>) {
     return { success: false, error: `الحقل "${firstErr.path.join(".")}" — ${firstErr.message}` };
   }
   const { settings, message, model } = parsed.data;
+  const selectedModel = resolvedModel(model);
+  const { data: reservation, error: reservationError } = await (supabase.rpc as any)("begin_template_designer_request", {
+    p_operation: "generate",
+    p_model: selectedModel,
+  });
+  if (reservationError || !reservation?.requestId) {
+    return { success: false, error: "انتهت التجربة المجانية أو لا يوجد رصيد كافٍ" };
+  }
 
   try {
     // Content generation reuses the same engine that powers /projects/new —
@@ -66,17 +134,38 @@ export async function generateTemplateAction(input: Record<string, unknown>) {
     };
 
     const [carousel, rawDesign] = await Promise.all([
-      getGenerationProvider(model).generate(contentInput),
-      generateTemplateSystem(settings, message, model),
+      getGenerationProvider(selectedModel).generate(contentInput),
+      generateTemplateSystem(settings, message, selectedModel),
     ]);
     const design = sanitizeResult(rawDesign);
-
-    await supabase.rpc("increment_usage", { p_user_id: user.id, p_field: "generations_used" });
+    const totalCost = providerCost(carousel.usage?.costMicroUsd, design.usage.costMicroUsd);
+    const { data: saved, error: saveError } = await (supabase.rpc as any)("complete_template_designer_request", {
+      p_request_id: reservation.requestId,
+      p_provider_usage: usagePayload(carousel.usage as TemplateGenerationResult["usage"], design.usage),
+      p_provider_cost_microusd: totalCost,
+      p_template_payload: {
+        title: settings.topic,
+        topic: settings.topic,
+        settings,
+        css: design.css,
+        htmlCover: design.htmlCover,
+        htmlContent: design.htmlContent,
+        htmlEnding: design.htmlEnding,
+        rawSlides: carousel.slides,
+        aiMessage: design.aiMessage,
+      },
+    });
+    if (saveError || !saved?.templateId) throw new Error(saveError?.message ?? "Could not save template");
     log("CUSTOM_TEMPLATE", "generate success", { slideCount: carousel.slides.length });
-    return { success: true, data: { ...design, slides: carousel.slides, caption: carousel.caption, hashtags: carousel.hashtags } };
+    return {
+      success: true,
+      data: { ...design, slides: carousel.slides, caption: carousel.caption, hashtags: carousel.hashtags, templateId: saved.templateId },
+      access: await getAccess(supabase),
+    };
   } catch (err) {
     const message2 = err instanceof Error ? err.message : String(err);
     logError("CUSTOM_TEMPLATE", "generate failed", message2);
+    await (supabase.rpc as any)("fail_template_designer_request", { p_request_id: reservation.requestId, p_error_message: message2 });
     return { success: false, error: "تعذر توليد التصميم، حاول مرة أخرى" };
   }
 }
@@ -95,6 +184,21 @@ export async function editTemplateAction(input: Record<string, unknown>) {
     return { success: false, error: `الحقل "${firstErr.path.join(".")}" — ${firstErr.message}` };
   }
 
+  const selectedModel = resolvedModel(parsed.data.model);
+  const { data: reservation, error: reservationError } = await (supabase.rpc as any)("begin_template_designer_request", {
+    p_operation: "edit",
+    p_model: selectedModel,
+    p_template_id: parsed.data.templateId,
+  });
+  if (reservationError || !reservation?.requestId) return { success: false, error: "يلزم اشتراك فعّال ورصيد كافٍ لتعديل القالب" };
+
+  const { data: previous } = await (supabase.from("custom_template_versions") as any)
+    .select("raw_slides")
+    .eq("custom_template_id", parsed.data.templateId)
+    .order("version_number", { ascending: false })
+    .limit(1)
+    .single();
+
   try {
     const raw = await editTemplateSystem(
       parsed.data.settings,
@@ -105,15 +209,33 @@ export async function editTemplateAction(input: Record<string, unknown>) {
         htmlContent: parsed.data.currentHtmlContent,
         htmlEnding: parsed.data.currentHtmlEnding,
       },
-      parsed.data.model
+      selectedModel
     );
     const result = sanitizeResult(raw);
-    await supabase.rpc("increment_usage", { p_user_id: user.id, p_field: "generations_used" });
+    const totalCost = providerCost(result.usage.costMicroUsd);
+    const { data: saved, error: saveError } = await (supabase.rpc as any)("complete_template_designer_request", {
+      p_request_id: reservation.requestId,
+      p_provider_usage: usagePayload(result.usage),
+      p_provider_cost_microusd: totalCost,
+      p_template_payload: {
+        title: parsed.data.settings.topic,
+        topic: parsed.data.settings.topic,
+        settings: parsed.data.settings,
+        css: result.css,
+        htmlCover: result.htmlCover,
+        htmlContent: result.htmlContent,
+        htmlEnding: result.htmlEnding,
+        rawSlides: previous?.raw_slides ?? [],
+        aiMessage: result.aiMessage,
+      },
+    });
+    if (saveError || !saved?.templateId) throw new Error(saveError?.message ?? "Could not save template");
     log("CUSTOM_TEMPLATE", "edit success");
-    return { success: true, data: result };
+    return { success: true, data: { ...result, templateId: saved.templateId }, access: await getAccess(supabase) };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     logError("CUSTOM_TEMPLATE", "edit failed", message);
+    await (supabase.rpc as any)("fail_template_designer_request", { p_request_id: reservation.requestId, p_error_message: message });
     return { success: false, error: "تعذر تعديل التصميم، حاول مرة أخرى" };
   }
 }

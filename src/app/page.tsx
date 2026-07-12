@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { ScaledSlide } from "@/components/carousel/slide-renderer";
 import { VISIBLE_TEMPLATES, getPalette } from "@/lib/templates";
 import type { Slide, BrandKit, BrandKitSettings } from "@/lib/types";
+import { getWhatsAppUpgradeUrl } from "@/lib/whatsapp";
 
 const demoSlide: Slide = { id: "d1", type: "cover", title: "كيف تبني حضورك الرقمي؟", body: "دليل مبسّط لصناعة محتوى مؤثر" };
 const demoSlides: Slide[] = [
@@ -404,6 +405,9 @@ function WorkflowDemo() {
 }
 
 function Pricing() {
+  const upgradeUrl = getWhatsAppUpgradeUrl();
+  const freePlan = ["إنشاء مشاريع كاروسيل", "الوصول إلى القوالب الحالية", "تنزيل الصور دون علامة مائية", "إنشاء Caption وHashtags", "توليدان مجانيان مدى الحياة في مصمم القوالب"];
+  const paidPlan = ["كل مزايا الخطة المجانية", "مصمم القوالب بالذكاء الاصطناعي", "قوالب HTML وCSS مخصصة", "حفظ القوالب ضمن قوالبي", "تكلفة النموذج الفعلية + 20% حسب الرصيد"];
   return (
     <section className="py-14 md:py-20 border-t border-stone-100">
       <div className="mx-auto max-w-4xl px-4">
@@ -411,29 +415,17 @@ function Pricing() {
           <h2 className="text-3xl md:text-4xl font-extrabold text-ink">الأسعار</h2>
           <p className="mt-3 text-ink-muted">ابدأ مجانًا اليوم</p>
         </div>
-        <div className="rounded-2xl border-2 border-teal-500/30 bg-white p-8 shadow-soft max-w-md mx-auto text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-3 py-1 mb-4">
-            <Sparkles className="w-4 h-4 text-teal-600" />
-            <span className="text-sm font-medium text-teal-700">الخطة الحالية</span>
-          </div>
-          <h3 className="text-2xl font-extrabold text-ink">الخطة المجانية</h3>
-          <div className="my-6">
-            <span className="text-5xl font-extrabold text-ink">مجانًا</span>
-          </div>
-          <div className="space-y-3 text-right mb-8">
-            {["إنشاء كاروسيلات طبية", "مراجعة طبية تلقائية", "الوصول للقوالب الطبية", "تنزيل الصور دون علامة مائية", "تنبيه استشارة الطبيب", "إنشاء Caption وHashtags"].map((f) => (
-              <div key={f} className="flex items-center gap-3">
-                <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-                  <Check className="w-3 h-3 text-green-600" strokeWidth={3} />
-                </div>
-                <span className="text-sm text-ink">{f}</span>
+        <div className="grid gap-6 md:grid-cols-2">
+          {[{ name: "الخطة المجانية", items: freePlan }, { name: "الخطة المدفوعة", items: paidPlan }].map((plan, index) => (
+            <div key={plan.name} className="rounded-2xl border-2 border-teal-500/30 bg-white p-8 shadow-soft text-center">
+              <h3 className="text-2xl font-extrabold text-ink">{plan.name}</h3>
+              <p className="my-4 text-ink-muted">{index === 0 ? "مجانًا" : "ادفع حسب الاستخدام"}</p>
+              <div className="space-y-3 text-right mb-8">
+                {plan.items.map((f) => <div key={f} className="flex items-center gap-3"><div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center shrink-0"><Check className="w-3 h-3 text-green-600" strokeWidth={3} /></div><span className="text-sm text-ink">{f}</span></div>)}
               </div>
-            ))}
-          </div>
-          <Link href="/signup">
-            <Button size="lg" className="w-full">ابدأ مجانًا</Button>
-          </Link>
-          <p className="mt-4 text-xs text-ink-subtle">سيتم الإعلان عن الخطط المستقبلية لاحقًا.</p>
+              {index === 0 ? <Link href="/signup"><Button size="lg" className="w-full">ابدأ مجانًا</Button></Link> : upgradeUrl ? <a href={upgradeUrl} target="_blank" rel="noreferrer"><Button size="lg" className="w-full">اشترك عبر واتساب</Button></a> : <Button size="lg" className="w-full" disabled>تواصل للاشتراك</Button>}
+            </div>
+          ))}
         </div>
       </div>
     </section>

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ChevronDown, LogOut, Settings as SettingsIcon, LayoutGrid, Image as ImageIcon, User as UserIcon, Sparkles, Wand2 } from "lucide-react";
+import { Menu, X, ChevronDown, LogOut, Settings as SettingsIcon, LayoutGrid, Image as ImageIcon, Sparkles, Wand2, FolderOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dropdown, DropdownItem, DropdownSeparator } from "@/components/ui/dropdown";
 import { useApp } from "@/lib/app-context";
@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { href: "/projects", label: "المشاريع", icon: LayoutGrid },
   { href: "/templates", label: "القوالب", icon: ImageIcon },
+  { href: "/templates/mine", label: "قوالبي", icon: FolderOpen },
   { href: "/templates/designer", label: "مصمم القوالب بالذكاء الاصطناعي", icon: Wand2 },
   { href: "/projects/new", label: "إنشاء مشروع", icon: Sparkles },
   { href: "/settings", label: "الإعدادات", icon: SettingsIcon },

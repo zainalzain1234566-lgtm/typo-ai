@@ -45,6 +45,13 @@ export interface AppData {
     contentMode: ContentMode;
   };
   telegramEnabled: boolean;
+  billing: {
+    plan: "free" | "paid";
+    subscriptionStatus: "inactive" | "active" | "expired" | "canceled";
+    freeUsesRemaining: number;
+    creditBalanceMicroUsd: number;
+    subscriptionExpiresAt: string | null;
+  };
 }
 
 interface AppContextValue extends AppData {
@@ -62,6 +69,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [brandKit, setBrandKit] = useState<{ instagramHandle: string; logoUrl: string | null; primaryColor: string; font: string; disclaimerText: string }>({ instagramHandle: "", logoUrl: null, primaryColor: DEFAULT_ACCENT_COLOR, font: "tajawal", disclaimerText: DEFAULT_DISCLAIMER_TEXT });
   const [preferences, setPreferences] = useState({ language: "العربية الفصحى", tone: "مبسطة", level: "مبتدئ", size: "portrait", slideCount: 6, preferredTemplateId: null, contentMode: "general" as ContentMode });
   const [telegramEnabled, setTelegramEnabled] = useState(false);
+  const [billing, setBilling] = useState<AppData["billing"]>({ plan: "free", subscriptionStatus: "inactive", freeUsesRemaining: 2, creditBalanceMicroUsd: 0, subscriptionExpiresAt: null });
 
   const loadUserData = useCallback(async (userId: string) => {
     console.log("[APP] loadUserData start", { userId });
@@ -74,6 +82,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Load preferences
     const { data: prefs, error: prefsErr } = await supabase.from("user_preferences").select("*").eq("user_id", userId).single();
     if (prefsErr) console.error("[APP] user_preferences load error", prefsErr.message);
+    const { data: entitlement, error: entitlementErr } = await (supabase.from("account_entitlements") as any).select("*").eq("user_id", userId).single();
+    if (entitlementErr) console.error("[APP] account_entitlements load error", entitlementErr.message);
     // Load stats
     const { data: statsData, error: statsErr } = await supabase.rpc("get_dashboard_stats");
     if (statsErr) console.error("[APP] get_dashboard_stats error", statsErr.message);
@@ -121,6 +131,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
         contentMode: contentModeFromValue(prefs.content_mode),
       });
       setTelegramEnabled(!!prefs.telegram_enabled);
+    }
+
+    if (entitlement) {
+      const paidActive = entitlement.current_plan === "paid"
+        && entitlement.subscription_status === "active"
+        && (!entitlement.subscription_expires_at || new Date(entitlement.subscription_expires_at) > new Date());
+      const subscriptionStatus = paidActive ? "active" : (
+        entitlement.current_plan === "paid" && entitlement.subscription_status === "active" && entitlement.subscription_expires_at && new Date(entitlement.subscription_expires_at) <= new Date()
+          ? "expired"
+          : entitlement.subscription_status
+      );
+      setBilling({
+        plan: entitlement.current_plan === "paid" ? "paid" : "free",
+        subscriptionStatus,
+        freeUsesRemaining: Math.max(0, 2 - entitlement.free_template_generations_used - entitlement.free_template_generations_reserved),
+        creditBalanceMicroUsd: Math.max(0, entitlement.credit_balance_microusd - entitlement.credit_reserved_microusd),
+        subscriptionExpiresAt: entitlement.subscription_expires_at,
+      });
     }
 
     if (statsData && typeof statsData === "object") {
@@ -178,6 +206,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     brandKit,
     preferences,
     telegramEnabled,
+    billing,
     supabase,
     refresh,
   };

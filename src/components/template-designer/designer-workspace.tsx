@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { ChevronRight, ChevronLeft, Code2, Download, FileArchive, Send, RotateCcw, Loader2 } from "lucide-react";
 import { AppNavbar } from "@/components/layout/app-navbar";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
-import { generateTemplateAction, editTemplateAction } from "@/app/actions/custom-templates";
+import { generateTemplateAction, editTemplateAction, getCustomTemplateAction } from "@/app/actions/custom-templates";
 import { sendDesignerPngsToTelegramAction } from "@/app/actions/telegram";
 import { downloadDataUrl, dataUrlToBlob } from "@/lib/export";
 import { CANVAS_SIZE_DIMENSIONS, type CustomTemplateSettings } from "@/lib/validation/custom-templates";
@@ -17,6 +19,9 @@ import { CodeInspector } from "./code-inspector";
 import { captureIframePng, captureAllToZip } from "./capture";
 import { mergeSlides } from "./merge";
 import type { DesignerVersion } from "./types";
+import { useApp } from "@/lib/app-context";
+import { getDesignerAccess } from "@/lib/template-designer-access";
+import { getWhatsAppUpgradeUrl } from "@/lib/whatsapp";
 
 let clientIdCounter = 0;
 function makeClientId() {
@@ -24,12 +29,12 @@ function makeClientId() {
   return `local-${Date.now()}-${clientIdCounter}`;
 }
 
-// One-shot AI carousel generator: topic + colors + slide count + size in,
-// a complete set of real-content slides with a from-scratch AI-designed
-// look out. Nothing here is ever written to a database — download or send
-// to Telegram, or start over; there is no "save as reusable template."
+// AI carousel generator: successful results are saved server-side as
+// reusable custom templates while previews and exports remain client-side.
 export function DesignerWorkspace() {
   const { toast } = useToast();
+  const { billing, refresh } = useApp();
+  const searchParams = useSearchParams();
 
   const [settings, setSettings] = useState<CustomTemplateSettings>(DEFAULT_DESIGNER_SETTINGS);
   const [model, setModel] = useState<string | undefined>(undefined);
@@ -42,6 +47,7 @@ export function DesignerWorkspace() {
   const [downloading, setDownloading] = useState(false);
   const [downloadingAll, setDownloadingAll] = useState(false);
   const [codeOpen, setCodeOpen] = useState(false);
+  const [currentTemplateId, setCurrentTemplateId] = useState<string | null>(null);
 
   const visibleIframeRef = useRef<HTMLIFrameElement>(null);
   const hiddenIframeRefs = useRef<(HTMLIFrameElement | null)[]>([]);
@@ -50,9 +56,53 @@ export function DesignerWorkspace() {
   const dims = CANVAS_SIZE_DIMENSIONS[settings.size];
   const hasDesign = !!currentVersion;
   const currentSlideHtml = currentVersion?.slides[currentSlideIndex] ?? "";
+  const operation = currentVersion ? "edit" : "generate";
+  const designerAccess = getDesignerAccess({ operation, ...billing });
+  const upgradeUrl = getWhatsAppUpgradeUrl();
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  useEffect(() => {
+    const templateId = searchParams.get("template");
+    if (!templateId) return;
+    let active = true;
+    void getCustomTemplateAction(templateId).then((res) => {
+      if (!active || !res.success || !res.data) return;
+      const latest = res.data.custom_template_versions.at(-1);
+      if (!latest) return;
+      const layouts = { cover: latest.html_cover, content: latest.html_content, ending: latest.html_ending };
+      const rawSlides = latest.raw_slides;
+      const version: DesignerVersion = {
+        id: makeClientId(),
+        versionNumber: latest.version_number,
+        css: latest.css,
+        layouts,
+        rawSlides,
+        slides: mergeSlides(rawSlides, layouts),
+        aiMessage: latest.ai_message,
+        source: latest.source,
+        createdAt: latest.created_at,
+      };
+      setSettings(res.data.settings);
+      setVersions([version]);
+      setCurrentTemplateId(res.data.id);
+      setCurrentVersionId(version.id);
+    });
+    return () => { active = false; };
+  }, [searchParams]);
 
   const handleSend = useCallback(
     async (message: string) => {
+      if (!designerAccess.allowed) {
+        toast({ type: "error", title: designerAccess.reason === "insufficient_credit" ? "لا يوجد رصيد كافٍ" : "انتهت التجربة المجانية" });
+        return;
+      }
+      if (currentVersion && !currentTemplateId) {
+        toast({ type: "error", title: "تعذر العثور على القالب المحفوظ" });
+        return;
+      }
       setLoading(true);
       setMessages((prev) => [...prev, { role: "user", content: message }]);
       try {
@@ -76,12 +126,15 @@ export function DesignerWorkspace() {
             createdAt: new Date().toISOString(),
           };
           setVersions([version]);
+          setCurrentTemplateId(res.data.templateId);
           setCurrentVersionId(version.id);
           setCurrentSlideIndex(0);
           setMessages((prev) => [...prev, { role: "assistant", content: res.data!.aiMessage || `تم توليد ${slides.length} شرائح` }]);
+          await refresh();
         } else {
           // Design-only edit — content stays fixed, re-merge with the same rawSlides.
           const res = await editTemplateAction({
+            templateId: currentTemplateId,
             settings,
             message,
             currentCss: currentVersion.css,
@@ -108,14 +161,16 @@ export function DesignerWorkspace() {
             createdAt: new Date().toISOString(),
           };
           setVersions((prev) => [...prev, version]);
+          setCurrentTemplateId(res.data.templateId);
           setCurrentVersionId(version.id);
           setMessages((prev) => [...prev, { role: "assistant", content: res.data!.aiMessage || "تم تحديث التصميم" }]);
+          await refresh();
         }
       } finally {
         setLoading(false);
       }
     },
-    [currentVersion, settings, model, toast]
+    [currentVersion, currentTemplateId, settings, model, toast, designerAccess, refresh]
   );
 
   const handleReset = () => {
@@ -123,6 +178,7 @@ export function DesignerWorkspace() {
     setCurrentVersionId(null);
     setCurrentSlideIndex(0);
     setMessages([]);
+    setCurrentTemplateId(null);
   };
 
   const handleDownloadCurrent = async () => {
@@ -181,6 +237,18 @@ export function DesignerWorkspace() {
         {/* Settings pane (left) */}
         <aside className="border-l border-stone-200 bg-white overflow-y-auto order-3 lg:order-1">
           <DesignerSettings settings={settings} onChange={setSettings} disabled={loading || hasDesign} />
+          <div className="mx-4 mb-4 rounded-xl border border-accent/20 bg-accent-soft/40 p-3 text-sm text-ink-muted">
+            {billing.plan === "paid" && billing.subscriptionStatus === "active" ? (
+              <p>الرصيد المتاح: ${(billing.creditBalanceMicroUsd / 1_000_000).toFixed(2)}</p>
+            ) : (
+              <p>التصاميم المجانية المتبقية: {Math.max(0, billing.freeUsesRemaining)} من 2</p>
+            )}
+            {!designerAccess.allowed && upgradeUrl && (
+              <Link href={upgradeUrl} target="_blank" className="mt-2 inline-block font-bold text-accent underline">
+                ترقية عبر واتساب
+              </Link>
+            )}
+          </div>
           {hasDesign && (
             <div className="p-4 pt-0">
               <Button variant="outline" size="sm" className="w-full" onClick={handleReset} disabled={loading}>

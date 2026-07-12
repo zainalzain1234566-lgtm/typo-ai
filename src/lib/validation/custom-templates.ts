@@ -51,6 +51,7 @@ export const generateCustomTemplateSchema = z.object({
 });
 
 export const editCustomTemplateSchema = z.object({
+  templateId: z.string().uuid(),
   settings: customTemplateSettingsSchema,
   message: z.string().min(1).max(2000),
   currentCss: z.string().min(1),

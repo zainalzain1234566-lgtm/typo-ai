@@ -29,6 +29,15 @@ export interface GeneratedCarousel {
   slides: GeneratedSlide[];
   caption: string;
   hashtags: string[];
+  usage?: ProviderUsage;
+}
+
+export interface ProviderUsage {
+  requestId: string;
+  model: string;
+  promptTokens: number;
+  completionTokens: number;
+  costMicroUsd: number | null;
 }
 
 export interface GenerationProvider {
@@ -58,7 +67,7 @@ async function callChatCompletion(
   model: string,
   messages: ChatMessage[],
   opts: ChatCompletionOptions = {}
-): Promise<string> {
+): Promise<{ content: string; usage: ProviderUsage }> {
   const body: Record<string, unknown> = {
     model,
     messages,
@@ -101,7 +110,18 @@ async function callChatCompletion(
     }
     throw new Error(`Empty AI response: ${JSON.stringify(data).slice(0, 300)}`);
   }
-  return content;
+  return {
+    content,
+    usage: {
+      requestId: String(data.id ?? ""),
+      model: String(data.model ?? model),
+      promptTokens: Number(data.usage?.prompt_tokens ?? 0),
+      completionTokens: Number(data.usage?.completion_tokens ?? 0),
+      costMicroUsd: typeof data.usage?.cost === "number" && Number.isFinite(data.usage.cost)
+        ? Math.round(data.usage.cost * 1_000_000)
+        : null,
+    },
+  };
 }
 
 // ============= External AI Provider =============
@@ -130,19 +150,19 @@ export class ExternalAIProvider implements GenerationProvider {
       { role: "user", content: prompt },
     ];
 
-    const content = await callChatCompletion(this.apiKey, this.baseUrl, this.model, messages, {
+    const completion = await callChatCompletion(this.apiKey, this.baseUrl, this.model, messages, {
       maxTokens: 4000,
       jsonMode: isJsonSupported,
     });
 
-    const jsonStr = extractJSON(content);
+    const jsonStr = extractJSON(completion.content);
     let parsed: any;
     try {
       parsed = JSON.parse(jsonStr);
     } catch (parseErr) {
-      throw new Error(`JSON parse failed: ${(parseErr as Error).message}\nContent preview: ${content.slice(0, 500)}`);
+      throw new Error(`JSON parse failed: ${(parseErr as Error).message}\nContent preview: ${completion.content.slice(0, 500)}`);
     }
-    return validateAIResponse(parsed);
+    return { ...validateAIResponse(parsed), usage: completion.usage };
   }
 }
 
@@ -359,7 +379,7 @@ export async function reviewMedicalContent(
     .map((s, i) => `شريحة ${i + 1} (${s.slide_type}):\nالعنوان: ${s.title}\nالنص: ${s.body}${s.cta_text ? `\nCTA: ${s.cta_text}` : ""}`)
     .join("\n\n");
 
-  const rawContent = await callChatCompletion(
+  const completion = await callChatCompletion(
     apiKey,
     baseUrl,
     model,
@@ -370,7 +390,7 @@ export async function reviewMedicalContent(
     { temperature: 0.3, maxTokens: 2000 }
   );
 
-  const jsonStr = extractJSON(rawContent);
+  const jsonStr = extractJSON(completion.content);
   let parsed: any;
   try {
     parsed = JSON.parse(jsonStr);
@@ -395,12 +415,16 @@ export async function reviewMedicalContent(
 // in the calling server action — this module only generates, it does not
 // sanitize or persist.
 
-export interface TemplateGenerationResult {
+interface TemplateBlocks {
   css: string;
   htmlCover: string;
   htmlContent: string;
   htmlEnding: string;
   aiMessage: string;
+}
+
+export interface TemplateGenerationResult extends TemplateBlocks {
+  usage: ProviderUsage;
 }
 
 const TEMPLATE_FORMAT_SPEC = `OUTPUT FORMAT — follow exactly, nothing else in your response:
@@ -558,7 +582,7 @@ function extractFencedBlock(content: string, label: string): string {
   return match[1].trim();
 }
 
-function extractTemplateBlocks(content: string): TemplateGenerationResult {
+function extractTemplateBlocks(content: string): TemplateBlocks {
   const css = extractFencedBlock(content, "css");
   const htmlCover = extractFencedBlock(content, "html:cover");
   const htmlContent = extractFencedBlock(content, "html:content");
@@ -580,7 +604,7 @@ export async function generateTemplateSystem(settings: CustomTemplateSettings, m
   const { apiKey, baseUrl, model } = getAIConfig(modelOverride);
   const prompt = message ? `${buildDesignBrief(settings)}\n\nUser's design brief: "${message}"` : buildDesignBrief(settings);
 
-  const content = await callChatCompletion(
+  const completion = await callChatCompletion(
     apiKey,
     baseUrl,
     model,
@@ -591,7 +615,7 @@ export async function generateTemplateSystem(settings: CustomTemplateSettings, m
     { temperature: 0.8, maxTokens: 50000 }
   );
 
-  return extractTemplateBlocks(content);
+  return { ...extractTemplateBlocks(completion.content), usage: completion.usage };
 }
 
 export async function editTemplateSystem(
@@ -602,7 +626,7 @@ export async function editTemplateSystem(
 ): Promise<TemplateGenerationResult> {
   const { apiKey, baseUrl, model } = getAIConfig(modelOverride);
 
-  const content = await callChatCompletion(
+  const completion = await callChatCompletion(
     apiKey,
     baseUrl,
     model,
@@ -613,5 +637,5 @@ export async function editTemplateSystem(
     { temperature: 0.7, maxTokens: 50000 }
   );
 
-  return extractTemplateBlocks(content);
+  return { ...extractTemplateBlocks(completion.content), usage: completion.usage };
 }

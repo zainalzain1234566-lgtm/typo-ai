@@ -28,6 +28,7 @@ import { testTelegramAction, testSavedTelegramAction, getTelegramStatusAction } 
 import { createClient } from "@/lib/supabase/client";
 import { DEFAULT_ACCENT_COLOR, DEFAULT_DISCLAIMER_TEXT } from "@/lib/constants";
 import { contentModeFromValue, type ContentMode } from "@/lib/content-mode";
+import { formatAvailableCredit, planLabel } from "@/lib/billing-display";
 
 const SECTIONS = [
   { id: "account", label: "الحساب", icon: UserIcon },
@@ -50,7 +51,7 @@ const demoBkSettings: BrandKitSettings = { enabled: true, showLogo: true, showAc
 export default function SettingsPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { user, brandKit, preferences, ready, refresh } = useApp();
+  const { user, brandKit, preferences, billing, ready, refresh } = useApp();
   const [active, setActive] = useState("account");
   const [deleteDialog, setDeleteDialog] = useState(false);
 
@@ -289,6 +290,16 @@ export default function SettingsPage() {
                     <div>
                       <p className="font-bold text-ink">{name}</p>
                       <p className="text-sm text-ink-muted">{user.email}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+                    <div className="rounded-xl border border-stone-200 bg-stone-50 px-4 py-3">
+                      <p className="text-xs text-ink-muted">نوع الحساب</p>
+                      <p className="mt-1 font-bold text-ink">{planLabel(billing.plan)}</p>
+                    </div>
+                    <div className="rounded-xl border border-stone-200 bg-stone-50 px-4 py-3">
+                      <p className="text-xs text-ink-muted">رصيدي</p>
+                      <p className="mt-1 font-bold text-ink" dir="ltr">{formatAvailableCredit(billing.creditBalanceMicroUsd)}</p>
                     </div>
                   </div>
                   <div className="space-y-4">
