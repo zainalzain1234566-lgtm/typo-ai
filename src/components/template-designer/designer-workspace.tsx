@@ -20,7 +20,7 @@ import { captureIframePng, captureAllToZip } from "./capture";
 import { mergeSlides } from "./merge";
 import type { DesignerVersion } from "./types";
 import { useApp } from "@/lib/app-context";
-import { getDesignerAccess } from "@/lib/template-designer-access";
+import { getDesignerAccess, hasSavedSlides } from "@/lib/template-designer-access";
 import { getWhatsAppUpgradeUrl } from "@/lib/whatsapp";
 
 let clientIdCounter = 0;
@@ -48,6 +48,7 @@ export function DesignerWorkspace() {
   const [downloadingAll, setDownloadingAll] = useState(false);
   const [codeOpen, setCodeOpen] = useState(false);
   const [currentTemplateId, setCurrentTemplateId] = useState<string | null>(null);
+  const [legacyTemplate, setLegacyTemplate] = useState(false);
 
   const visibleIframeRef = useRef<HTMLIFrameElement>(null);
   const hiddenIframeRefs = useRef<(HTMLIFrameElement | null)[]>([]);
@@ -66,7 +67,11 @@ export function DesignerWorkspace() {
 
   useEffect(() => {
     const templateId = searchParams.get("template");
-    if (!templateId) return;
+    if (!templateId) {
+      setLegacyTemplate(false);
+      setCurrentTemplateId(null);
+      return;
+    }
     let active = true;
     void getCustomTemplateAction(templateId).then((res) => {
       if (!active || !res.success || !res.data) return;
@@ -74,6 +79,14 @@ export function DesignerWorkspace() {
       if (!latest) return;
       const layouts = { cover: latest.html_cover, content: latest.html_content, ending: latest.html_ending };
       const rawSlides = latest.raw_slides;
+      setSettings(res.data.settings);
+      setCurrentTemplateId(res.data.id);
+      if (!hasSavedSlides(rawSlides)) {
+        setLegacyTemplate(true);
+        setVersions([]);
+        setCurrentVersionId(null);
+        return;
+      }
       const version: DesignerVersion = {
         id: makeClientId(),
         versionNumber: latest.version_number,
@@ -85,9 +98,8 @@ export function DesignerWorkspace() {
         source: latest.source,
         createdAt: latest.created_at,
       };
-      setSettings(res.data.settings);
+      setLegacyTemplate(false);
       setVersions([version]);
-      setCurrentTemplateId(res.data.id);
       setCurrentVersionId(version.id);
     });
     return () => { active = false; };
@@ -95,6 +107,7 @@ export function DesignerWorkspace() {
 
   const handleSend = useCallback(
     async (message: string) => {
+      if (legacyTemplate) return;
       if (!designerAccess.allowed) {
         toast({ type: "error", title: designerAccess.reason === "insufficient_credit" ? "لا يوجد رصيد كافٍ" : "انتهت التجربة المجانية" });
         return;
@@ -170,7 +183,7 @@ export function DesignerWorkspace() {
         setLoading(false);
       }
     },
-    [currentVersion, currentTemplateId, settings, model, toast, designerAccess, refresh]
+    [currentVersion, currentTemplateId, settings, model, toast, designerAccess, refresh, legacyTemplate]
   );
 
   const handleReset = () => {
@@ -179,6 +192,7 @@ export function DesignerWorkspace() {
     setCurrentSlideIndex(0);
     setMessages([]);
     setCurrentTemplateId(null);
+    setLegacyTemplate(false);
   };
 
   const handleDownloadCurrent = async () => {
@@ -236,7 +250,7 @@ export function DesignerWorkspace() {
       <div dir="rtl" className="flex-1 grid grid-cols-1 lg:grid-cols-[280px_1fr_340px] gap-0 max-w-[1600px] w-full mx-auto">
         {/* Settings pane (left) */}
         <aside className="border-l border-stone-200 bg-white overflow-y-auto order-3 lg:order-1">
-          <DesignerSettings settings={settings} onChange={setSettings} disabled={loading || hasDesign} />
+          <DesignerSettings settings={settings} onChange={setSettings} disabled={loading || hasDesign || legacyTemplate} />
           <div className="mx-4 mb-4 rounded-xl border border-accent/20 bg-accent-soft/40 p-3 text-sm text-ink-muted">
             {billing.plan === "paid" && billing.subscriptionStatus === "active" ? (
               <p>الرصيد المتاح: ${(billing.creditBalanceMicroUsd / 1_000_000).toFixed(2)}</p>
@@ -249,7 +263,7 @@ export function DesignerWorkspace() {
               </Link>
             )}
           </div>
-          {hasDesign && (
+          {(hasDesign || legacyTemplate) && (
             <div className="p-4 pt-0">
               <Button variant="outline" size="sm" className="w-full" onClick={handleReset} disabled={loading}>
                 <RotateCcw className="w-4 h-4" /> توليد جديد
@@ -297,6 +311,16 @@ export function DesignerWorkspace() {
                 values={{}}
                 iframeRef={visibleIframeRef}
               />
+            ) : legacyTemplate ? (
+              <div className="max-w-md rounded-2xl border border-amber-200 bg-amber-50 p-6 text-center">
+                <p className="font-bold text-amber-900">هذا القالب من إصدار قديم</p>
+                <p className="mt-2 text-sm leading-6 text-amber-800">
+                  لم تُحفظ بيانات الشرائح اللازمة للتعديل أو التصدير. يمكنك إنشاء قالب جديد مع بقاء القالب القديم محفوظًا.
+                </p>
+                <Link href="/templates/designer" className="mt-4 inline-flex h-10 items-center justify-center rounded-xl bg-accent px-4 text-sm font-medium text-accent-foreground">
+                  إنشاء قالب جديد
+                </Link>
+              </div>
             ) : (
               <div className="text-center text-ink-subtle max-w-xs">
                 <p className="text-sm">اكتب الموضوع في الإعدادات أو المحادثة، وسيولّد الذكاء الاصطناعي المحتوى والتصميم معًا</p>
@@ -323,14 +347,21 @@ export function DesignerWorkspace() {
         {/* Chat pane (right) */}
         <aside className="border-r border-stone-200 bg-white flex flex-col order-2 lg:order-3 h-[calc(100vh-4rem)] lg:sticky lg:top-16">
           <div className="flex-1 min-h-0">
-            <ChatPanel
-              messages={messages}
-              loading={loading}
-              onSend={handleSend}
-              placeholder={hasDesign ? "صف التعديل المطلوب على التصميم..." : "صف التصميم الذي تريده (اختياري)..."}
-              model={model}
-              onModelChange={setModel}
-            />
+            {legacyTemplate ? (
+              <div className="flex h-full items-center justify-center p-6 text-center text-sm leading-6 text-ink-muted">
+                التعديل بالذكاء الاصطناعي غير متاح لهذا القالب القديم لأن محتوى الشرائح غير محفوظ.
+              </div>
+            ) : (
+              <ChatPanel
+                messages={messages}
+                loading={loading}
+                onSend={handleSend}
+                placeholder={hasDesign ? "صف التعديل المطلوب على التصميم..." : "صف التصميم الذي تريده (اختياري)..."}
+                model={model}
+                onModelChange={setModel}
+                canChooseModel={billing.plan === "paid" && billing.subscriptionStatus === "active"}
+              />
+            )}
           </div>
           <VersionHistory versions={versions} currentVersionId={currentVersionId} onSelect={(v) => setCurrentVersionId(v.id)} disabled={loading} />
         </aside>

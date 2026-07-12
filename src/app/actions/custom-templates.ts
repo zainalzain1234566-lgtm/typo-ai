@@ -1,17 +1,19 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { log, logError } from "@/lib/logger";
 import {
   generateTemplateSystem,
   editTemplateSystem,
   getGenerationProvider,
+  GenerationError,
+  type ProviderUsage,
   type TemplateGenerationResult,
   type GenerationInput,
 } from "@/lib/services/generation";
 import { sanitizeTemplateHtml, sanitizeTemplateCss } from "@/lib/services/template-sandbox";
 import { generateCustomTemplateSchema, editCustomTemplateSchema } from "@/lib/validation/custom-templates";
-import { AI_DEFAULT_MODEL } from "@/lib/constants";
+import { resolveDesignerModel } from "@/lib/template-designer-access";
 
 function sanitizeResult(result: TemplateGenerationResult): TemplateGenerationResult {
   return {
@@ -43,16 +45,12 @@ async function getAccess(supabase: Awaited<ReturnType<typeof createClient>>): Pr
   return error ? null : data as DesignerAccess;
 }
 
-function resolvedModel(model?: string) {
-  return model ?? process.env.AI_MODEL ?? AI_DEFAULT_MODEL;
-}
-
 function providerCost(...costs: Array<number | null | undefined>) {
   if (costs.some((cost) => cost === null || cost === undefined)) throw new Error("AI provider did not return usage cost");
   return costs.reduce<number>((total, cost) => total + Number(cost), 0);
 }
 
-function usagePayload(...usage: Array<TemplateGenerationResult["usage"] | undefined>) {
+function usagePayload(...usage: Array<ProviderUsage | undefined>) {
   return usage.filter(Boolean).map((item) => ({
     requestId: item!.requestId,
     model: item!.model,
@@ -60,6 +58,31 @@ function usagePayload(...usage: Array<TemplateGenerationResult["usage"] | undefi
     completionTokens: item!.completionTokens,
     costMicroUsd: item!.costMicroUsd,
   }));
+}
+
+function usageFromError(error: unknown): ProviderUsage | undefined {
+  return error instanceof GenerationError ? error.usage : undefined;
+}
+
+function auditedProviderCost(usages: ProviderUsage[]): number {
+  return usages.reduce((total, usage) => total + (usage.costMicroUsd ?? 0), 0);
+}
+
+async function settleFailure(
+  admin: ReturnType<typeof createAdminClient>,
+  userId: string,
+  requestId: string,
+  usages: ProviderUsage[],
+  error: string
+) {
+  const { error: settlementError } = await (admin.rpc as any)("fail_template_designer_request_internal", {
+    p_user_id: userId,
+    p_request_id: requestId,
+    p_provider_usage: usagePayload(...usages),
+    p_provider_cost_microusd: auditedProviderCost(usages),
+    p_error_message: error,
+  });
+  if (settlementError) logError("CUSTOM_TEMPLATE", "failure settlement failed", settlementError.message);
 }
 
 export async function getTemplateDesignerAccessAction() {
@@ -105,8 +128,12 @@ export async function generateTemplateAction(input: Record<string, unknown>) {
     return { success: false, error: `الحقل "${firstErr.path.join(".")}" — ${firstErr.message}` };
   }
   const { settings, message, model } = parsed.data;
-  const selectedModel = resolvedModel(model);
-  const { data: reservation, error: reservationError } = await (supabase.rpc as any)("begin_template_designer_request", {
+  const access = await getAccess(supabase);
+  if (!access) return { success: false, error: "تعذر تحميل حالة الاشتراك" };
+  const selectedModel = resolveDesignerModel(access.plan, access.subscriptionStatus, model);
+  const admin = createAdminClient();
+  const { data: reservation, error: reservationError } = await (admin.rpc as any)("begin_template_designer_request_internal", {
+    p_user_id: user.id,
     p_operation: "generate",
     p_model: selectedModel,
   });
@@ -114,6 +141,7 @@ export async function generateTemplateAction(input: Record<string, unknown>) {
     return { success: false, error: "انتهت التجربة المجانية أو لا يوجد رصيد كافٍ" };
   }
 
+  const recordedUsage: ProviderUsage[] = [];
   try {
     // Content generation reuses the same engine that powers /projects/new —
     // no separate content model needed. Design generation is the new
@@ -133,15 +161,30 @@ export async function generateTemplateAction(input: Record<string, unknown>) {
       isMedical: false,
     };
 
-    const [carousel, rawDesign] = await Promise.all([
+    const [carouselResult, designResult] = await Promise.allSettled([
       getGenerationProvider(selectedModel).generate(contentInput),
       generateTemplateSystem(settings, message, selectedModel),
     ]);
+    if (carouselResult.status === "fulfilled" && carouselResult.value.usage) recordedUsage.push(carouselResult.value.usage);
+    if (designResult.status === "fulfilled") recordedUsage.push(designResult.value.usage);
+    if (carouselResult.status === "rejected") {
+      const usage = usageFromError(carouselResult.reason);
+      if (usage) recordedUsage.push(usage);
+      throw carouselResult.reason;
+    }
+    if (designResult.status === "rejected") {
+      const usage = usageFromError(designResult.reason);
+      if (usage) recordedUsage.push(usage);
+      throw designResult.reason;
+    }
+    const carousel = carouselResult.value;
+    const rawDesign = designResult.value;
     const design = sanitizeResult(rawDesign);
     const totalCost = providerCost(carousel.usage?.costMicroUsd, design.usage.costMicroUsd);
-    const { data: saved, error: saveError } = await (supabase.rpc as any)("complete_template_designer_request", {
+    const { data: saved, error: saveError } = await (admin.rpc as any)("complete_template_designer_request_internal", {
+      p_user_id: user.id,
       p_request_id: reservation.requestId,
-      p_provider_usage: usagePayload(carousel.usage as TemplateGenerationResult["usage"], design.usage),
+      p_provider_usage: usagePayload(carousel.usage, design.usage),
       p_provider_cost_microusd: totalCost,
       p_template_payload: {
         title: settings.topic,
@@ -155,7 +198,9 @@ export async function generateTemplateAction(input: Record<string, unknown>) {
         aiMessage: design.aiMessage,
       },
     });
-    if (saveError || !saved?.templateId) throw new Error(saveError?.message ?? "Could not save template");
+    if (saveError) throw new Error(saveError.message);
+    if (saved?.success === false) return { success: false, error: "الرصيد المتبقي لا يغطي التكلفة النهائية" };
+    if (!saved?.templateId) throw new Error("Could not save template");
     log("CUSTOM_TEMPLATE", "generate success", { slideCount: carousel.slides.length });
     return {
       success: true,
@@ -165,7 +210,7 @@ export async function generateTemplateAction(input: Record<string, unknown>) {
   } catch (err) {
     const message2 = err instanceof Error ? err.message : String(err);
     logError("CUSTOM_TEMPLATE", "generate failed", message2);
-    await (supabase.rpc as any)("fail_template_designer_request", { p_request_id: reservation.requestId, p_error_message: message2 });
+    await settleFailure(admin, user.id, reservation.requestId, recordedUsage, message2);
     return { success: false, error: "تعذر توليد التصميم، حاول مرة أخرى" };
   }
 }
@@ -184,21 +229,27 @@ export async function editTemplateAction(input: Record<string, unknown>) {
     return { success: false, error: `الحقل "${firstErr.path.join(".")}" — ${firstErr.message}` };
   }
 
-  const selectedModel = resolvedModel(parsed.data.model);
-  const { data: reservation, error: reservationError } = await (supabase.rpc as any)("begin_template_designer_request", {
+  const access = await getAccess(supabase);
+  if (!access) return { success: false, error: "تعذر تحميل حالة الاشتراك" };
+  const selectedModel = resolveDesignerModel(access.plan, access.subscriptionStatus, parsed.data.model);
+  const { data: previous, error: previousError } = await (supabase.from("custom_template_versions") as any)
+    .select("raw_slides")
+    .eq("custom_template_id", parsed.data.templateId)
+    .order("version_number", { ascending: false })
+    .limit(1)
+    .single();
+  if (previousError || !previous) return { success: false, error: "تعذر تحميل محتوى النسخة السابقة" };
+
+  const admin = createAdminClient();
+  const { data: reservation, error: reservationError } = await (admin.rpc as any)("begin_template_designer_request_internal", {
+    p_user_id: user.id,
     p_operation: "edit",
     p_model: selectedModel,
     p_template_id: parsed.data.templateId,
   });
   if (reservationError || !reservation?.requestId) return { success: false, error: "يلزم اشتراك فعّال ورصيد كافٍ لتعديل القالب" };
 
-  const { data: previous } = await (supabase.from("custom_template_versions") as any)
-    .select("raw_slides")
-    .eq("custom_template_id", parsed.data.templateId)
-    .order("version_number", { ascending: false })
-    .limit(1)
-    .single();
-
+  const recordedUsage: ProviderUsage[] = [];
   try {
     const raw = await editTemplateSystem(
       parsed.data.settings,
@@ -211,9 +262,11 @@ export async function editTemplateAction(input: Record<string, unknown>) {
       },
       selectedModel
     );
+    recordedUsage.push(raw.usage);
     const result = sanitizeResult(raw);
     const totalCost = providerCost(result.usage.costMicroUsd);
-    const { data: saved, error: saveError } = await (supabase.rpc as any)("complete_template_designer_request", {
+    const { data: saved, error: saveError } = await (admin.rpc as any)("complete_template_designer_request_internal", {
+      p_user_id: user.id,
       p_request_id: reservation.requestId,
       p_provider_usage: usagePayload(result.usage),
       p_provider_cost_microusd: totalCost,
@@ -225,17 +278,21 @@ export async function editTemplateAction(input: Record<string, unknown>) {
         htmlCover: result.htmlCover,
         htmlContent: result.htmlContent,
         htmlEnding: result.htmlEnding,
-        rawSlides: previous?.raw_slides ?? [],
+        rawSlides: previous.raw_slides,
         aiMessage: result.aiMessage,
       },
     });
-    if (saveError || !saved?.templateId) throw new Error(saveError?.message ?? "Could not save template");
+    if (saveError) throw new Error(saveError.message);
+    if (saved?.success === false) return { success: false, error: "الرصيد المتبقي لا يغطي التكلفة النهائية" };
+    if (!saved?.templateId) throw new Error("Could not save template");
     log("CUSTOM_TEMPLATE", "edit success");
     return { success: true, data: { ...result, templateId: saved.templateId }, access: await getAccess(supabase) };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    const failedUsage = usageFromError(err);
+    if (failedUsage) recordedUsage.push(failedUsage);
     logError("CUSTOM_TEMPLATE", "edit failed", message);
-    await (supabase.rpc as any)("fail_template_designer_request", { p_request_id: reservation.requestId, p_error_message: message });
+    await settleFailure(admin, user.id, reservation.requestId, recordedUsage, message);
     return { success: false, error: "تعذر تعديل التصميم، حاول مرة أخرى" };
   }
 }

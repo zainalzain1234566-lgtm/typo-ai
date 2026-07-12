@@ -86,6 +86,13 @@ const RETRO_PALETTES: Palette[] = [
   { id: "p4", name: "برتقالي", background: "#ffd000", text: "#111111", accent: "#ff00a0", secondary: "#00a0ff" },
 ];
 
+const ENGINEERING_PALETTES: Palette[] = [
+  { id: "p1", name: "مخطط كحلي", background: "#0D2B4A", text: "#F5FBFF", accent: "#63C6FF", secondary: "#173F66" },
+  { id: "p2", name: "ورق هندسي", background: "#F4F9FC", text: "#13324A", accent: "#1976A8", secondary: "#DCECF5" },
+  { id: "p3", name: "فحمي سماوي", background: "#151A1F", text: "#EFF7FA", accent: "#38BDF8", secondary: "#26333D" },
+  { id: "p4", name: "كوبالت أبيض", background: "#123B6D", text: "#FFFFFF", accent: "#A8E4FF", secondary: "#1D518F" },
+];
+
 // ============= Medical Spec Template Palettes =============
 
 const CLINICAL_CLEAN_PALETTES: Palette[] = [
@@ -167,6 +174,7 @@ export const TEMPLATE_DEFS: Template[] = [
   { id: "magazine", name: "مجلة", description: "أعمدة مجلية بخط الآلة الكاتبة وإطار متقطع", palettes: MAGAZINE_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "magazine", category: "general" },
   { id: "tilt", name: "قطري", description: "تصميم مائل قطريًا بخلفية متدرجة وزجاجية", palettes: TILT_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "tilt", category: "general" },
   { id: "retro", name: "ريترو", description: "تصميم تسعينيات بخطوط قطرية وظلال صلبة", palettes: RETRO_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "retro", category: "general" },
+  { id: "engineering", name: "هندسي", description: "مخطط هندسي بخلفية شبكية وخطوط قياس تقنية", palettes: ENGINEERING_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "engineering", category: "general" },
 ];
 
 export const VISIBLE_TEMPLATES = TEMPLATE_DEFS;

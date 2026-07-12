@@ -20,9 +20,10 @@ interface ChatPanelProps {
   placeholder?: string;
   model?: string;
   onModelChange: (model: string | undefined) => void;
+  canChooseModel: boolean;
 }
 
-export function ChatPanel({ messages, loading, onSend, placeholder, model, onModelChange }: ChatPanelProps) {
+export function ChatPanel({ messages, loading, onSend, placeholder, model, onModelChange, canChooseModel }: ChatPanelProps) {
   const [draft, setDraft] = useState("");
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const [progressIndex, setProgressIndex] = useState(0);
@@ -103,7 +104,7 @@ export function ChatPanel({ messages, loading, onSend, placeholder, model, onMod
             this trigger sits directly above the input row, and the shared
             Dropdown always opens downward, which covered the textarea/send
             button. bottom-full anchors the menu above the trigger instead. */}
-        <div ref={modelPickerRef} className="relative inline-block">
+        {canChooseModel ? <div ref={modelPickerRef} className="relative inline-block">
           <button
             type="button"
             disabled={loading}
@@ -136,7 +137,11 @@ export function ChatPanel({ messages, loading, onSend, placeholder, model, onMod
               ))}
             </div>
           )}
-        </div>
+        </div> : (
+          <div className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-1 text-xs text-ink-muted">
+            <Cpu className="w-3.5 h-3.5" /> DeepSeek Flash
+          </div>
+        )}
         <div className="flex items-end gap-2">
           <Textarea
             value={draft}

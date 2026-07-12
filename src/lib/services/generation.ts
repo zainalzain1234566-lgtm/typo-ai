@@ -40,6 +40,13 @@ export interface ProviderUsage {
   costMicroUsd: number | null;
 }
 
+export class GenerationError extends Error {
+  constructor(message: string, public readonly usage?: ProviderUsage) {
+    super(message);
+    this.name = "GenerationError";
+  }
+}
+
 export interface GenerationProvider {
   generate(input: GenerationInput): Promise<GeneratedCarousel>;
 }
@@ -104,24 +111,22 @@ async function callChatCompletion(
   const data = await response.json();
   const content = data.choices?.[0]?.message?.content;
   const finishReason = data.choices?.[0]?.finish_reason;
+  const usage: ProviderUsage = {
+    requestId: String(data.id ?? ""),
+    model: String(data.model ?? model),
+    promptTokens: Number(data.usage?.prompt_tokens ?? 0),
+    completionTokens: Number(data.usage?.completion_tokens ?? 0),
+    costMicroUsd: typeof data.usage?.cost === "number" && Number.isFinite(data.usage.cost)
+      ? Math.round(data.usage.cost * 1_000_000)
+      : null,
+  };
   if (!content) {
     if (finishReason === "length") {
-      throw new Error(`AI response truncated before any content was emitted (hit max_tokens=${opts.maxTokens ?? 4000}) — the model likely spent its whole budget on internal reasoning tokens. Retry with a higher max_tokens.`);
+      throw new GenerationError(`AI response truncated before any content was emitted (hit max_tokens=${opts.maxTokens ?? 4000}) — the model likely spent its whole budget on internal reasoning tokens. Retry with a higher max_tokens.`, usage);
     }
-    throw new Error(`Empty AI response: ${JSON.stringify(data).slice(0, 300)}`);
+    throw new GenerationError(`Empty AI response: ${JSON.stringify(data).slice(0, 300)}`, usage);
   }
-  return {
-    content,
-    usage: {
-      requestId: String(data.id ?? ""),
-      model: String(data.model ?? model),
-      promptTokens: Number(data.usage?.prompt_tokens ?? 0),
-      completionTokens: Number(data.usage?.completion_tokens ?? 0),
-      costMicroUsd: typeof data.usage?.cost === "number" && Number.isFinite(data.usage.cost)
-        ? Math.round(data.usage.cost * 1_000_000)
-        : null,
-    },
-  };
+  return { content, usage };
 }
 
 // ============= External AI Provider =============
@@ -155,14 +160,13 @@ export class ExternalAIProvider implements GenerationProvider {
       jsonMode: isJsonSupported,
     });
 
-    const jsonStr = extractJSON(completion.content);
-    let parsed: any;
     try {
-      parsed = JSON.parse(jsonStr);
-    } catch (parseErr) {
-      throw new Error(`JSON parse failed: ${(parseErr as Error).message}\nContent preview: ${completion.content.slice(0, 500)}`);
+      const parsed = JSON.parse(extractJSON(completion.content));
+      return { ...validateAIResponse(parsed), usage: completion.usage };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new GenerationError(`Invalid carousel response: ${message}\nContent preview: ${completion.content.slice(0, 500)}`, completion.usage);
     }
-    return { ...validateAIResponse(parsed), usage: completion.usage };
   }
 }
 
@@ -615,7 +619,11 @@ export async function generateTemplateSystem(settings: CustomTemplateSettings, m
     { temperature: 0.8, maxTokens: 50000 }
   );
 
-  return { ...extractTemplateBlocks(completion.content), usage: completion.usage };
+  try {
+    return { ...extractTemplateBlocks(completion.content), usage: completion.usage };
+  } catch (error) {
+    throw new GenerationError(error instanceof Error ? error.message : String(error), completion.usage);
+  }
 }
 
 export async function editTemplateSystem(
@@ -637,5 +645,9 @@ export async function editTemplateSystem(
     { temperature: 0.7, maxTokens: 50000 }
   );
 
-  return { ...extractTemplateBlocks(completion.content), usage: completion.usage };
+  try {
+    return { ...extractTemplateBlocks(completion.content), usage: completion.usage };
+  } catch (error) {
+    throw new GenerationError(error instanceof Error ? error.message : String(error), completion.usage);
+  }
 }

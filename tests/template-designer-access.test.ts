@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { customerCostMicroUsd, getDesignerAccess } from "../src/lib/template-designer-access";
+import { customerCostMicroUsd, getDesignerAccess, resolveDesignerModel } from "../src/lib/template-designer-access";
 
 test("allows a new template while a lifetime free use remains", () => {
   const access = getDesignerAccess({
@@ -82,4 +82,19 @@ test("uses paid credit before free trial uses", () => {
 
 test("adds the required twenty percent markup using integer micro-USD", () => {
   assert.equal(customerCostMicroUsd(100001), 120002);
+});
+
+test("limits free accounts to DeepSeek Flash while paid accounts keep their model", () => {
+  assert.equal(
+    resolveDesignerModel("free", "inactive", "deepseek/deepseek-v4-pro"),
+    "deepseek/deepseek-v4-flash"
+  );
+  assert.equal(
+    resolveDesignerModel("paid", "active", "deepseek/deepseek-v4-pro"),
+    "deepseek/deepseek-v4-pro"
+  );
+  assert.equal(
+    resolveDesignerModel("paid", "expired", "minimax/minimax-m3"),
+    "deepseek/deepseek-v4-flash"
+  );
 });

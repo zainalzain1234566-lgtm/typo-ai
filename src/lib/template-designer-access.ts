@@ -1,3 +1,5 @@
+import { AI_DEFAULT_MODEL } from "./constants";
+
 export type DesignerOperation = "generate" | "edit";
 export type SubscriptionStatus = "inactive" | "active" | "expired" | "canceled";
 export type DesignerAccessReason = "trial_available" | "paid_active" | "trial_ended" | "subscription_inactive" | "insufficient_credit";
@@ -23,4 +25,18 @@ export function getDesignerAccess(input: DesignerAccessInput): { allowed: boolea
 
 export function customerCostMicroUsd(providerCostMicroUsd: number): number {
   return Math.ceil(providerCostMicroUsd * 1.2);
+}
+
+export function resolveDesignerModel(
+  plan: "free" | "paid",
+  subscriptionStatus: SubscriptionStatus,
+  selectedModel?: string
+) {
+  return plan === "paid" && subscriptionStatus === "active"
+    ? selectedModel ?? AI_DEFAULT_MODEL
+    : AI_DEFAULT_MODEL;
+}
+
+export function hasSavedSlides(value: unknown): boolean {
+  return Array.isArray(value) && value.length > 0;
 }

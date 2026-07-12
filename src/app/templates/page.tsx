@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
 import { ScaledSlide } from "@/components/carousel/slide-renderer";
-import { TEMPLATE_DEFS, getPalette, SIZES, ALL_FONTS, VISIBLE_TEMPLATES } from "@/lib/templates";
+import { getPalette, SIZES, ALL_FONTS, templatesForMode } from "@/lib/templates";
 import { FEATURE_FLAGS } from "@/lib/feature-flags";
 import { useApp } from "@/lib/app-context";
 import { toggleTemplateFavoriteAction } from "@/app/actions/projects";
@@ -25,7 +25,7 @@ const demoEnding: Slide = { id: "d3", type: "ending", title: "شارك الفك�
 
 export default function TemplatesPage() {
   const router = useRouter();
-  const { supabase, ready } = useApp();
+  const { supabase, ready, preferences } = useApp();
   const [preview, setPreview] = useState<string | null>(null);
   const [previewSize, setPreviewSize] = useState<CarouselSize>("1080x1080");
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -39,7 +39,8 @@ export default function TemplatesPage() {
     if (ready) loadFavorites();
   }, [ready, loadFavorites]);
 
-  const tmpl = preview ? VISIBLE_TEMPLATES.find((t) => t.id === preview) : null;
+  const visibleTemplates = templatesForMode(preferences.contentMode);
+  const tmpl = preview ? visibleTemplates.find((t) => t.id === preview) : null;
 
   const handleToggleFavorite = async (templateId: string) => {
     setFavorites((prev) =>
@@ -63,7 +64,7 @@ export default function TemplatesPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {VISIBLE_TEMPLATES.map((t, i) => {
+          {visibleTemplates.map((t, i) => {
             const pal = getPalette(t.id, ["p1", "p2", "p3", "p4"][i % 4]);
             const isFav = favorites.includes(t.id);
             return (

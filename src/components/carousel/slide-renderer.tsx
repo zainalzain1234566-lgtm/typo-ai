@@ -79,6 +79,7 @@ export const SlideRenderer = forwardRef<HTMLDivElement, SlideRenderProps>(functi
     "bold-statement": BoldStatement,
     tahdheer: Tahdheer,
     raqmi: Raqmi,
+    engineering: Engineering,
   };
   const Renderer = renderers[templateId] ?? Tahrir;
   return <Renderer {...props} ref={ref} />;
@@ -2589,6 +2590,91 @@ const Raqmi = forwardRef<HTMLDivElement, SlideRenderProps>(function Raqmi(
           {shouldShowMedicalDisclaimer(!!medical?.isMedical, brandKitSettings.showDisclaimer) && !isCover && (
             <DisclaimerFooter variant="inline" text={brandKitData.disclaimerText || ""} palette={palette} font={font} fontSizeScale={fontSizeScale} />
           )}
+        </div>
+      </BaseSlide>
+    </div>
+  );
+});
+
+// ============= Engineering — Technical Blueprint =============
+
+const Engineering = forwardRef<HTMLDivElement, SlideRenderProps>(function Engineering(
+  { slide, palette, font, brandKitSettings, brandKitData, index, total, fontSizeScale = 1 }, ref
+) {
+  const isCover = slide.type === "cover";
+  const isEnding = slide.type === "ending";
+  const { para, items } = splitBody(slide.body || "");
+  const grid = `linear-gradient(${palette.accent}18 1px, transparent 1px), linear-gradient(90deg, ${palette.accent}18 1px, transparent 1px)`;
+
+  return (
+    <div ref={ref} style={{ width: "100%", height: "100%" }}>
+      <BaseSlide
+        slide={slide}
+        palette={palette}
+        font={font}
+        settings={brandKitSettings}
+        data={brandKitData}
+        index={index}
+        total={total}
+        fontSizeScale={fontSizeScale}
+        style={{ backgroundImage: grid, backgroundSize: "36px 36px" }}
+      >
+        <div dir="rtl" style={{ position: "relative", zIndex: 2, height: "100%", padding: "72px", display: "flex", flexDirection: "column" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", color: palette.accent, fontSize: fs(18, fontSizeScale), fontWeight: 700, letterSpacing: "2px" }}>
+            <span>{String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}</span>
+            <span>ENGINEERING</span>
+          </div>
+
+          <div aria-hidden style={{ position: "absolute", top: "145px", left: "82px", width: "170px", height: "170px", border: `2px dashed ${palette.accent}`, borderRadius: "50%", opacity: 0.65 }}>
+            <span style={{ position: "absolute", top: "50%", left: "-24px", width: "216px", height: "1px", background: palette.accent }} />
+            <span style={{ position: "absolute", top: "-24px", left: "50%", width: "1px", height: "216px", background: palette.accent }} />
+            <span style={{ position: "absolute", inset: "38px", border: `1px solid ${palette.accent}`, transform: "rotate(45deg)" }} />
+          </div>
+
+          {isCover && (
+            <div style={{ marginTop: "auto", marginBottom: "45px", maxWidth: "820px" }}>
+              <div style={{ width: "86px", height: "4px", background: palette.accent, marginBottom: "24px" }} />
+              <h1 style={{ margin: 0, fontSize: fs(68, fontSizeScale), lineHeight: 1.25, fontWeight: 900 }}>{slide.title}</h1>
+              {slide.body && <p style={{ margin: "22px 0 0", maxWidth: "720px", fontSize: fs(30, fontSizeScale), lineHeight: 1.7, opacity: 0.72 }}>{slide.body}</p>}
+            </div>
+          )}
+
+          {!isCover && !isEnding && (
+            <div style={{ marginTop: "auto", marginBottom: "45px", maxWidth: "850px" }}>
+              <span style={{ display: "inline-block", marginBottom: "18px", color: palette.accent, fontSize: fs(18, fontSizeScale), fontWeight: 700 }}>DETAIL_{String(index + 1).padStart(2, "0")}</span>
+              <h2 style={{ margin: 0, fontSize: fs(50, fontSizeScale), lineHeight: 1.3, fontWeight: 850 }}>{slide.title}</h2>
+              {para && <p style={{ margin: "22px 0 0", fontSize: fs(29, fontSizeScale), lineHeight: 1.65, opacity: 0.78 }}>{para}</p>}
+              {items.length > 0 && (
+                <ul style={{ listStyle: "none", margin: "24px 0 0", padding: 0, display: "grid", gap: "14px" }}>
+                  {items.map((item, itemIndex) => (
+                    <li key={itemIndex} style={{ display: "flex", gap: "14px", alignItems: "flex-start", fontSize: fs(27, fontSizeScale), lineHeight: 1.5 }}>
+                      <span style={{ color: palette.accent, fontWeight: 900, flexShrink: 0 }}>0{itemIndex + 1}</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+
+          {isEnding && (
+            <div style={{ margin: "auto 0", maxWidth: "820px" }}>
+              <span style={{ color: palette.accent, fontSize: fs(18, fontSizeScale), fontWeight: 700, letterSpacing: "2px" }}>END_OF_DRAWING</span>
+              <h2 style={{ margin: "20px 0 0", fontSize: fs(58, fontSizeScale), lineHeight: 1.3, fontWeight: 900 }}>{slide.title}</h2>
+              {slide.body && <p style={{ margin: "20px 0 0", fontSize: fs(29, fontSizeScale), lineHeight: 1.65, opacity: 0.75 }}>{slide.body}</p>}
+              {slide.ctaText && (
+                <div style={{ display: "inline-block", marginTop: "32px", padding: "16px 28px", border: `2px solid ${palette.accent}`, background: palette.secondary, color: palette.text, fontSize: fs(26, fontSizeScale), fontWeight: 800 }}>
+                  {slide.ctaText} ←
+                </div>
+              )}
+            </div>
+          )}
+
+          <div aria-hidden style={{ display: "flex", alignItems: "center", gap: "10px", color: palette.accent, fontSize: fs(14, fontSizeScale), opacity: 0.8 }}>
+            <span style={{ width: "70px", height: "1px", background: palette.accent }} />
+            <span>SCALE 1:100</span>
+            <span style={{ flex: 1, height: "1px", background: palette.accent }} />
+          </div>
         </div>
       </BaseSlide>
     </div>
