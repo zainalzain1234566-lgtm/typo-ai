@@ -62,7 +62,7 @@ export async function exportAllToZip(
   URL.revokeObjectURL(url);
 }
 
-function dataUrlToBlob(dataUrl: string): Blob {
+export function dataUrlToBlob(dataUrl: string): Blob {
   const arr = dataUrl.split(",");
   const mime = arr[0].match(/:(.*?);/)?.[1] ?? "image/png";
   const bstr = atob(arr[1]);

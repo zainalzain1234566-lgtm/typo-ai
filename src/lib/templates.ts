@@ -123,6 +123,20 @@ const BOLD_STATEMENT_PALETTES: Palette[] = [
   { id: "p4", name: "أخضر عميق", background: "#16302B", text: "#EAF4EF", accent: "#2CC28E", secondary: "#1a3f37" },
 ];
 
+const TAHDHEER_PALETTES: Palette[] = [
+  { id: "p1", name: "كهرماني", background: "#FFFBEB", text: "#451A03", accent: "#D97706", secondary: "#FEF3C7" },
+  { id: "p2", name: "أحمر تحذيري", background: "#FEF2F2", text: "#450A0A", accent: "#DC2626", secondary: "#FEE2E2" },
+  { id: "p3", name: "داكن", background: "#1C1410", text: "#FDE9CE", accent: "#F59E0B", secondary: "#2B2016" },
+  { id: "p4", name: "محايد", background: "#FAFAF9", text: "#1C1917", accent: "#B91C1C", secondary: "#F5F5F4" },
+];
+
+const RAQMI_PALETTES: Palette[] = [
+  { id: "p1", name: "بنفسجي", background: "#F5F3FF", text: "#2E1065", accent: "#7C3AED", secondary: "#EDE9FE" },
+  { id: "p2", name: "أزرق", background: "#EFF6FF", text: "#1E3A5F", accent: "#2563EB", secondary: "#DBEAFE" },
+  { id: "p3", name: "أخضر", background: "#ECFDF5", text: "#064E3B", accent: "#059669", secondary: "#D1FAE5" },
+  { id: "p4", name: "داكن", background: "#18181B", text: "#F4F4F5", accent: "#A78BFA", secondary: "#27272A" },
+];
+
 export const TEMPLATE_DEFS: Template[] = [
   { id: "tahrir", name: "تحرير", description: "تصميم تحريري بأرقام كبيرة وتباين واضح", palettes: PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "tahrir", category: "medical" },
   { id: "wadeh", name: "واضح", description: "تصميم نظيف بمساحات واسعة وخط واضح", palettes: PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "wadeh", category: "medical" },
@@ -138,6 +152,8 @@ export const TEMPLATE_DEFS: Template[] = [
   { id: "myth-fact", name: "خرافة وحقيقة", description: "نظام بصحيح لتفكيك الخرافات بإشارات صح والخطأ المتضادة", palettes: MYTH_FACT_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "myth-fact", category: "medical" },
   { id: "editorial-health", name: "صحي تحريري", description: "تصميم مجلات دافئ بصفحات راقية ومحتوى إنساني", palettes: EDITORIAL_HEALTH_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "editorial-health", category: "medical" },
   { id: "bold-statement", name: "بيان جريء", description: "تباين عالي ورسالة واحدة قوية في كل شريحة", palettes: BOLD_STATEMENT_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "bold-statement", category: "medical" },
+  { id: "tahdheer", name: "تحذير", description: "تصميم تنبيهي لأعراض الخطر وحالات استشارة الطبيب العاجلة", palettes: TAHDHEER_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "tahdheer", category: "medical" },
+  { id: "raqmi", name: "رقمي", description: "تصميم إحصائي برقم كبير وخلفية متدرجة لعرض الأرقام والدراسات", palettes: RAQMI_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "raqmi", category: "medical" },
   { id: "shabaka", name: "شبكة", description: "تصميم بخلفية شبكية وعناصر منظمة", palettes: PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "shabaka", category: "general" },
   { id: "unwan", name: "عنوان", description: "عنوان ضخم يملأ المساحة مع تفاصيل دقيقة", palettes: PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "unwan", category: "general" },
   // === New styles (style01–style10) ===

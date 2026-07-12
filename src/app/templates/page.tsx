@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Heart, Eye, Check } from "lucide-react";
+import { Heart, Eye, Check, Wand2 } from "lucide-react";
 import { AppNavbar } from "@/components/layout/app-navbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -52,9 +52,14 @@ export default function TemplatesPage() {
     <div className="min-h-screen bg-[#faf9f7]">
       <AppNavbar />
       <div className="mx-auto max-w-7xl px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-extrabold text-ink">القوالب</h1>
-          <p className="mt-2 text-ink-muted">اختر قالبًا لبدء مشروعك أو استعرض التصاميم</p>
+        <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-extrabold text-ink">القوالب</h1>
+            <p className="mt-2 text-ink-muted">اختر قالبًا لبدء مشروعك أو دع الذكاء الاصطناعي يصمم كاروسيلًا كاملاً من الصفر</p>
+          </div>
+          <Button onClick={() => router.push("/templates/designer")}>
+            <Wand2 className="w-4 h-4" /> مصمم القوالب بالذكاء الاصطناعي
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
