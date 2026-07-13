@@ -9,5 +9,8 @@ export function friendlyAuthError(raw: string): string {
   if (/^Email address ".*" is invalid$/.test(raw)) {
     return "هذا البريد الإلكتروني غير مدعوم، يرجى تجربة بريد آخر";
   }
+  if (/rate limit|too many requests/i.test(raw)) {
+    return "تم إرسال طلبات كثيرة، يرجى الانتظار قبل طلب رسالة جديدة";
+  }
   return "حدث خطأ غير متوقع، يرجى المحاولة مرة أخرى";
 }

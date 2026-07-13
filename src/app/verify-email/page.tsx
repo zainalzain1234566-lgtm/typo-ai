@@ -1,29 +1,23 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import { Mail, RefreshCw } from "lucide-react";
 import { MarketingNavbar } from "@/components/layout/marketing-navbar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
+import { friendlyAuthError } from "@/lib/error-messages";
 
 export default function VerifyEmailPage() {
-  const router = useRouter();
-  const supabase = createClient();
-  const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [email, setEmail] = useState("");
-  const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user?.email) setEmail(user.email);
-    });
-    inputsRef.current[0]?.focus();
-  }, []); // eslint-disable-line
+    setEmail(sessionStorage.getItem("pendingSignupEmail") ?? "");
+  }, []);
 
   useEffect(() => {
     if (countdown <= 0) return;
@@ -31,55 +25,23 @@ export default function VerifyEmailPage() {
     return () => clearInterval(timer);
   }, [countdown]);
 
-  const handleInput = (i: number, val: string) => {
-    if (!/^\d?$/.test(val)) return;
-    setCode((prev) => {
-      const next = [...prev];
-      next[i] = val;
-      return next;
-    });
-    if (val && i < 5) inputsRef.current[i + 1]?.focus();
-  };
-
-  const handleKeyDown = (i: number, e: React.KeyboardEvent) => {
-    if (e.key === "Backspace" && !code[i] && i > 0) inputsRef.current[i - 1]?.focus();
-  };
-
-  const handlePaste = (e: React.ClipboardEvent) => {
-    e.preventDefault();
-    const text = e.clipboardData.getData("text").slice(0, 6);
-    const next = ["", "", "", "", "", ""];
-    text.split("").forEach((c, i) => (next[i] = c));
-    setCode(next);
-  };
-
-  const onSubmit = async () => {
-    const token = code.join("");
-    if (token.length !== 6) {
-      setError("أدخل الرمز كاملاً (6 أرقام)");
-      return;
-    }
-    if (!email) {
-      setError("تعذر تحديد البريد الإلكتروني");
-      return;
-    }
+  const resend = async () => {
     setError(null);
+    setSuccess(null);
     setLoading(true);
-    const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
+    const supabase = createClient();
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    });
     setLoading(false);
     if (error) {
-      setError(error.message);
-    } else {
-      router.push("/projects");
-      router.refresh();
+      setError(friendlyAuthError(error.message));
+      return;
     }
-  };
-
-  const resend = async () => {
     setCountdown(30);
-    setCode(["", "", "", "", "", ""]);
-    setError(null);
-    await supabase.auth.resend({ type: "signup", email });
+    setSuccess("تم إرسال رابط تأكيد جديد");
   };
 
   return (
@@ -92,27 +54,20 @@ export default function VerifyEmailPage() {
           </div>
           <h1 className="text-2xl font-extrabold text-ink">تحقق من بريدك الإلكتروني</h1>
           <p className="mt-2 text-sm text-ink-muted">
-            أرسلنا رمز التحقق إلى <span className="font-medium text-ink">{email || "بريدك"}</span>
+            أرسلنا رابط التأكيد إلى <span className="font-medium text-ink">{email || "بريدك الإلكتروني"}</span>
           </p>
+          <p className="mt-2 text-sm text-ink-muted">افتح الرسالة واضغط على رابط التأكيد لإكمال إنشاء حسابك.</p>
           {error && <div id="verification-error" role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
-          <div className="mt-6 grid grid-cols-6 gap-2" dir="ltr">
-            {code.map((c, i) => (
-              <Input key={i} ref={(el) => { inputsRef.current[i] = el; }} type="text" inputMode="numeric" autoComplete={i === 0 ? "one-time-code" : "off"} maxLength={1} value={c}
-                onChange={(e) => handleInput(i, e.target.value)} onKeyDown={(e) => handleKeyDown(i, e)} onPaste={handlePaste}
-                aria-label={`الرقم ${i + 1} من رمز التحقق`}
-                aria-invalid={!!error}
-                aria-describedby={error ? "verification-error" : undefined}
-                className="w-full h-12 sm:h-14 text-center text-lg sm:text-xl font-bold" />
-            ))}
-          </div>
-          <div className="mt-6 space-y-3">
-            <Button onClick={onSubmit} className="w-full" size="lg" disabled={loading}>
-              {loading ? "جارٍ التحقق..." : "تأكيد البريد"}
+          {success && <p aria-live="polite" className="mt-4 text-sm text-green-700">{success}</p>}
+          {email ? (
+            <Button onClick={resend} variant="ghost" className="mt-6 w-full" disabled={loading || countdown > 0}>
+              {loading ? "جارٍ الإرسال..." : countdown > 0 ? `إعادة الإرسال خلال ${countdown} ثانية` : <><RefreshCw className="w-4 h-4" /> إعادة إرسال الرابط</>}
             </Button>
-            <Button onClick={resend} variant="ghost" className="w-full" disabled={countdown > 0}>
-              {countdown > 0 ? `إعادة الإرسال خلال ${countdown} ثانية` : <><RefreshCw className="w-4 h-4" /> إعادة إرسال الرمز</>}
-            </Button>
-          </div>
+          ) : (
+            <Link href="/signup" className="mt-6 inline-flex min-h-11 items-center text-sm font-medium text-accent hover:underline">
+              العودة إلى إنشاء الحساب
+            </Link>
+          )}
         </div>
       </main>
     </div>

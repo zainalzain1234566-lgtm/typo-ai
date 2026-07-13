@@ -52,12 +52,16 @@ export default function SignupPage() {
     const { error } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
-      options: { data: { display_name: data.name, content_mode: data.contentMode } },
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        data: { display_name: data.name, content_mode: data.contentMode },
+      },
     });
     setLoading(false);
     if (error) {
       setServerError(friendlyAuthError(error.message));
     } else {
+      sessionStorage.setItem("pendingSignupEmail", data.email);
       router.push("/verify-email");
     }
   };

@@ -42,8 +42,11 @@ function LoginContent() {
   const redirect = requestedRedirect && /^\/(?![\\/])/.test(requestedRedirect)
     ? requestedRedirect
     : "/projects";
+  const confirmationError = searchParams.get("error") === "email-confirmation"
+    ? "تعذر تأكيد البريد الإلكتروني. قد يكون الرابط منتهيًا أو مستخدمًا بالفعل."
+    : null;
   const [showPass, setShowPass] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(confirmationError);
   const [loading, setLoading] = useState(false);
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
