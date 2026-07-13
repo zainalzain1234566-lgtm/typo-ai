@@ -361,14 +361,18 @@ function ProjectCard({ project, folders, onOpen, onDuplicate, onDelete, onExport
               slide={coverSlide}
               templateId={project.settings.templateId}
               palette={pal}
-              font={project.settings.font}
+              font={project.settings.bodyFont}
+              titleFont={project.settings.titleFont}
               size={project.settings.size}
               brandKitSettings={project.settings.brandKit}
-              brandKitData={{ instagramHandle: "@typo.ai", logoDataUrl: null, primaryColor: DEFAULT_ACCENT_COLOR, font: project.settings.font }}
+              brandKitData={{ instagramHandle: "@typo.ai", logoDataUrl: null, primaryColor: DEFAULT_ACCENT_COLOR, font: project.settings.bodyFont }}
               medical={{ isMedical: isMedicalAccount, specialty: project.settings.specialty, source: project.settings.source }}
               index={0}
               total={project.slides.length}
-              fontSizeScale={project.settings.fontSizeScale}
+              bodyFontSizeScale={project.settings.bodyFontSizeScale}
+              titleFontSizeScale={project.settings.titleFontSizeScale}
+              titleTextAlign={project.settings.titleTextAlign}
+              bodyTextAlign={project.settings.bodyTextAlign}
             />
           ) : (
             <div className="aspect-square flex items-center justify-center text-ink-subtle">

@@ -15,15 +15,16 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScaledSlide } from "@/components/carousel/slide-renderer";
+import { TypographyControls } from "@/components/carousel/typography-controls";
 import { useApp } from "@/lib/app-context";
 import { useToast } from "@/components/ui/toast";
-import { TEMPLATE_DEFS, getPalette, ALL_FONTS, templatesForMode } from "@/lib/templates";
+import { TEMPLATE_DEFS, getPalette, templatesForMode } from "@/lib/templates";
 import { DEFAULT_ACCENT_COLOR } from "@/lib/constants";
 import {
-  mapProject, useTemplateLookup, projectToUpdateInput, FONT_FE_TO_DB,
+  mapProject, useTemplateLookup, projectToUpdateInput,
 } from "@/lib/db-mappers";
 import { cn } from "@/lib/utils";
-import type { Slide, FontFamily, Placement, Project } from "@/lib/types";
+import type { Slide, Placement, Project } from "@/lib/types";
 import {
   updateProjectAction, updateSlideAction, addSlideAction,
   duplicateSlideAction, deleteSlideAction, reorderSlidesAction,
@@ -164,7 +165,7 @@ export default function EditorPage() {
   const currentSlide = project.slides[currentSlideIdx];
   const basePal = getPalette(project.settings.templateId, project.settings.paletteId);
   const pal = brandKit.primaryColor && brandKit.primaryColor !== DEFAULT_ACCENT_COLOR ? { ...basePal, accent: brandKit.primaryColor } : basePal;
-  const brandKitData = { instagramHandle: brandKit.instagramHandle, logoDataUrl: brandKit.logoUrl, primaryColor: brandKit.primaryColor, font: project.settings.font, disclaimerText: brandKit.disclaimerText };
+  const brandKitData = { instagramHandle: brandKit.instagramHandle, logoDataUrl: brandKit.logoUrl, primaryColor: brandKit.primaryColor, font: project.settings.bodyFont, disclaimerText: brandKit.disclaimerText };
   const tmpl = TEMPLATE_DEFS.find((t) => t.id === project.settings.templateId);
 
   return (
@@ -186,7 +187,7 @@ export default function EditorPage() {
           </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={() => setTemplateDialog(true)}><Palette className="w-4 h-4" /> تغيير القالب</Button>
-            <Button variant="ghost" size="sm" onClick={() => setBrandDialog(true)}><SettingsIcon className="w-4 h-4" /> إعدادات الهوية</Button>
+            <Button variant="ghost" size="sm" onClick={() => setBrandDialog(true)}><SettingsIcon className="w-4 h-4" /> الهوية والخطوط</Button>
             <Button size="sm" onClick={() => router.push(`/projects/${project.id}/export`)}><Download className="w-4 h-4" /> تصدير</Button>
           </div>
         </div>
@@ -205,12 +206,16 @@ export default function EditorPage() {
                 slide={slide}
                 templateId={project.settings.templateId}
                 palette={pal}
-                font={project.settings.font}
+                font={project.settings.bodyFont}
+                titleFont={project.settings.titleFont}
                 size={project.settings.size}
                 brandKitSettings={project.settings.brandKit}
                 brandKitData={brandKitData}
                 medical={{ isMedical: preferences.contentMode === "medical", specialty: project.settings.specialty, source: project.settings.source }}
-                fontSizeScale={project.settings.fontSizeScale}
+                bodyFontSizeScale={project.settings.bodyFontSizeScale}
+                titleFontSizeScale={project.settings.titleFontSizeScale}
+                titleTextAlign={project.settings.titleTextAlign}
+                bodyTextAlign={project.settings.bodyTextAlign}
                 index={i}
                 total={project.slides.length}
               />
@@ -240,13 +245,18 @@ export default function EditorPage() {
                         slide={slide}
                         templateId={project.settings.templateId}
                         palette={pal}
-                        font={project.settings.font}
+                        font={project.settings.bodyFont}
+                        titleFont={project.settings.titleFont}
                         size={project.settings.size}
                         brandKitSettings={project.settings.brandKit}
                         brandKitData={brandKitData}
                         medical={{ isMedical: preferences.contentMode === "medical", specialty: project.settings.specialty, source: project.settings.source }}
                         index={i}
                         total={project.slides.length}
+                        bodyFontSizeScale={project.settings.bodyFontSizeScale}
+                        titleFontSizeScale={project.settings.titleFontSizeScale}
+                        titleTextAlign={project.settings.titleTextAlign}
+                        bodyTextAlign={project.settings.bodyTextAlign}
                       />
                       <div className="absolute top-1 right-1 flex items-center gap-1">
                         <span className="text-[10px] font-bold text-white bg-black/50 rounded px-1.5 py-0.5">{i + 1}</span>
@@ -288,14 +298,18 @@ export default function EditorPage() {
                       slide={currentSlide}
                       templateId={project.settings.templateId}
                       palette={pal}
-                      font={project.settings.font}
+                      font={project.settings.bodyFont}
+                      titleFont={project.settings.titleFont}
                       size={project.settings.size}
                       brandKitSettings={project.settings.brandKit}
                       brandKitData={brandKitData}
                       medical={{ isMedical: preferences.contentMode === "medical", specialty: project.settings.specialty, source: project.settings.source }}
                       index={currentSlideIdx}
                       total={project.slides.length}
-                      fontSizeScale={project.settings.fontSizeScale}
+                      bodyFontSizeScale={project.settings.bodyFontSizeScale}
+                      titleFontSizeScale={project.settings.titleFontSizeScale}
+                      titleTextAlign={project.settings.titleTextAlign}
+                      bodyTextAlign={project.settings.bodyTextAlign}
                     />
                     <div className="absolute inset-0 rounded-xl bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
                       <ZoomIn className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow" />
@@ -386,14 +400,18 @@ export default function EditorPage() {
               slide={currentSlide}
               templateId={project.settings.templateId}
               palette={pal}
-              font={project.settings.font}
+              font={project.settings.bodyFont}
+              titleFont={project.settings.titleFont}
               size={project.settings.size}
               brandKitSettings={project.settings.brandKit}
               brandKitData={brandKitData}
               medical={{ isMedical: preferences.contentMode === "medical", specialty: project.settings.specialty, source: project.settings.source }}
               index={currentSlideIdx}
               total={project.slides.length}
-              fontSizeScale={project.settings.fontSizeScale}
+              bodyFontSizeScale={project.settings.bodyFontSizeScale}
+              titleFontSizeScale={project.settings.titleFontSizeScale}
+              titleTextAlign={project.settings.titleTextAlign}
+              bodyTextAlign={project.settings.bodyTextAlign}
             />
           </div>
         )}
@@ -435,14 +453,18 @@ function TemplateDialog({ open, onClose, project, update, brandKitData, template
                   slide={previewSlide}
                   templateId={t.id}
                   palette={p}
-                  font={project.settings.font}
+                  font={project.settings.bodyFont}
+                  titleFont={project.settings.titleFont}
                   size="1080x1080"
                   brandKitSettings={project.settings.brandKit}
                   brandKitData={brandKitData}
                   medical={{ isMedical: isMedicalAccount, specialty: project.settings.specialty, source: project.settings.source }}
                   index={0}
                   total={project.slides.length}
-                  fontSizeScale={project.settings.fontSizeScale}
+                  bodyFontSizeScale={project.settings.bodyFontSizeScale}
+                  titleFontSizeScale={project.settings.titleFontSizeScale}
+                  titleTextAlign={project.settings.titleTextAlign}
+                  bodyTextAlign={project.settings.bodyTextAlign}
                 />
               )}
               <div className="px-2 py-1 text-center">
@@ -473,22 +495,6 @@ function TemplateDialog({ open, onClose, project, update, brandKitData, template
           ))}
         </div>
       </div>
-      <div className="mt-4">
-        <Label>الخط</Label>
-        <div className="grid grid-cols-3 gap-2 mt-2">
-          {ALL_FONTS.map((f) => (
-            <button
-              key={f.id}
-              type="button"
-              onClick={() => update({ settings: { ...project.settings, font: f.id as FontFamily } })}
-              aria-pressed={project.settings.font === f.id}
-              className={cn("min-h-11 rounded-xl border-2 py-2 text-sm font-medium cursor-pointer transition-colors", project.settings.font === f.id ? "border-accent bg-accent-soft text-accent" : "border-stone-200 text-ink hover:bg-stone-50")}
-            >
-              {f.name}
-            </button>
-          ))}
-        </div>
-      </div>
     </Dialog>
   );
 }
@@ -505,7 +511,7 @@ function BrandDialog({ open, onClose, project, update }: {
   const setBk = (updates: Partial<typeof bk>) => update({ settings: { ...project.settings, brandKit: { ...bk, ...updates } } });
 
   return (
-    <Dialog open={open} onClose={onClose} title="إعدادات الهوية" description="خصّص الهوية البصرية لهذا المشروع">
+    <Dialog open={open} onClose={onClose} title="الهوية والخطوط" description="خصّص الهوية البصرية وخطوط المشروع">
       <div className="space-y-4">
         <label className="flex items-center gap-2 cursor-pointer">
           <Checkbox checked={bk.enabled} onCheckedChange={(v) => setBk({ enabled: !!v })} />
@@ -547,25 +553,7 @@ function BrandDialog({ open, onClose, project, update }: {
             </div>
           </div>
         )}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <Label>حجم الخط</Label>
-            <span className="text-sm font-medium text-accent">{Math.round(project.settings.fontSizeScale * 100)}%</span>
-          </div>
-          <input
-            type="range"
-            min={0.8}
-            max={1.3}
-            step={0.05}
-            value={project.settings.fontSizeScale}
-            onChange={(e) => update({ settings: { ...project.settings, fontSizeScale: parseFloat(e.target.value) } })}
-            className="w-full h-2 rounded-full appearance-none cursor-pointer bg-stone-200 accent-accent"
-          />
-          <div className="flex justify-between mt-1">
-            <span className="text-xs text-ink-subtle">صغير</span>
-            <span className="text-xs text-ink-subtle">كبير</span>
-          </div>
-        </div>
+        <TypographyControls settings={project.settings} onChange={(settings) => update({ settings: { ...project.settings, ...settings } })} />
         <Button className="w-full" onClick={onClose}>تم</Button>
       </div>
     </Dialog>

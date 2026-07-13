@@ -82,7 +82,7 @@ export default function ExportPage() {
 
   const basePal = getPalette(project.settings.templateId, project.settings.paletteId);
   const pal = brandKit.primaryColor && brandKit.primaryColor !== DEFAULT_ACCENT_COLOR ? { ...basePal, accent: brandKit.primaryColor } : basePal;
-  const brandKitData = { instagramHandle: brandKit.instagramHandle, logoDataUrl: brandKit.logoUrl, primaryColor: brandKit.primaryColor, font: project.settings.font, disclaimerText: brandKit.disclaimerText };
+  const brandKitData = { instagramHandle: brandKit.instagramHandle, logoDataUrl: brandKit.logoUrl, primaryColor: brandKit.primaryColor, font: project.settings.bodyFont, disclaimerText: brandKit.disclaimerText };
   const tmpl = TEMPLATE_DEFS.find((t) => t.id === project.settings.templateId);
   const sizeLabel = { "1080x1080": "1080×1080", "1080x1350": "1080×1350", "1080x1920": "1080×1920" }[project.settings.size];
   const exportBlocked = project.reviewStatus === "blocked";
@@ -174,21 +174,25 @@ export default function ExportPage() {
               slide={slide}
               templateId={project.settings.templateId}
               palette={pal}
-              font={project.settings.font}
+              font={project.settings.bodyFont}
+              titleFont={project.settings.titleFont}
               size={project.settings.size}
               brandKitSettings={project.settings.brandKit}
               brandKitData={brandKitData}
               medical={{ isMedical: preferences.contentMode === "medical", specialty: project.settings.specialty, source: project.settings.source }}
               index={i}
               total={project.slides.length}
-              fontSizeScale={project.settings.fontSizeScale}
+              bodyFontSizeScale={project.settings.bodyFontSizeScale}
+              titleFontSizeScale={project.settings.titleFontSizeScale}
+              titleTextAlign={project.settings.titleTextAlign}
+              bodyTextAlign={project.settings.bodyTextAlign}
             />
             {preferences.contentMode === "medical" && project.settings.brandKit.showDisclaimer && (
               <DisclaimerFooter
                 variant="overlay"
                 text={brandKitData.disclaimerText || ""}
                 palette={pal}
-                font={project.settings.font}
+                font={project.settings.bodyFont}
               />
             )}
           </div>
@@ -266,14 +270,18 @@ export default function ExportPage() {
                 slide={slide}
                 templateId={project.settings.templateId}
                 palette={pal}
-                font={project.settings.font}
+                font={project.settings.bodyFont}
+                titleFont={project.settings.titleFont}
                 size={project.settings.size}
                 brandKitSettings={project.settings.brandKit}
                 brandKitData={brandKitData}
                 medical={{ isMedical: preferences.contentMode === "medical", specialty: project.settings.specialty, source: project.settings.source }}
                 index={i}
                 total={project.slides.length}
-                fontSizeScale={project.settings.fontSizeScale}
+                bodyFontSizeScale={project.settings.bodyFontSizeScale}
+                titleFontSizeScale={project.settings.titleFontSizeScale}
+                titleTextAlign={project.settings.titleTextAlign}
+                bodyTextAlign={project.settings.bodyTextAlign}
               />
               <div className="mt-3 flex items-center justify-between">
                 <span className="text-sm font-medium text-ink-muted">{i + 1} / {project.slides.length}</span>

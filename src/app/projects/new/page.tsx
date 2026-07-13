@@ -18,9 +18,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { ScaledSlide } from "@/components/carousel/slide-renderer";
+import { TypographyControls } from "@/components/carousel/typography-controls";
 import { useApp } from "@/lib/app-context";
 import { useToast } from "@/components/ui/toast";
-import { TEMPLATE_DEFS, getPalette, SIZES, ALL_FONTS, templatesForMode } from "@/lib/templates";
+import { TEMPLATE_DEFS, getPalette, SIZES, templatesForMode, ALL_FONTS } from "@/lib/templates";
 import { PROGRESS_MESSAGES } from "@/lib/services/generation";
 import {
   createBlankProject, useTemplateLookup, projectToCreateInput,
@@ -106,7 +107,8 @@ function WizardContent() {
     const p = createBlankProject();
     const templateParam = searchParams.get("template");
     if (templateParam) p.settings.templateId = templateParam;
-    p.settings.font = brandKit.font as FontFamily;
+    p.settings.titleFont = brandKit.font as FontFamily;
+    p.settings.bodyFont = brandKit.font as FontFamily;
     p.settings.brandKit.enabled = false;
     return p;
   });
@@ -200,7 +202,12 @@ function WizardContent() {
       // Preserve user-selected template/palette/font (createProjectAction used defaults)
       fetched.settings.templateId = project.settings.templateId;
       fetched.settings.paletteId = project.settings.paletteId;
-      fetched.settings.font = project.settings.font;
+      fetched.settings.titleFont = project.settings.titleFont;
+      fetched.settings.bodyFont = project.settings.bodyFont;
+      fetched.settings.titleFontSizeScale = project.settings.titleFontSizeScale;
+      fetched.settings.bodyFontSizeScale = project.settings.bodyFontSizeScale;
+      fetched.settings.titleTextAlign = project.settings.titleTextAlign;
+      fetched.settings.bodyTextAlign = project.settings.bodyTextAlign;
       fetched.settings.brandKit = project.settings.brandKit;
       setProject(fetched);
     }
@@ -659,7 +666,7 @@ function Step4Template({ project, updateSettings, brandKit, templates, isMedical
   const basePal = getPalette(project.settings.templateId, project.settings.paletteId);
   const pal = brandKit.primaryColor && brandKit.primaryColor !== DEFAULT_ACCENT_COLOR ? { ...basePal, accent: brandKit.primaryColor } : basePal;
   const previewSlide = project.slides[0] ?? { id: "p", type: "cover" as SlideType, title: project.title, body: "" };
-  const brandKitData = { instagramHandle: brandKit.instagramHandle, logoDataUrl: brandKit.logoUrl, primaryColor: brandKit.primaryColor, font: project.settings.font, disclaimerText: brandKit.disclaimerText };
+  const brandKitData = { instagramHandle: brandKit.instagramHandle, logoDataUrl: brandKit.logoUrl, primaryColor: brandKit.primaryColor, font: project.settings.bodyFont, disclaimerText: brandKit.disclaimerText };
 
   return (
     <div>
@@ -690,14 +697,18 @@ function Step4Template({ project, updateSettings, brandKit, templates, isMedical
                       slide={previewSlide}
                       templateId={t.id}
                       palette={p}
-                      font={project.settings.font}
+                      font={project.settings.bodyFont}
+                      titleFont={project.settings.titleFont}
                       size="1080x1080"
                       brandKitSettings={project.settings.brandKit}
                       brandKitData={brandKitData}
                       medical={{ isMedical, specialty: project.settings.specialty, source: project.settings.source }}
                       index={0}
                       total={project.slides.length || 1}
-                      fontSizeScale={project.settings.fontSizeScale}
+                      bodyFontSizeScale={project.settings.bodyFontSizeScale}
+                      titleFontSizeScale={project.settings.titleFontSizeScale}
+                      titleTextAlign={project.settings.titleTextAlign}
+                      bodyTextAlign={project.settings.bodyTextAlign}
                     />
                     <div className="flex-1 flex items-center px-3 text-right">
                       <span className={cn("text-sm font-medium", active ? "text-accent" : "text-ink")}>{t.name}</span>
@@ -715,14 +726,18 @@ function Step4Template({ project, updateSettings, brandKit, templates, isMedical
             slide={previewSlide}
             templateId={project.settings.templateId}
             palette={pal}
-            font={project.settings.font}
+            font={project.settings.bodyFont}
+            titleFont={project.settings.titleFont}
             size={project.settings.size}
             brandKitSettings={project.settings.brandKit}
             brandKitData={brandKitData}
             medical={{ isMedical, specialty: project.settings.specialty, source: project.settings.source }}
             index={0}
             total={project.slides.length || 1}
-            fontSizeScale={project.settings.fontSizeScale}
+            bodyFontSizeScale={project.settings.bodyFontSizeScale}
+            titleFontSizeScale={project.settings.titleFontSizeScale}
+            titleTextAlign={project.settings.titleTextAlign}
+            bodyTextAlign={project.settings.bodyTextAlign}
           />
         </div>
 
@@ -752,45 +767,7 @@ function Step4Template({ project, updateSettings, brandKit, templates, isMedical
             </div>
           </div>
 
-          <div>
-            <h3 className="text-sm font-bold text-ink mb-2">الخط</h3>
-            <div className="space-y-1.5">
-              {ALL_FONTS.map((f) => (
-                <button
-                  key={f.id}
-                  type="button"
-                  onClick={() => updateSettings({ font: f.id as FontFamily })}
-                  aria-pressed={project.settings.font === f.id}
-                  className={cn(
-                    "min-h-11 w-full rounded-xl border-2 px-3 py-2 text-sm font-medium transition-all cursor-pointer",
-                    project.settings.font === f.id ? "border-accent bg-accent-soft text-accent" : "border-stone-200 bg-white text-ink hover:bg-stone-50"
-                  )}
-                >
-                  {f.name}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-bold text-ink">حجم الخط</h3>
-              <span className="text-sm font-medium text-accent">{Math.round(project.settings.fontSizeScale * 100)}%</span>
-            </div>
-            <input
-              type="range"
-              min={0.8}
-              max={1.3}
-              step={0.05}
-              value={project.settings.fontSizeScale}
-              onChange={(e) => updateSettings({ fontSizeScale: parseFloat(e.target.value) })}
-              className="w-full h-2 rounded-full appearance-none cursor-pointer bg-stone-200 accent-accent"
-            />
-            <div className="flex justify-between mt-1">
-              <span className="text-xs text-ink-subtle">صغير</span>
-              <span className="text-xs text-ink-subtle">كبير</span>
-            </div>
-          </div>
+          <TypographyControls settings={project.settings} onChange={updateSettings} />
 
           <div>
             <h3 className="text-sm font-bold text-ink mb-2">الهوية المحفوظة</h3>
@@ -1028,14 +1005,18 @@ function Step6Export({ project, templates, isMedical }: { project: Project; temp
             slide={coverSlide}
             templateId={project.settings.templateId}
             palette={pal}
-            font={project.settings.font}
+            font={project.settings.bodyFont}
+            titleFont={project.settings.titleFont}
             size={project.settings.size}
             brandKitSettings={project.settings.brandKit}
-            brandKitData={{ instagramHandle: "@typo.ai", logoDataUrl: null, primaryColor: DEFAULT_ACCENT_COLOR, font: project.settings.font, disclaimerText: DEFAULT_DISCLAIMER_TEXT }}
+            brandKitData={{ instagramHandle: "@typo.ai", logoDataUrl: null, primaryColor: DEFAULT_ACCENT_COLOR, font: project.settings.bodyFont, disclaimerText: DEFAULT_DISCLAIMER_TEXT }}
             medical={{ isMedical, specialty: project.settings.specialty, source: project.settings.source }}
             index={0}
             total={project.slides.length}
-            fontSizeScale={project.settings.fontSizeScale}
+            bodyFontSizeScale={project.settings.bodyFontSizeScale}
+            titleFontSizeScale={project.settings.titleFontSizeScale}
+            titleTextAlign={project.settings.titleTextAlign}
+            bodyTextAlign={project.settings.bodyTextAlign}
           />
         )}
       </div>
@@ -1045,7 +1026,8 @@ function Step6Export({ project, templates, isMedical }: { project: Project; temp
         <div className="flex justify-between"><span className="text-ink-muted">عدد الشرائح</span><span className="font-medium text-ink">{project.slides.length}</span></div>
         <div className="flex justify-between"><span className="text-ink-muted">المقاس</span><span className="font-medium text-ink">{({ "1080x1080": "1080×1080", "1080x1350": "1080×1350", "1080x1920": "1080×1920" } as Record<string, string>)[project.settings.size]}</span></div>
         <div className="flex justify-between"><span className="text-ink-muted">القالب</span><span className="font-medium text-ink">{templates.find((t) => t.id === project.settings.templateId)?.name}</span></div>
-        <div className="flex justify-between"><span className="text-ink-muted">الخط</span><span className="font-medium text-ink">{ALL_FONTS.find((f) => f.id === project.settings.font)?.name}</span></div>
+        <div className="flex justify-between"><span className="text-ink-muted">خط العنوان</span><span className="font-medium text-ink">{ALL_FONTS.find((f) => f.id === project.settings.titleFont)?.name}</span></div>
+        <div className="flex justify-between"><span className="text-ink-muted">خط الوصف</span><span className="font-medium text-ink">{ALL_FONTS.find((f) => f.id === project.settings.bodyFont)?.name}</span></div>
       </div>
 
       <p className="text-sm text-ink-muted mt-4">سيتم حفظ المشروع ونقلك لصفحة التصدير</p>

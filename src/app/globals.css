@@ -41,3 +41,36 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+[data-slide-root] [data-slide-title] {
+  font-family: var(--slide-title-font) !important;
+  font-size: var(--slide-title-size);
+}
+
+[data-slide-root] [data-slide-body],
+[data-slide-root] [data-slide-body] * {
+  font-family: var(--slide-body-font) !important;
+}
+
+[data-title-align] [data-slide-title],
+[data-body-align] [data-slide-body] {
+  display: block;
+  width: 100%;
+  align-self: stretch;
+}
+
+[data-body-align] li:has(> [data-slide-body]) {
+  width: 100%;
+}
+
+[data-body-align] li > span:has(> [data-slide-body]) {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+[data-title-align="right"] [data-slide-title],
+[data-body-align="right"] [data-slide-body] { text-align: right !important; }
+[data-title-align="center"] [data-slide-title],
+[data-body-align="center"] [data-slide-body] { text-align: center !important; }
+[data-title-align="left"] [data-slide-title],
+[data-body-align="left"] [data-slide-body] { text-align: left !important; }

@@ -256,6 +256,11 @@ export type Database = {
           slide_count: number;
           cta_type: string | null;
           font_family: string;
+          font_size_scale: number;
+          title_font_family: string;
+          title_font_size_scale: number;
+          title_text_align: string;
+          body_text_align: string;
           use_brand_kit: boolean;
           show_logo: boolean;
           show_account_name: boolean;
@@ -289,6 +294,11 @@ export type Database = {
           slide_count: number;
           cta_type?: string | null;
           font_family?: string;
+          font_size_scale?: number;
+          title_font_family?: string;
+          title_font_size_scale?: number;
+          title_text_align?: string;
+          body_text_align?: string;
           use_brand_kit?: boolean;
           show_logo?: boolean;
           show_account_name?: boolean;
@@ -322,6 +332,11 @@ export type Database = {
           slide_count?: number;
           cta_type?: string | null;
           font_family?: string;
+          font_size_scale?: number;
+          title_font_family?: string;
+          title_font_size_scale?: number;
+          title_text_align?: string;
+          body_text_align?: string;
           use_brand_kit?: boolean;
           show_logo?: boolean;
           show_account_name?: boolean;

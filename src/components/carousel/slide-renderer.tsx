@@ -1,7 +1,7 @@
 "use client";
 
 import { forwardRef, useRef, useState, useEffect, type ForwardRefExoticComponent, type RefAttributes } from "react";
-import type { Slide, Palette, FontFamily, BrandKitSettings, CarouselSize, Placement, BrandKit as BrandKitData, SlideType, MedicalProps } from "@/lib/types";
+import type { Slide, Palette, FontFamily, BrandKitSettings, CarouselSize, Placement, BrandKit as BrandKitData, SlideType, MedicalProps, TextAlignment } from "@/lib/types";
 import { SIZES, ALL_FONTS } from "@/lib/templates";
 import { shouldShowMedicalDisclaimer } from "@/lib/content-mode";
 import { oppositeHorizontalPlacement, templateLayoutProfile } from "@/lib/template-layout";
@@ -17,6 +17,12 @@ interface SlideRenderProps {
   index: number;
   total: number;
   fontSizeScale?: number;
+  titleFont?: FontFamily;
+  bodyFont?: FontFamily;
+  titleFontSizeScale?: number;
+  bodyFontSizeScale?: number;
+  titleTextAlign?: TextAlignment;
+  bodyTextAlign?: TextAlignment;
   medical?: MedicalProps;
 }
 
@@ -34,6 +40,14 @@ const decorFont = {
 };
 
 const fs = (px: number, scale = 1) => `${Math.round(px * scale)}px`;
+
+function TitleText({ children }: { children: React.ReactNode }) {
+  return <span data-slide-title>{children}</span>;
+}
+
+function BodyText({ children }: { children: React.ReactNode }) {
+  return <span data-slide-body>{children}</span>;
+}
 
 const SPECIALTY_LABELS: Record<string, string> = {
   general: "طب عام",
@@ -83,7 +97,28 @@ export const SlideRenderer = forwardRef<HTMLDivElement, SlideRenderProps>(functi
     engineering: Engineering,
   };
   const Renderer = renderers[templateId] ?? Tahrir;
-  return <Renderer {...props} ref={ref} />;
+  const bodyFont = props.bodyFont ?? props.font;
+  const bodyScale = props.bodyFontSizeScale ?? props.fontSizeScale ?? 1;
+  const titleScale = props.titleFontSizeScale ?? props.fontSizeScale ?? 1;
+  const typographyStyle = {
+    width: "100%",
+    height: "100%",
+    "--slide-title-font": fontMap[props.titleFont ?? props.font],
+    "--slide-body-font": fontMap[bodyFont],
+    "--slide-title-size": `${(titleScale / bodyScale) * 100}%`,
+  } as React.CSSProperties;
+
+  return (
+    <div
+      ref={ref}
+      data-slide-root
+      data-title-align={props.titleTextAlign === "auto" ? undefined : props.titleTextAlign}
+      data-body-align={props.bodyTextAlign === "auto" ? undefined : props.bodyTextAlign}
+      style={typographyStyle}
+    >
+      <Renderer {...props} font={bodyFont} fontSizeScale={bodyScale} />
+    </div>
+  );
 });
 
 // ============= Scaled Wrapper =============
@@ -405,11 +440,11 @@ const Tahrir = forwardRef<HTMLDivElement, SlideRenderProps>(function Tahrir(
             margin: 0,
             marginBottom: slide.body ? "28px" : 0,
           }}>
-            {slide.title}
+            <TitleText>{slide.title}</TitleText>
           </div>
           {slide.body && (
             <p style={{ fontSize: fs(isCover ? 32 : 28, fontSizeScale), lineHeight: 1.6, color: palette.text, opacity: 0.75, margin: 0, maxWidth: "85%" }}>
-              {slide.body}
+              <BodyText>{slide.body}</BodyText>
             </p>
           )}
           {isEnding && slide.ctaText && (
@@ -460,11 +495,11 @@ const Wadeh = forwardRef<HTMLDivElement, SlideRenderProps>(function Wadeh(
             marginBottom: slide.body ? "28px" : 0,
             maxWidth: "90%",
           }}>
-            {slide.title}
+            <TitleText>{slide.title}</TitleText>
           </div>
           {slide.body && (
             <p style={{ fontSize: fs(30, fontSizeScale), lineHeight: 1.7, opacity: 0.7, margin: 0, maxWidth: "80%" }}>
-              {slide.body}
+              <BodyText>{slide.body}</BodyText>
             </p>
           )}
           {isEnding && slide.ctaText && (
@@ -535,11 +570,11 @@ const Noqta = forwardRef<HTMLDivElement, SlideRenderProps>(function Noqta(
             margin: 0,
             marginBottom: slide.body ? "24px" : 0,
           }}>
-            {slide.title}
+            <TitleText>{slide.title}</TitleText>
           </div>
           {slide.body && (
             <p style={{ fontSize: fs(30, fontSizeScale), lineHeight: 1.7, opacity: 0.7, margin: 0, maxWidth: "85%" }}>
-              {slide.body}
+              <BodyText>{slide.body}</BodyText>
             </p>
           )}
           {isEnding && slide.ctaText && (
@@ -584,11 +619,11 @@ const Itar = forwardRef<HTMLDivElement, SlideRenderProps>(function Itar(
             margin: 0,
             marginBottom: slide.body ? "24px" : 0,
           }}>
-            {slide.title}
+            <TitleText>{slide.title}</TitleText>
           </div>
           {slide.body && (
             <p style={{ fontSize: fs(28, fontSizeScale), lineHeight: 1.7, opacity: 0.65, margin: 0, maxWidth: "85%" }}>
-              {slide.body}
+              <BodyText>{slide.body}</BodyText>
             </p>
           )}
           {isEnding && slide.ctaText && (
@@ -629,11 +664,11 @@ const Mujaz = forwardRef<HTMLDivElement, SlideRenderProps>(function Mujaz(
             margin: 0,
             marginBottom: slide.body ? "20px" : 0,
           }}>
-            {slide.title}
+            <TitleText>{slide.title}</TitleText>
           </div>
           {slide.body && (
             <p style={{ fontSize: fs(26, fontSizeScale), lineHeight: 1.8, opacity: 0.6, margin: 0 }}>
-              {slide.body}
+              <BodyText>{slide.body}</BodyText>
             </p>
           )}
           {isEnding && slide.ctaText && (
@@ -685,12 +720,12 @@ const Academy = forwardRef<HTMLDivElement, SlideRenderProps>(function Academy(
             margin: 0,
             marginBottom: slide.body ? "24px" : 0,
           }}>
-            {slide.title}
+            <TitleText>{slide.title}</TitleText>
           </div>
           {slide.body && (
             <div style={{ borderRight: `4px solid ${palette.accent}`, paddingRight: "24px", marginRight: "-28px" }}>
               <p style={{ fontSize: fs(28, fontSizeScale), lineHeight: 1.7, opacity: 0.7, margin: 0 }}>
-                {slide.body}
+                <BodyText>{slide.body}</BodyText>
               </p>
             </div>
           )}
@@ -740,11 +775,11 @@ const Hadith = forwardRef<HTMLDivElement, SlideRenderProps>(function Hadith(
             margin: 0,
             marginBottom: slide.body ? "24px" : 0,
           }}>
-            {slide.title}
+            <TitleText>{slide.title}</TitleText>
           </div>
           {slide.body && (
             <p style={{ fontSize: fs(28, fontSizeScale), lineHeight: 1.7, opacity: 0.7, margin: 0, maxWidth: "80%" }}>
-              {slide.body}
+              <BodyText>{slide.body}</BodyText>
             </p>
           )}
           {isEnding && slide.ctaText && (
@@ -793,11 +828,11 @@ const Tabayun = forwardRef<HTMLDivElement, SlideRenderProps>(function Tabayun(
             margin: 0,
             marginBottom: slide.body ? "24px" : 0,
           }}>
-            {slide.title}
+            <TitleText>{slide.title}</TitleText>
           </div>
           {slide.body && (
             <p style={{ fontSize: fs(28, fontSizeScale), lineHeight: 1.7, opacity: 0.75, margin: 0, maxWidth: "75%" }}>
-              {slide.body}
+              <BodyText>{slide.body}</BodyText>
             </p>
           )}
           {isEnding && slide.ctaText && (
@@ -860,11 +895,11 @@ const Shabaka = forwardRef<HTMLDivElement, SlideRenderProps>(function Shabaka(
             margin: 0,
             marginBottom: slide.body ? "20px" : 0,
           }}>
-            {slide.title}
+            <TitleText>{slide.title}</TitleText>
           </div>
           {slide.body && (
             <p style={{ fontSize: fs(26, fontSizeScale), lineHeight: 1.7, opacity: 0.65, margin: 0 }}>
-              {slide.body}
+              <BodyText>{slide.body}</BodyText>
             </p>
           )}
           {isEnding && slide.ctaText && (
@@ -930,27 +965,27 @@ const Hero = forwardRef<HTMLDivElement, SlideRenderProps>(function Hero(
             <div style={{
               fontSize: fs(isCover ? 66 : 54, fontSizeScale), fontWeight: 900, lineHeight: 1.15, margin: 0,
             }}>
-              {slide.title}
+              <TitleText>{slide.title}</TitleText>
             </div>
           ) : (
             <div style={{
               fontSize: fs(46, fontSizeScale), fontWeight: 700, color: palette.accent, lineHeight: 1.2, margin: 0,
             }}>
-              {slide.title}
+              <TitleText>{slide.title}</TitleText>
             </div>
           )}
           {(isCover || isEnding) && slide.body && (
             <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.6, margin: 0, maxWidth: "760px" }}>
-              {slide.body}
+              <BodyText>{slide.body}</BodyText>
             </p>
           )}
           {!isCover && !isEnding && slide.body && (
             <>
-              {para && <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.6, margin: 0, maxWidth: "760px" }}>{para}</p>}
+              {para && <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.6, margin: 0, maxWidth: "760px" }}><BodyText>{para}</BodyText></p>}
               {items.length > 0 && (
                 <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: fs(14, fontSizeScale), padding: 0, margin: 0, alignItems: "center" }}>
                   {items.map((item, i) => (
-                    <li key={i} style={{ fontSize: fs(24, fontSizeScale), color: palette.text, opacity: 0.6, textAlign: "center" }}>{item}</li>
+                    <li key={i} style={{ fontSize: fs(24, fontSizeScale), color: palette.text, opacity: 0.6, textAlign: "center" }}><BodyText>{item}</BodyText></li>
                   ))}
                 </ul>
               )}
@@ -1010,30 +1045,30 @@ const Editorial = forwardRef<HTMLDivElement, SlideRenderProps>(function Editoria
               fontFamily: decorFont.playfair, fontSize: fs(isCover ? 58 : 50, fontSizeScale),
               fontWeight: 900, lineHeight: 1.2, margin: 0,
             }}>
-              {slide.title}
+              <TitleText>{slide.title}</TitleText>
             </div>
           ) : (
             <div style={{
               fontFamily: decorFont.playfair, fontSize: fs(42, fontSizeScale),
               fontWeight: 700, color: palette.accent, lineHeight: 1.2, margin: 0,
             }}>
-              {slide.title}
+              <TitleText>{slide.title}</TitleText>
             </div>
           )}
           {(isCover || isEnding) && slide.body && (
             <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.85, color: palette.text, opacity: 0.6, margin: 0 }}>
-              {slide.body}
+              <BodyText>{slide.body}</BodyText>
             </p>
           )}
           {!isCover && !isEnding && slide.body && (
             <>
-              {para && <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.85, color: palette.text, opacity: 0.6, margin: 0 }}>{para}</p>}
+              {para && <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.85, color: palette.text, opacity: 0.6, margin: 0 }}><BodyText>{para}</BodyText></p>}
               {items.length > 0 && (
                 <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: fs(14, fontSizeScale), padding: 0, margin: 0 }}>
                   {items.map((item, i) => (
                     <li key={i} style={{ fontSize: fs(23, fontSizeScale), color: palette.text, opacity: 0.6, paddingInlineStart: "26px", position: "relative" }}>
                       <span style={{ position: "absolute", insetInlineStart: 0, color: palette.accent }}>—</span>
-                      {item}
+                      <BodyText>{item}</BodyText>
                     </li>
                   ))}
                 </ul>
@@ -1082,25 +1117,25 @@ const Split = forwardRef<HTMLDivElement, SlideRenderProps>(function Split(
               )}
               {isCover || isEnding ? (
                 <div style={{ fontSize: fs(isCover ? 56 : 50, fontSizeScale), fontWeight: 900, lineHeight: 1.2, margin: 0 }}>
-                  {slide.title}
+                  <TitleText>{slide.title}</TitleText>
                 </div>
               ) : (
                 <div style={{ fontSize: fs(42, fontSizeScale), fontWeight: 700, color: palette.accent, lineHeight: 1.2, margin: 0 }}>
-                  {slide.title}
+                  <TitleText>{slide.title}</TitleText>
                 </div>
               )}
               {(isCover || isEnding) && slide.body && (
-                <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.6, margin: 0 }}>{slide.body}</p>
+                <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.6, margin: 0 }}><BodyText>{slide.body}</BodyText></p>
               )}
               {!isCover && !isEnding && slide.body && (
                 <>
-                  {para && <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.6, margin: 0 }}>{para}</p>}
+                  {para && <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.6, margin: 0 }}><BodyText>{para}</BodyText></p>}
                   {items.length > 0 && (
                     <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: fs(13, fontSizeScale), padding: 0, margin: 0 }}>
                       {items.map((item, i) => (
                         <li key={i} style={{ fontSize: fs(23, fontSizeScale), color: palette.text, opacity: 0.6, paddingInlineStart: "28px", position: "relative" }}>
                           <span style={{ position: "absolute", insetInlineStart: 0, top: "11px", width: "10px", height: "10px", background: palette.accent, borderRadius: "50%" }} />
-                          {item}
+                          <BodyText>{item}</BodyText>
                         </li>
                       ))}
                     </ul>
@@ -1171,25 +1206,25 @@ const Stacked = forwardRef<HTMLDivElement, SlideRenderProps>(function Stacked(
           )}
           {isCover || isEnding ? (
             <div style={{ fontSize: fs(isCover ? 60 : 50, fontSizeScale), fontWeight: 900, lineHeight: 1.15, margin: 0 }}>
-              {slide.title}
+              <TitleText>{slide.title}</TitleText>
             </div>
           ) : (
             <div style={{ fontSize: fs(44, fontSizeScale), fontWeight: 700, color: palette.accent, lineHeight: 1.2, margin: 0 }}>
-              {slide.title}
+              <TitleText>{slide.title}</TitleText>
             </div>
           )}
           {(isCover || isEnding) && slide.body && (
-            <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.6, margin: 0, maxWidth: "840px" }}>{slide.body}</p>
+            <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.6, margin: 0, maxWidth: "840px" }}><BodyText>{slide.body}</BodyText></p>
           )}
           {!isCover && !isEnding && slide.body && (
             <>
-              {para && <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.6, margin: 0, maxWidth: "840px" }}>{para}</p>}
+              {para && <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.6, margin: 0, maxWidth: "840px" }}><BodyText>{para}</BodyText></p>}
               {items.length > 0 && (
                 <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: fs(13, fontSizeScale), padding: 0, margin: 0 }}>
                   {items.map((item, i) => (
                     <li key={i} style={{ fontSize: fs(24, fontSizeScale), color: palette.text, opacity: 0.6, paddingInlineStart: "30px", position: "relative" }}>
                       <span style={{ position: "absolute", insetInlineStart: 0, top: "12px", width: "11px", height: "11px", borderRadius: "50%", background: palette.accent }} />
-                      {item}
+                      <BodyText>{item}</BodyText>
                     </li>
                   ))}
                 </ul>
@@ -1240,19 +1275,19 @@ const Cards = forwardRef<HTMLDivElement, SlideRenderProps>(function Cards(
           )}
           {isCover || isEnding ? (
             <div style={{ fontSize: fs(isCover ? 60 : 50, fontSizeScale), fontWeight: 900, lineHeight: 1.15, margin: 0 }}>
-              {slide.title}
+              <TitleText>{slide.title}</TitleText>
             </div>
           ) : (
             <div style={{ fontSize: fs(42, fontSizeScale), fontWeight: 700, color: palette.accent, lineHeight: 1.2, margin: 0 }}>
-              {slide.title}
+              <TitleText>{slide.title}</TitleText>
             </div>
           )}
           {(isCover || isEnding) && slide.body && (
-            <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.6, margin: 0 }}>{slide.body}</p>
+            <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.6, margin: 0 }}><BodyText>{slide.body}</BodyText></p>
           )}
           {!isCover && !isEnding && slide.body && (
             <>
-              {para && <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.6, margin: 0 }}>{para}</p>}
+              {para && <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.6, margin: 0 }}><BodyText>{para}</BodyText></p>}
               {items.length > 0 && (
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: fs(16, fontSizeScale) }}>
                   {items.map((item, i) => (
@@ -1262,7 +1297,7 @@ const Cards = forwardRef<HTMLDivElement, SlideRenderProps>(function Cards(
                       borderRadius: "16px", padding: "18px 22px",
                       boxShadow: `0 8px 18px ${palette.accent}1a`,
                     }}>
-                      {item}
+                      <BodyText>{item}</BodyText>
                     </div>
                   ))}
                 </div>
@@ -1322,28 +1357,28 @@ const Rotated = forwardRef<HTMLDivElement, SlideRenderProps>(function Rotated(
           )}
           {isCover || isEnding ? (
             <div style={{ fontSize: fs(isCover ? 62 : 50, fontSizeScale), fontWeight: 900, lineHeight: 1.12, margin: 0 }}>
-              {slide.title}
+              <TitleText>{slide.title}</TitleText>
             </div>
           ) : (
             <div style={{
               fontSize: fs(44, fontSizeScale), fontWeight: 700, color: palette.accent,
               lineHeight: 1.2, margin: 0, transform: `rotate(${-1.5 * layout.rotationScale}deg)`, transformOrigin: "right",
             }}>
-              {slide.title}
+              <TitleText>{slide.title}</TitleText>
             </div>
           )}
           {(isCover || isEnding) && slide.body && (
-            <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.72, margin: 0, maxWidth: `${layout.contentMaxWidth}px` }}>{slide.body}</p>
+            <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.72, margin: 0, maxWidth: `${layout.contentMaxWidth}px` }}><BodyText>{slide.body}</BodyText></p>
           )}
           {!isCover && !isEnding && slide.body && (
             <>
-              {para && <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.72, margin: 0, maxWidth: `${layout.contentMaxWidth}px` }}>{para}</p>}
+              {para && <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.72, margin: 0, maxWidth: `${layout.contentMaxWidth}px` }}><BodyText>{para}</BodyText></p>}
               {items.length > 0 && (
                 <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: fs(14, fontSizeScale), padding: 0, margin: 0 }}>
                   {items.map((item, i) => (
                     <li key={i} style={{ fontSize: fs(24, fontSizeScale), color: palette.text, opacity: 0.6, paddingInlineStart: "30px", position: "relative" }}>
                       <span style={{ position: "absolute", insetInlineStart: 0, color: palette.accent }}>▸</span>
-                      {item}
+                      <BodyText>{item}</BodyText>
                     </li>
                   ))}
                 </ul>
@@ -1395,25 +1430,25 @@ const Terminal = forwardRef<HTMLDivElement, SlideRenderProps>(function Terminal(
           )}
           {isCover || isEnding ? (
             <div style={{ fontSize: fs(isCover ? 54 : 48, fontSizeScale), fontWeight: 900, lineHeight: 1.15, margin: 0 }}>
-              {slide.title}
+              <TitleText>{slide.title}</TitleText>
             </div>
           ) : (
             <div style={{ fontSize: fs(38, fontSizeScale), fontWeight: 700, color: palette.accent, lineHeight: 1.2, margin: 0 }}>
-              {slide.title}
+              <TitleText>{slide.title}</TitleText>
             </div>
           )}
           {(isCover || isEnding) && slide.body && (
-            <p style={{ fontSize: fs(21, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.6, margin: 0, maxWidth: "880px", fontFamily: mono }}>{slide.body}</p>
+            <p style={{ fontSize: fs(21, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.6, margin: 0, maxWidth: "880px", fontFamily: mono }}><BodyText>{slide.body}</BodyText></p>
           )}
           {!isCover && !isEnding && slide.body && (
             <>
-              {para && <p style={{ fontSize: fs(21, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.6, margin: 0, maxWidth: "880px", fontFamily: mono }}>{para}</p>}
+              {para && <p style={{ fontSize: fs(21, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.6, margin: 0, maxWidth: "880px", fontFamily: mono }}><BodyText>{para}</BodyText></p>}
               {items.length > 0 && (
                 <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: fs(12, fontSizeScale), padding: 0, margin: 0, fontFamily: mono }}>
                   {items.map((item, i) => (
                     <li key={i} style={{ fontSize: fs(21, fontSizeScale), color: palette.text, opacity: 0.6, paddingInlineStart: "26px", position: "relative" }}>
                       <span style={{ position: "absolute", insetInlineStart: 0, color: palette.accent }}>$</span>
-                      {item}
+                      <BodyText>{item}</BodyText>
                     </li>
                   ))}
                 </ul>
@@ -1475,27 +1510,27 @@ const Magazine = forwardRef<HTMLDivElement, SlideRenderProps>(function Magazine(
           )}
           {isCover || isEnding ? (
             <div style={{ fontSize: fs(isCover ? 58 : 50, fontSizeScale), fontWeight: 900, lineHeight: 1.15, margin: 0 }}>
-              {slide.title}
+              <TitleText>{slide.title}</TitleText>
             </div>
           ) : (
             <div style={{ fontSize: fs(42, fontSizeScale), fontWeight: 700, color: palette.accent, lineHeight: 1.2, margin: 0 }}>
-              {slide.title}
+              <TitleText>{slide.title}</TitleText>
             </div>
           )}
           {(isCover || isEnding) && slide.body && (
             <p style={{ fontSize: fs(21, fontSizeScale), lineHeight: 1.9, color: palette.text, opacity: 0.72, margin: 0, columnCount: layout.magazineColumns, columnGap: "34px", textAlign: "start" }}>
-              {slide.body}
+              <BodyText>{slide.body}</BodyText>
             </p>
           )}
           {!isCover && !isEnding && slide.body && (
             <>
-              {para && <p style={{ fontSize: fs(21, fontSizeScale), lineHeight: 1.9, color: palette.text, opacity: 0.72, margin: 0, columnCount: layout.magazineColumns, columnGap: "34px", textAlign: "start" }}>{para}</p>}
+              {para && <p style={{ fontSize: fs(21, fontSizeScale), lineHeight: 1.9, color: palette.text, opacity: 0.72, margin: 0, columnCount: layout.magazineColumns, columnGap: "34px", textAlign: "start" }}><BodyText>{para}</BodyText></p>}
               {items.length > 0 && (
                 <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: fs(13, fontSizeScale), padding: 0, margin: 0 }}>
                   {items.map((item, i) => (
                     <li key={i} style={{ fontSize: fs(22, fontSizeScale), color: palette.text, opacity: 0.6, paddingInlineStart: "26px", position: "relative" }}>
                       <span style={{ position: "absolute", insetInlineStart: 0, top: "6px", color: palette.accent, fontSize: fs(12, fontSizeScale) }}>■</span>
-                      {item}
+                      <BodyText>{item}</BodyText>
                     </li>
                   ))}
                 </ul>
@@ -1558,25 +1593,25 @@ const Tilt = forwardRef<HTMLDivElement, SlideRenderProps>(function Tilt(
           )}
           {isCover || isEnding ? (
             <div style={{ fontSize: fs(isCover ? 60 : 50, fontSizeScale), fontWeight: 900, lineHeight: 1.15, margin: 0 }}>
-              {slide.title}
+              <TitleText>{slide.title}</TitleText>
             </div>
           ) : (
             <div style={{ fontSize: fs(44, fontSizeScale), fontWeight: 700, color: palette.accent, lineHeight: 1.2, margin: 0 }}>
-              {slide.title}
+              <TitleText>{slide.title}</TitleText>
             </div>
           )}
           {(isCover || isEnding) && slide.body && (
-            <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.72, margin: 0, maxWidth: `${layout.contentMaxWidth}px` }}>{slide.body}</p>
+            <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.72, margin: 0, maxWidth: `${layout.contentMaxWidth}px` }}><BodyText>{slide.body}</BodyText></p>
           )}
           {!isCover && !isEnding && slide.body && (
             <>
-              {para && <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.72, margin: 0, maxWidth: `${layout.contentMaxWidth}px` }}>{para}</p>}
+              {para && <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.72, margin: 0, maxWidth: `${layout.contentMaxWidth}px` }}><BodyText>{para}</BodyText></p>}
               {items.length > 0 && (
                 <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: fs(13, fontSizeScale), padding: 0, margin: 0 }}>
                   {items.map((item, i) => (
                     <li key={i} style={{ fontSize: fs(24, fontSizeScale), color: palette.text, opacity: 0.6, paddingInlineStart: "30px", position: "relative" }}>
                       <span style={{ position: "absolute", insetInlineStart: 0, top: "12px", width: "11px", height: "11px", borderRadius: "50%", background: `linear-gradient(135deg, ${palette.accent}, ${palette.secondary})` }} />
-                      {item}
+                      <BodyText>{item}</BodyText>
                     </li>
                   ))}
                 </ul>
@@ -1647,7 +1682,7 @@ const Retro = forwardRef<HTMLDivElement, SlideRenderProps>(function Retro(
               padding: "14px 26px", alignSelf: "flex-start", margin: 0,
               boxShadow: `8px 8px 0 ${palette.accent}`,
             }}>
-              {slide.title}
+              <TitleText>{slide.title}</TitleText>
             </div>
           ) : (
             <div style={{
@@ -1656,7 +1691,7 @@ const Retro = forwardRef<HTMLDivElement, SlideRenderProps>(function Retro(
               alignSelf: "flex-start", margin: 0, border: `3px solid ${palette.text}`,
               boxShadow: `6px 6px 0 ${palette.secondary}`,
             }}>
-              {slide.title}
+              <TitleText>{slide.title}</TitleText>
             </div>
           )}
           {(isCover || isEnding) && slide.body && (
@@ -1665,7 +1700,7 @@ const Retro = forwardRef<HTMLDivElement, SlideRenderProps>(function Retro(
               background: `${palette.background}d8`, padding: "14px 20px",
               alignSelf: "flex-start", maxWidth: `${layout.contentMaxWidth}px`, border: `2px solid ${palette.text}`,
             }}>
-              {slide.body}
+              <BodyText>{slide.body}</BodyText>
             </p>
           )}
           {!isCover && !isEnding && slide.body && (
@@ -1674,7 +1709,7 @@ const Retro = forwardRef<HTMLDivElement, SlideRenderProps>(function Retro(
                 fontSize: fs(23, fontSizeScale), lineHeight: 1.8, color: palette.text,
                 background: `${palette.background}d8`, padding: "14px 20px",
                 alignSelf: "flex-start", maxWidth: `${layout.contentMaxWidth}px`, border: `2px solid ${palette.text}`,
-              }}>{para}</p>}
+              }}><BodyText>{para}</BodyText></p>}
               {items.length > 0 && (
                 <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: fs(12, fontSizeScale), padding: 0, margin: 0 }}>
                   {items.map((item, i) => (
@@ -1683,7 +1718,7 @@ const Retro = forwardRef<HTMLDivElement, SlideRenderProps>(function Retro(
                       background: `${palette.background}d8`, padding: "12px 18px",
                       border: `2px solid ${palette.text}`, borderInlineStart: `8px solid ${palette.accent}`,
                     }}>
-                      {item}
+                      <BodyText>{item}</BodyText>
                     </li>
                   ))}
                 </ul>
@@ -1736,11 +1771,11 @@ const Unwan = forwardRef<HTMLDivElement, SlideRenderProps>(function Unwan(
               marginBottom: slide.body ? "24px" : 0,
               letterSpacing: "-1px",
             }}>
-              {slide.title}
+              <TitleText>{slide.title}</TitleText>
             </div>
             {slide.body && (
               <p style={{ fontSize: fs(28, fontSizeScale), lineHeight: 1.6, opacity: 0.6, margin: 0, maxWidth: "85%" }}>
-                {slide.body}
+                <BodyText>{slide.body}</BodyText>
               </p>
             )}
             {isEnding && slide.ctaText && (
@@ -1795,7 +1830,7 @@ const ClinicalClean = forwardRef<HTMLDivElement, SlideRenderProps>(function Clin
             textAlign: "right",
             maxWidth: "90%",
           }}>
-            {slide.title}
+            <TitleText>{slide.title}</TitleText>
           </div>
           <div style={{ width: fs(80, fontSizeScale), height: "4px", backgroundColor: palette.accent, borderRadius: "2px" }} />
           {slide.body && (
@@ -1808,7 +1843,7 @@ const ClinicalClean = forwardRef<HTMLDivElement, SlideRenderProps>(function Clin
               maxWidth: "88%",
               fontWeight: 400,
             }}>
-              {slide.body}
+              <BodyText>{slide.body}</BodyText>
             </p>
           )}
           {!isCover && medical?.source && (
@@ -1886,11 +1921,11 @@ const NumberedSteps = forwardRef<HTMLDivElement, SlideRenderProps>(function Numb
                 fontFamily: fontMap.cairo,
                 textAlign: "right",
               }}>
-                {slide.title}
+                <TitleText>{slide.title}</TitleText>
               </div>
               {slide.body && (
                 <p style={{ fontSize: fs(34, fontSizeScale), lineHeight: 1.6, opacity: 0.7, margin: 0, maxWidth: "85%" }}>
-                  {slide.body}
+                  <BodyText>{slide.body}</BodyText>
                 </p>
               )}
             </>
@@ -1914,13 +1949,13 @@ const NumberedSteps = forwardRef<HTMLDivElement, SlideRenderProps>(function Numb
                   {isList ? (
                     <>
                       <div style={{ fontSize: fs(40, fontSizeScale), fontWeight: 700, margin: "0 0 16px 0", lineHeight: 1.3 }}>
-                        {slide.title}
+                        <TitleText>{slide.title}</TitleText>
                       </div>
                       <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "12px" }}>
                         {stepItems.map((item, i) => (
                           <li key={i} style={{ fontSize: fs(30, fontSizeScale), lineHeight: 1.5, display: "flex", gap: "12px", alignItems: "baseline" }}>
                             <span style={{ color: palette.accent, fontWeight: 700, flexShrink: 0 }}>{i + 1}.</span>
-                            <span>{item}</span>
+                            <span><BodyText>{item}</BodyText></span>
                           </li>
                         ))}
                       </ul>
@@ -1928,10 +1963,10 @@ const NumberedSteps = forwardRef<HTMLDivElement, SlideRenderProps>(function Numb
                   ) : (
                     <>
                       <div style={{ fontSize: fs(48, fontSizeScale), fontWeight: 700, margin: "0 0 16px 0", lineHeight: 1.3 }}>
-                        {slide.title}
+                        <TitleText>{slide.title}</TitleText>
                       </div>
                       <p style={{ fontSize: fs(32, fontSizeScale), lineHeight: 1.6, opacity: 0.8, margin: 0 }}>
-                        {slide.body}
+                        <BodyText>{slide.body}</BodyText>
                       </p>
                     </>
                   )}
@@ -2052,7 +2087,7 @@ const MythFact = forwardRef<HTMLDivElement, SlideRenderProps>(function MythFact(
                 fontFamily: fontMap.ibm,
                 maxWidth: "85%",
               }}>
-                {slide.title}
+                <TitleText>{slide.title}</TitleText>
               </div>
               <span style={{ fontSize: fs(28, fontSizeScale), fontWeight: 600, color: factColor }}>
                 الحقيقة بالداخل ↓
@@ -2078,7 +2113,7 @@ const MythFact = forwardRef<HTMLDivElement, SlideRenderProps>(function MythFact(
                       textDecoration: "line-through",
                       fontFamily: fontMap.ibm,
                     }}>
-                      {mythText}
+                      <BodyText>{mythText}</BodyText>
                     </p>
                   </div>
                   <div style={{ height: "2px", backgroundColor: palette.text, opacity: 0.1 }} />
@@ -2092,7 +2127,7 @@ const MythFact = forwardRef<HTMLDivElement, SlideRenderProps>(function MythFact(
                       color: palette.text,
                       fontFamily: fontMap.ibm,
                     }}>
-                      {factText}
+                      <BodyText>{factText}</BodyText>
                     </p>
                     {medical?.source && (
                       <SourceBadge source={medical.source} palette={palette} font={font} fontSizeScale={fontSizeScale} />
@@ -2109,11 +2144,11 @@ const MythFact = forwardRef<HTMLDivElement, SlideRenderProps>(function MythFact(
                     margin: 0,
                     fontFamily: fontMap.ibm,
                   }}>
-                    {slide.title}
+                    <TitleText>{slide.title}</TitleText>
                   </div>
                   {regularBody && (
                     <p style={{ fontSize: fs(34, fontSizeScale), lineHeight: 1.6, opacity: 0.8, margin: 0 }}>
-                      {regularBody}
+                      <BodyText>{regularBody}</BodyText>
                     </p>
                   )}
                   {medical?.source && (
@@ -2188,7 +2223,7 @@ const EditorialHealth = forwardRef<HTMLDivElement, SlideRenderProps>(function Ed
                 fontFamily: fontMap.ibm,
                 maxWidth: "90%",
               }}>
-                {slide.title}
+                <TitleText>{slide.title}</TitleText>
               </div>
               <div style={{ width: fs(60, fontSizeScale), height: "3px", backgroundColor: palette.accent, borderRadius: "2px" }} />
               {slide.body && (
@@ -2200,7 +2235,7 @@ const EditorialHealth = forwardRef<HTMLDivElement, SlideRenderProps>(function Ed
                   margin: 0,
                   maxWidth: "80%",
                 }}>
-                  {slide.body}
+                  <BodyText>{slide.body}</BodyText>
                 </p>
               )}
             </div>
@@ -2223,7 +2258,7 @@ const EditorialHealth = forwardRef<HTMLDivElement, SlideRenderProps>(function Ed
                 fontFamily: fontMap.ibm,
                 maxWidth: "95%",
               }}>
-                {slide.title}
+                <TitleText>{slide.title}</TitleText>
               </div>
               <div style={{ width: fs(40, fontSizeScale), height: "2px", backgroundColor: palette.accent, opacity: 0.5, borderRadius: "1px" }} />
               {paragraphs.map((para, i) => (
@@ -2235,7 +2270,7 @@ const EditorialHealth = forwardRef<HTMLDivElement, SlideRenderProps>(function Ed
                   margin: 0,
                   maxWidth: "85%",
                 }}>
-                  {para}
+                  <BodyText>{para}</BodyText>
                 </p>
               ))}
               {medical?.source && (
@@ -2314,7 +2349,7 @@ const BoldStatement = forwardRef<HTMLDivElement, SlideRenderProps>(function Bold
                 textAlign: "right",
                 maxWidth: "95%",
               }}>
-                {slide.title}
+                <TitleText>{slide.title}</TitleText>
               </div>
               {slide.body && (
                 <p style={{
@@ -2324,7 +2359,7 @@ const BoldStatement = forwardRef<HTMLDivElement, SlideRenderProps>(function Bold
                   margin: 0,
                   maxWidth: "70%",
                 }}>
-                  {slide.body}
+                  <BodyText>{slide.body}</BodyText>
                 </p>
               )}
             </>
@@ -2350,7 +2385,7 @@ const BoldStatement = forwardRef<HTMLDivElement, SlideRenderProps>(function Bold
                       fontFamily: fontMap.ibm,
                       maxWidth: "90%",
                     }}>
-                      {statLabel}
+                      <TitleText>{statLabel}</TitleText>
                     </span>
                   )}
                 </div>
@@ -2365,7 +2400,7 @@ const BoldStatement = forwardRef<HTMLDivElement, SlideRenderProps>(function Bold
                   textAlign: "right",
                   maxWidth: "95%",
                 }}>
-                  {slide.title}
+                  <TitleText>{slide.title}</TitleText>
                 </div>
               )}
               {slide.body && (
@@ -2376,7 +2411,7 @@ const BoldStatement = forwardRef<HTMLDivElement, SlideRenderProps>(function Bold
                   margin: 0,
                   maxWidth: "75%",
                 }}>
-                  {slide.body}
+                  <BodyText>{slide.body}</BodyText>
                 </p>
               )}
               {medical?.source && (
@@ -2453,11 +2488,11 @@ const Tahdheer = forwardRef<HTMLDivElement, SlideRenderProps>(function Tahdheer(
           {isCover && (
             <>
               <div style={{ fontSize: fs(76, fontSizeScale), fontWeight: 900, lineHeight: 1.2, margin: 0, fontFamily: fontMap.ibm, textAlign: "right", maxWidth: "92%" }}>
-                {slide.title}
+                <TitleText>{slide.title}</TitleText>
               </div>
               {slide.body && (
                 <p style={{ fontSize: fs(32, fontSizeScale), lineHeight: 1.5, opacity: 0.75, margin: 0, maxWidth: "85%" }}>
-                  {slide.body}
+                  <BodyText>{slide.body}</BodyText>
                 </p>
               )}
             </>
@@ -2465,21 +2500,21 @@ const Tahdheer = forwardRef<HTMLDivElement, SlideRenderProps>(function Tahdheer(
           {!isCover && !isEnding && (
             <>
               <div style={{ fontSize: fs(48, fontSizeScale), fontWeight: 800, margin: 0, lineHeight: 1.25, textAlign: "right", fontFamily: fontMap.ibm }}>
-                {slide.title}
+                <TitleText>{slide.title}</TitleText>
               </div>
               {isList ? (
                 <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "16px" }}>
                   {warnItems.map((item, i) => (
                     <li key={i} style={{ display: "flex", gap: "14px", alignItems: "flex-start", fontSize: fs(30, fontSizeScale), lineHeight: 1.5 }}>
                       <span style={{ color: palette.accent, fontWeight: 900, flexShrink: 0, marginTop: "4px" }}>▲</span>
-                      <span>{item}</span>
+                      <span><BodyText>{item}</BodyText></span>
                     </li>
                   ))}
                 </ul>
               ) : (
                 slide.body && (
                   <p style={{ fontSize: fs(32, fontSizeScale), lineHeight: 1.6, opacity: 0.85, margin: 0 }}>
-                    {slide.body}
+                    <BodyText>{slide.body}</BodyText>
                   </p>
                 )
               )}
@@ -2561,12 +2596,12 @@ const Raqmi = forwardRef<HTMLDivElement, SlideRenderProps>(function Raqmi(
                   fontSize: fs(30, fontSizeScale),
                   fontWeight: 700,
                 }}>
-                  {statLabel}
+                  <TitleText>{statLabel}</TitleText>
                 </span>
               )}
               {slide.body && (
                 <p style={{ fontSize: fs(28, fontSizeScale), lineHeight: 1.6, opacity: 0.75, margin: 0, maxWidth: "80%" }}>
-                  {slide.body}
+                  <BodyText>{slide.body}</BodyText>
                 </p>
               )}
             </>
@@ -2581,11 +2616,11 @@ const Raqmi = forwardRef<HTMLDivElement, SlideRenderProps>(function Raqmi(
                 fontFamily: fontMap.ibm,
                 maxWidth: "90%",
               }}>
-                {slide.title}
+                <TitleText>{slide.title}</TitleText>
               </div>
               {slide.body && (
                 <p style={{ fontSize: fs(30, fontSizeScale), lineHeight: 1.6, opacity: 0.75, margin: 0, maxWidth: "85%" }}>
-                  {slide.body}
+                  <BodyText>{slide.body}</BodyText>
                 </p>
               )}
             </>
@@ -2667,22 +2702,22 @@ const Engineering = forwardRef<HTMLDivElement, SlideRenderProps>(function Engine
           {isCover && (
             <div style={{ marginTop: "auto", marginBottom: `${contentBottom}px`, maxWidth: `${layout.contentMaxWidth}px` }}>
               <div style={{ width: "86px", height: "4px", background: palette.accent, marginBottom: "24px" }} />
-              <div style={{ margin: 0, fontSize: fs(68, fontSizeScale), lineHeight: 1.25, fontWeight: 900 }}>{slide.title}</div>
-              {slide.body && <p style={{ margin: "22px 0 0", maxWidth: `${layout.contentMaxWidth - 100}px`, fontSize: fs(30, fontSizeScale), lineHeight: 1.7, opacity: 0.8 }}>{slide.body}</p>}
+              <div style={{ margin: 0, fontSize: fs(68, fontSizeScale), lineHeight: 1.25, fontWeight: 900 }}><TitleText>{slide.title}</TitleText></div>
+              {slide.body && <p style={{ margin: "22px 0 0", maxWidth: `${layout.contentMaxWidth - 100}px`, fontSize: fs(30, fontSizeScale), lineHeight: 1.7, opacity: 0.8 }}><BodyText>{slide.body}</BodyText></p>}
             </div>
           )}
 
           {!isCover && !isEnding && (
             <div style={{ marginTop: "auto", marginBottom: `${contentBottom}px`, maxWidth: `${layout.contentMaxWidth}px` }}>
               <span style={{ display: "inline-block", marginBottom: "18px", color: palette.accent, fontSize: fs(18, fontSizeScale), fontWeight: 700 }}>DETAIL_{String(index + 1).padStart(2, "0")}</span>
-              <div style={{ margin: 0, fontSize: fs(50, fontSizeScale), lineHeight: 1.3, fontWeight: 850 }}>{slide.title}</div>
-              {para && <p style={{ margin: "22px 0 0", fontSize: fs(29, fontSizeScale), lineHeight: 1.65, opacity: 0.82 }}>{para}</p>}
+              <div style={{ margin: 0, fontSize: fs(50, fontSizeScale), lineHeight: 1.3, fontWeight: 850 }}><TitleText>{slide.title}</TitleText></div>
+              {para && <p style={{ margin: "22px 0 0", fontSize: fs(29, fontSizeScale), lineHeight: 1.65, opacity: 0.82 }}><BodyText>{para}</BodyText></p>}
               {items.length > 0 && (
                 <ul style={{ listStyle: "none", margin: "24px 0 0", padding: 0, display: "grid", gap: "14px" }}>
                   {items.map((item, itemIndex) => (
                     <li key={itemIndex} style={{ display: "flex", gap: "14px", alignItems: "flex-start", fontSize: fs(27, fontSizeScale), lineHeight: 1.5 }}>
                       <span style={{ color: palette.accent, fontWeight: 900, flexShrink: 0 }}>0{itemIndex + 1}</span>
-                      <span>{item}</span>
+                      <span><BodyText>{item}</BodyText></span>
                     </li>
                   ))}
                 </ul>
@@ -2693,8 +2728,8 @@ const Engineering = forwardRef<HTMLDivElement, SlideRenderProps>(function Engine
           {isEnding && (
             <div style={{ margin: "auto 0", maxWidth: `${layout.contentMaxWidth}px` }}>
               <span style={{ color: palette.accent, fontSize: fs(18, fontSizeScale), fontWeight: 700, letterSpacing: "2px" }}>END_OF_DRAWING</span>
-              <div style={{ margin: "20px 0 0", fontSize: fs(58, fontSizeScale), lineHeight: 1.3, fontWeight: 900 }}>{slide.title}</div>
-              {slide.body && <p style={{ margin: "20px 0 0", fontSize: fs(29, fontSizeScale), lineHeight: 1.65, opacity: 0.75 }}>{slide.body}</p>}
+              <div style={{ margin: "20px 0 0", fontSize: fs(58, fontSizeScale), lineHeight: 1.3, fontWeight: 900 }}><TitleText>{slide.title}</TitleText></div>
+              {slide.body && <p style={{ margin: "20px 0 0", fontSize: fs(29, fontSizeScale), lineHeight: 1.65, opacity: 0.75 }}><BodyText>{slide.body}</BodyText></p>}
               {slide.ctaText && (
                 <div style={{ display: "inline-block", marginTop: "32px", padding: "16px 28px", border: `2px solid ${palette.accent}`, background: palette.secondary, color: palette.text, fontSize: fs(26, fontSizeScale), fontWeight: 800 }}>
                   {slide.ctaText} ←

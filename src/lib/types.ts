@@ -28,6 +28,7 @@ export type CarouselSize = "1080x1080" | "1080x1350" | "1080x1920";
 export type CTAOption = "بدون CTA" | "احفظ المنشور" | "شارك المنشور" | "تابع الحساب" | "اكتب رأيك";
 
 export type FontFamily = "tajawal" | "cairo" | "ibm";
+export type TextAlignment = "auto" | "right" | "center" | "left";
 
 export type Placement = "top-right" | "top-left" | "bottom-right" | "bottom-left";
 
@@ -84,8 +85,12 @@ export interface ProjectSettings {
   cta: CTAOption;
   templateId: string;
   paletteId: string;
-  font: FontFamily;
-  fontSizeScale: number;
+  titleFont: FontFamily;
+  bodyFont: FontFamily;
+  titleFontSizeScale: number;
+  bodyFontSizeScale: number;
+  titleTextAlign: TextAlignment;
+  bodyTextAlign: TextAlignment;
   brandKit: BrandKitSettings;
   specialty?: string;
   source?: string;
