@@ -11,7 +11,7 @@ const config: Config = {
       },
       colors: {
         accent: {
-          DEFAULT: "#6d5efc",
+          DEFAULT: "#5B4EE5",
           foreground: "#ffffff",
           soft: "#eef0ff",
           border: "#d9d6fe",
@@ -23,7 +23,7 @@ const config: Config = {
         ink: {
           DEFAULT: "#1c1917",
           muted: "#6b6670",
-          subtle: "#9b96a3",
+          subtle: "#706B75",
         },
       },
       borderRadius: {

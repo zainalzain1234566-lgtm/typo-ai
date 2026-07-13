@@ -42,8 +42,9 @@ function Chip({ active, children, onClick, disabled }: { active: boolean; childr
       type="button"
       onClick={onClick}
       disabled={disabled}
+      aria-pressed={active}
       className={cn(
-        "rounded-xl border-2 py-2 px-3 text-xs font-medium transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed",
+        "min-h-11 rounded-xl border-2 py-2 px-3 text-xs font-medium transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed",
         active ? "border-accent bg-accent-soft text-accent" : "border-stone-200 text-ink-muted hover:border-stone-300"
       )}
     >
@@ -55,7 +56,7 @@ function Chip({ active, children, onClick, disabled }: { active: boolean; childr
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-xs font-semibold text-ink-muted">{label}</label>
+      <p className="text-xs font-semibold text-ink-muted">{label}</p>
       {children}
     </div>
   );
@@ -69,6 +70,7 @@ export function DesignerSettings({ settings, onChange, disabled }: DesignerSetti
     <div className="space-y-5 p-4" dir="rtl">
       <Field label="الموضوع">
         <Textarea
+          aria-label="موضوع القالب"
           value={settings.topic}
           onChange={(e) => patch({ topic: e.target.value })}
           placeholder="مثال: كيف تربي طفلك بثقة، نصائح للصحة النفسية..."
@@ -81,18 +83,20 @@ export function DesignerSettings({ settings, onChange, disabled }: DesignerSetti
         <div className="flex items-center gap-3">
           <button
             type="button"
+            aria-label="تقليل عدد الشرائح"
             disabled={disabled || settings.slideCount <= MIN_SLIDE_COUNT}
             onClick={() => patch({ slideCount: settings.slideCount - 1 })}
-            className="w-8 h-8 rounded-lg border border-stone-200 flex items-center justify-center text-ink-muted hover:border-stone-300 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-stone-200 text-ink-muted hover:border-stone-300 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Minus className="w-3.5 h-3.5" />
           </button>
           <span className="flex-1 text-center text-sm font-bold text-ink">{settings.slideCount}</span>
           <button
             type="button"
+            aria-label="زيادة عدد الشرائح"
             disabled={disabled || settings.slideCount >= MAX_SLIDE_COUNT}
             onClick={() => patch({ slideCount: settings.slideCount + 1 })}
-            className="w-8 h-8 rounded-lg border border-stone-200 flex items-center justify-center text-ink-muted hover:border-stone-300 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-stone-200 text-ink-muted hover:border-stone-300 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Plus className="w-3.5 h-3.5" />
           </button>
@@ -115,6 +119,7 @@ export function DesignerSettings({ settings, onChange, disabled }: DesignerSetti
             <div key={i} className="relative">
               <input
                 type="color"
+                aria-label={`اللون ${i + 1}`}
                 value={color}
                 disabled={disabled}
                 onChange={(e) => {
@@ -122,24 +127,28 @@ export function DesignerSettings({ settings, onChange, disabled }: DesignerSetti
                   next[i] = e.target.value;
                   patch({ colors: next });
                 }}
-                className="w-9 h-9 rounded-lg border border-stone-200 cursor-pointer disabled:cursor-not-allowed"
+                className="h-11 w-11 rounded-lg border border-stone-200 cursor-pointer disabled:cursor-not-allowed"
               />
               <button
                 type="button"
+                aria-label={`إزالة اللون ${i + 1}`}
                 disabled={disabled}
                 onClick={() => patch({ colors: settings.colors.filter((_, idx) => idx !== i) })}
-                className="absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full bg-white border border-stone-300 flex items-center justify-center text-ink-subtle hover:text-red-600 cursor-pointer"
+                className="absolute -left-4 -top-4 z-10 flex min-h-11 min-w-11 items-center justify-center text-ink-subtle hover:text-red-600 cursor-pointer disabled:cursor-not-allowed"
               >
-                <Minus className="w-2.5 h-2.5" />
+                <span className="flex h-4 w-4 items-center justify-center rounded-full border border-stone-300 bg-white">
+                  <Minus className="w-2.5 h-2.5" />
+                </span>
               </button>
             </div>
           ))}
           {settings.colors.length < 6 && (
             <button
               type="button"
+              aria-label="إضافة لون"
               disabled={disabled}
               onClick={() => patch({ colors: [...settings.colors, "#6D5EFC"] })}
-              className="w-9 h-9 rounded-lg border-2 border-dashed border-stone-300 flex items-center justify-center text-ink-subtle hover:border-accent hover:text-accent cursor-pointer disabled:cursor-not-allowed"
+              className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border-2 border-dashed border-stone-300 text-ink-subtle hover:border-accent hover:text-accent cursor-pointer disabled:cursor-not-allowed"
             >
               <Plus className="w-4 h-4" />
             </button>
@@ -151,7 +160,8 @@ export function DesignerSettings({ settings, onChange, disabled }: DesignerSetti
       <button
         type="button"
         onClick={() => setExtrasOpen((v) => !v)}
-        className="flex items-center justify-between w-full text-xs font-semibold text-ink-muted cursor-pointer"
+        aria-expanded={extrasOpen}
+        className="flex min-h-11 items-center justify-between w-full text-xs font-semibold text-ink-muted cursor-pointer"
       >
         خيارات إضافية (اختياري — دع الذكاء الاصطناعي يقرر إن تُركت فارغة)
         <ChevronDown className={cn("w-4 h-4 transition-transform", extrasOpen && "rotate-180")} />
@@ -200,15 +210,15 @@ export function DesignerSettings({ settings, onChange, disabled }: DesignerSetti
 
           <Field label="عناصر إضافية">
             <div className="space-y-2.5">
-              <label className="flex items-center justify-between text-sm text-ink cursor-pointer">
+              <label className="flex min-h-11 items-center justify-between text-sm text-ink cursor-pointer">
                 اسم الحساب
                 <Checkbox checked={settings.showAccountName} onCheckedChange={(v) => patch({ showAccountName: v })} disabled={disabled} />
               </label>
-              <label className="flex items-center justify-between text-sm text-ink cursor-pointer">
+              <label className="flex min-h-11 items-center justify-between text-sm text-ink cursor-pointer">
                 الشعار
                 <Checkbox checked={settings.showLogo} onCheckedChange={(v) => patch({ showLogo: v })} disabled={disabled} />
               </label>
-              <label className="flex items-center justify-between text-sm text-ink cursor-pointer">
+              <label className="flex min-h-11 items-center justify-between text-sm text-ink cursor-pointer">
                 رقم الشريحة
                 <Checkbox checked={settings.showSlideNumbers} onCheckedChange={(v) => patch({ showSlideNumbers: v })} disabled={disabled} />
               </label>

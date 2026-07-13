@@ -273,15 +273,17 @@ export function DesignerWorkspace() {
         </aside>
 
         {/* Preview pane (center) */}
-        <main className="flex flex-col order-1 lg:order-2 p-6 gap-4">
+        <main id="main-content" className="flex flex-col order-1 lg:order-2 p-6 gap-4">
+          <h1 className="sr-only">مصمم القوالب بالذكاء الاصطناعي</h1>
           <div className="flex items-center justify-center gap-3">
             {hasDesign && (
               <>
                 <button
                   type="button"
+                  aria-label="الشريحة التالية"
                   onClick={() => setCurrentSlideIndex((i) => Math.min(i + 1, currentVersion!.slides.length - 1))}
                   disabled={currentSlideIndex >= currentVersion!.slides.length - 1}
-                  className="w-8 h-8 rounded-lg border border-stone-200 flex items-center justify-center text-ink-muted hover:border-stone-300 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="min-h-11 min-w-11 rounded-lg border border-stone-200 flex items-center justify-center text-ink-muted hover:border-stone-300 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
@@ -290,9 +292,10 @@ export function DesignerWorkspace() {
                 </span>
                 <button
                   type="button"
+                  aria-label="الشريحة السابقة"
                   onClick={() => setCurrentSlideIndex((i) => Math.max(i - 1, 0))}
                   disabled={currentSlideIndex <= 0}
-                  className="w-8 h-8 rounded-lg border border-stone-200 flex items-center justify-center text-ink-muted hover:border-stone-300 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="min-h-11 min-w-11 rounded-lg border border-stone-200 flex items-center justify-center text-ink-muted hover:border-stone-300 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
@@ -317,7 +320,7 @@ export function DesignerWorkspace() {
                 <p className="mt-2 text-sm leading-6 text-amber-800">
                   لم تُحفظ بيانات الشرائح اللازمة للتعديل أو التصدير. يمكنك إنشاء قالب جديد مع بقاء القالب القديم محفوظًا.
                 </p>
-                <Link href="/templates/designer" className="mt-4 inline-flex h-10 items-center justify-center rounded-xl bg-accent px-4 text-sm font-medium text-accent-foreground">
+                <Link href="/templates/designer" className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl bg-accent px-4 text-sm font-medium text-accent-foreground">
                   إنشاء قالب جديد
                 </Link>
               </div>

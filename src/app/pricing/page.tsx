@@ -1,11 +1,13 @@
-"use client";
-
 import Link from "next/link";
 import { Sparkles, Check } from "lucide-react";
 import { MarketingNavbar } from "@/components/layout/marketing-navbar";
 import { Footer } from "@/components/layout/footer";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { getWhatsAppUpgradeUrl } from "@/lib/whatsapp";
+import { createPageMetadata, ROUTE_SEO } from "@/lib/seo";
+import { cn } from "@/lib/utils";
+
+export const metadata = createPageMetadata(ROUTE_SEO["/pricing"]);
 
 const features = [
   "إنشاء مشاريع كاروسيل",
@@ -28,7 +30,7 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen bg-[#faf9f7]">
       <MarketingNavbar />
-      <div className="mx-auto max-w-4xl px-4 py-16">
+      <main id="main-content" className="mx-auto max-w-4xl px-4 py-16">
         <div className="text-center mb-12">
           <h1 className="text-3xl md:text-4xl font-extrabold text-ink">الأسعار</h1>
           <p className="mt-3 text-ink-muted">ابدأ مجانًا اليوم</p>
@@ -48,7 +50,7 @@ export default function PricingPage() {
                 </div>
               ))}
             </div>
-            <Link href="/signup"><Button size="lg" className="w-full">ابدأ مجانًا</Button></Link>
+            <Link href="/signup" className={cn(buttonVariants({ size: "lg" }), "w-full")}>ابدأ مجانًا</Link>
           </div>
           <div className="rounded-2xl border-2 border-accent bg-white p-8 shadow-soft text-center">
             <div className="inline-flex items-center gap-2 rounded-full bg-accent px-3 py-1 mb-4 text-white"><Sparkles className="w-4 h-4" /><span className="text-sm font-medium">الخطة المدفوعة</span></div>
@@ -58,10 +60,16 @@ export default function PricingPage() {
                 <div key={f} className="flex items-center gap-3"><div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center shrink-0"><Check className="w-3 h-3 text-green-600" strokeWidth={3} /></div><span className="text-sm text-ink">{f}</span></div>
               ))}
             </div>
-            {upgradeUrl ? <a href={upgradeUrl} target="_blank" rel="noreferrer"><Button size="lg" className="w-full">اشترك عبر واتساب</Button></a> : <Button size="lg" className="w-full" disabled>تواصل للاشتراك</Button>}
+            {upgradeUrl ? (
+              <a href={upgradeUrl} target="_blank" rel="noreferrer" className={cn(buttonVariants({ size: "lg" }), "w-full")}>
+                اشترك عبر واتساب
+              </a>
+            ) : (
+              <Button size="lg" className="w-full" disabled>تواصل للاشتراك</Button>
+            )}
           </div>
         </div>
-      </div>
+      </main>
       <Footer />
     </div>
   );

@@ -151,7 +151,7 @@ export default function ProjectsPage() {
   return (
     <div className="min-h-screen bg-[#faf9f7]">
       <AppNavbar />
-      <div className="mx-auto max-w-7xl px-4 py-8">
+      <main id="main-content" className="mx-auto max-w-7xl px-4 py-8">
         <div className="flex items-start justify-between flex-wrap gap-4 mb-6">
           <div>
             <h1 className="text-2xl md:text-3xl font-extrabold text-ink">مشاريعي</h1>
@@ -180,9 +180,11 @@ export default function ProjectsPage() {
           <div className="mb-6">
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
               <button
+                type="button"
                 onClick={() => setFolderFilter("all")}
+                aria-pressed={folderFilter === "all"}
                 className={cn(
-                  "shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-colors cursor-pointer",
+                  "min-h-11 shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-colors cursor-pointer",
                   folderFilter === "all" ? "bg-accent text-white" : "bg-white border border-stone-200 text-ink-muted hover:bg-stone-50"
                 )}
               >
@@ -191,9 +193,11 @@ export default function ProjectsPage() {
               {folders.map((f) => (
                 <div key={f.id} className="shrink-0 flex items-center group">
                   <button
+                    type="button"
                     onClick={() => setFolderFilter(f.id)}
+                    aria-pressed={folderFilter === f.id}
                     className={cn(
-                      "px-4 py-2 rounded-xl text-sm font-medium transition-colors cursor-pointer flex items-center gap-1.5",
+                      "min-h-11 px-4 py-2 rounded-xl text-sm font-medium transition-colors cursor-pointer flex items-center gap-1.5",
                       folderFilter === f.id ? "bg-accent text-white" : "bg-white border border-stone-200 text-ink-muted hover:bg-stone-50"
                     )}
                   >
@@ -201,7 +205,7 @@ export default function ProjectsPage() {
                     {f.name}
                   </button>
                   <Dropdown
-                    trigger={<button className="p-1.5 text-ink-subtle hover:text-ink cursor-pointer opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"><MoreVertical className="w-3.5 h-3.5" /></button>}
+                    trigger={<button type="button" aria-label={`خيارات مجلد ${f.name}`} className="flex min-h-11 min-w-11 items-center justify-center text-ink-subtle hover:text-ink cursor-pointer opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"><MoreVertical className="w-3.5 h-3.5" /></button>}
                   >
                     <DropdownItem onClick={() => { setFolderDialog({ mode: "edit", id: f.id, name: f.name }); setFolderName(f.name); }}>
                       <Pencil className="w-4 h-4" /> إعادة تسمية
@@ -213,8 +217,9 @@ export default function ProjectsPage() {
                 </div>
               ))}
               <button
+                type="button"
                 onClick={() => { setFolderDialog({ mode: "create" }); setFolderName(""); }}
-                className="shrink-0 px-3 py-2 rounded-xl text-sm font-medium bg-white border border-dashed border-stone-300 text-ink-muted hover:bg-stone-50 cursor-pointer flex items-center gap-1.5"
+                className="min-h-11 shrink-0 px-3 py-2 rounded-xl text-sm font-medium bg-white border border-dashed border-stone-300 text-ink-muted hover:bg-stone-50 cursor-pointer flex items-center gap-1.5"
               >
                 <FolderPlus className="w-4 h-4" /> مجلد جديد
               </button>
@@ -266,6 +271,8 @@ export default function ProjectsPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           <button
+            type="button"
+            aria-label="إنشاء مشروع جديد"
             onClick={() => router.push("/projects/new")}
             className="rounded-2xl border-2 border-dashed border-stone-300 bg-white/50 p-8 min-h-[280px] flex flex-col items-center justify-center gap-3 hover:border-accent hover:bg-accent-soft/30 transition-all cursor-pointer group"
           >
@@ -301,7 +308,7 @@ export default function ProjectsPage() {
             </Button>
           </div>
         )}
-      </div>
+      </main>
 
       <Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="حذف المشروع" description="سيتم حذف المشروع نهائيًا ولا يمكن التراجع عن ذلك.">
         <div className="flex gap-3">
@@ -371,8 +378,11 @@ function ProjectCard({ project, folders, onOpen, onDuplicate, onDelete, onExport
         </div>
         {!FEATURE_FLAGS.favorites && (
           <button
+            type="button"
+            aria-label={project.favorite ? `إزالة ${project.title} من المفضلة` : `إضافة ${project.title} إلى المفضلة`}
+            aria-pressed={project.favorite}
             onClick={(e) => { e.stopPropagation(); onFavorite(); }}
-            className={cn("absolute top-4 left-4 p-2 rounded-full bg-white/90 backdrop-blur cursor-pointer transition-colors", project.favorite ? "text-red-500" : "text-ink-subtle hover:text-ink")}
+            className={cn("absolute top-4 left-4 flex min-h-11 min-w-11 items-center justify-center rounded-full bg-white/90 backdrop-blur cursor-pointer transition-colors", project.favorite ? "text-red-500" : "text-ink-subtle hover:text-ink")}
           >
             <Heart className={cn("w-4 h-4", project.favorite && "fill-current")} />
           </button>
@@ -380,7 +390,7 @@ function ProjectCard({ project, folders, onOpen, onDuplicate, onDelete, onExport
         <div className="absolute top-4 right-4">
           <Dropdown
             trigger={
-              <button className="p-2 rounded-full bg-white/90 backdrop-blur cursor-pointer text-ink-muted hover:text-ink">
+              <button type="button" aria-label={`خيارات مشروع ${project.title}`} className="flex min-h-11 min-w-11 items-center justify-center rounded-full bg-white/90 backdrop-blur cursor-pointer text-ink-muted hover:text-ink">
                 <MoreVertical className="w-4 h-4" />
               </button>
             }
@@ -417,7 +427,7 @@ function ProjectCard({ project, folders, onOpen, onDuplicate, onDelete, onExport
       </div>
 
       <div className="p-4" onClick={onOpen}>
-        <h3 className="font-bold text-ink truncate cursor-pointer hover:text-accent transition-colors">{project.title}</h3>
+        <h2 className="font-bold text-ink truncate cursor-pointer hover:text-accent transition-colors">{project.title}</h2>
         <div className="flex items-center gap-2 mt-2 flex-wrap">
           <Badge className="bg-stone-100 text-ink-muted">{project.slides.length} شرائح</Badge>
           <Badge className="bg-stone-100 text-ink-muted">{sizeLabel}</Badge>

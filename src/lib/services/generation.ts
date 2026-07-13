@@ -483,7 +483,16 @@ HARD CONSTRAINTS:
    show them. Place {{slideNumber}}/{{totalSlides}} only if slide numbers
    should show.
 7. No absolute/fixed positioning that could escape the {{WIDTH}}x{{HEIGHT}}px
-   container. No external resource links except the font variables above.`;
+   container. No external resource links except the font variables above.
+8. Maintain a clear visual hierarchy: one dominant headline, readable body
+   copy, and restrained metadata. Do not make every element equally loud.
+9. Keep a safe area of at least 64px around important text and branding.
+10. Use strong text/background contrast and never place low-opacity body
+    copy on a similarly colored surface.
+11. Fit realistic Arabic text without shrinking body copy below 22px; use
+    flexible layout, sensible line-height, and bounded content regions.
+12. Decorative elements must stay behind content and must not cause text
+    overflow or clipping.`;
 
 // Colors/font/visualStyle/textDensity are optional "let the AI decide"
 // inputs — only topic/slideCount/size are treated as firm requirements.

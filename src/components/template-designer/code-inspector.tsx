@@ -44,8 +44,9 @@ export function CodeInspector({ open, onClose, css, htmlCover, htmlContent, html
               key={t.id}
               type="button"
               onClick={() => setTab(t.id)}
+              aria-pressed={tab === t.id}
               className={cn(
-                "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer",
+                "min-h-11 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer",
                 tab === t.id ? "bg-accent text-accent-foreground" : "bg-stone-100 text-ink-muted hover:bg-stone-200"
               )}
             >
@@ -57,7 +58,7 @@ export function CodeInspector({ open, onClose, css, htmlCover, htmlContent, html
           <button
             type="button"
             onClick={copy}
-            className="absolute top-2 left-2 z-10 flex items-center gap-1 rounded-lg bg-white/90 border border-stone-200 px-2 py-1 text-xs text-ink-muted hover:text-ink cursor-pointer"
+            className="absolute top-2 left-2 z-10 flex min-h-11 items-center gap-1 rounded-lg bg-white/90 border border-stone-200 px-2 py-1 text-xs text-ink-muted hover:text-ink cursor-pointer"
           >
             {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
             {copied ? "تم النسخ" : "نسخ"}

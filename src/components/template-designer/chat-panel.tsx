@@ -109,17 +109,20 @@ export function ChatPanel({ messages, loading, onSend, placeholder, model, onMod
             type="button"
             disabled={loading}
             onClick={() => setModelMenuOpen((v) => !v)}
-            className="flex items-center gap-1.5 rounded-lg border border-stone-200 px-2.5 py-1 text-xs text-ink-muted hover:border-stone-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-expanded={modelMenuOpen}
+            aria-controls="designer-model-options"
+            className="flex min-h-11 items-center gap-1.5 rounded-lg border border-stone-200 px-2.5 py-1 text-xs text-ink-muted hover:border-stone-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Cpu className="w-3.5 h-3.5" />
             {modelLabel}
           </button>
           {modelMenuOpen && (
-            <div className="absolute bottom-full right-0 mb-2 min-w-[200px] rounded-xl border border-stone-200 bg-white py-1.5 shadow-lift z-50">
+            <div id="designer-model-options" className="absolute bottom-full right-0 mb-2 min-w-[200px] rounded-xl border border-stone-200 bg-white py-1.5 shadow-lift z-50">
               <button
                 type="button"
                 onClick={() => { onModelChange(undefined); setModelMenuOpen(false); }}
-                className="flex w-full items-center gap-2.5 px-3.5 py-2 text-sm text-right text-ink hover:bg-stone-50 cursor-pointer"
+                aria-pressed={!model}
+                className="flex min-h-11 w-full items-center gap-2.5 px-3.5 py-2 text-sm text-right text-ink hover:bg-stone-50 cursor-pointer"
               >
                 {!model && <Check className="w-3.5 h-3.5" />}
                 افتراضي
@@ -129,7 +132,8 @@ export function ChatPanel({ messages, loading, onSend, placeholder, model, onMod
                   key={m.id}
                   type="button"
                   onClick={() => { onModelChange(m.id); setModelMenuOpen(false); }}
-                  className="flex w-full items-center gap-2.5 px-3.5 py-2 text-sm text-right text-ink hover:bg-stone-50 cursor-pointer"
+                  aria-pressed={model === m.id}
+                  className="flex min-h-11 w-full items-center gap-2.5 px-3.5 py-2 text-sm text-right text-ink hover:bg-stone-50 cursor-pointer"
                 >
                   {model === m.id && <Check className="w-3.5 h-3.5" />}
                   {m.label}
@@ -157,7 +161,7 @@ export function ChatPanel({ messages, loading, onSend, placeholder, model, onMod
             className="min-h-[44px] max-h-32"
             rows={1}
           />
-          <Button size="icon" onClick={send} disabled={loading || !draft.trim()}>
+          <Button type="button" size="icon" aria-label="إرسال الرسالة" onClick={send} disabled={loading || !draft.trim()}>
             <Send className="w-4 h-4" />
           </Button>
         </div>

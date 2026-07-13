@@ -125,7 +125,7 @@ const EDITORIAL_HEALTH_PALETTES: Palette[] = [
 
 const BOLD_STATEMENT_PALETTES: Palette[] = [
   { id: "p1", name: "ذهبي داكن", background: "#0E1116", text: "#FFFFFF", accent: "#FFD166", secondary: "#1a1d24" },
-  { id: "p2", name: "أزرق كامل", background: "#2E86C1", text: "#FFFFFF", accent: "#0B3D5C", secondary: "#2563a0" },
+  { id: "p2", name: "أزرق كامل", background: "#256A9B", text: "#FFFFFF", accent: "#0B3D5C", secondary: "#2563a0" },
   { id: "p3", name: "أبيض وأحمر", background: "#F2F4F8", text: "#14213D", accent: "#E63946", secondary: "#dfe3ec" },
   { id: "p4", name: "أخضر عميق", background: "#16302B", text: "#EAF4EF", accent: "#2CC28E", secondary: "#1a3f37" },
 ];

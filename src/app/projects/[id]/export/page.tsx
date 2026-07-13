@@ -72,9 +72,10 @@ export default function ExportPage() {
     return (
       <div className="min-h-screen bg-[#faf9f7]">
         <AppNavbar />
-        <div className="flex items-center justify-center h-[60vh]">
+        <main id="main-content" className="flex items-center justify-center h-[60vh]" aria-label="جارٍ تحميل صفحة التصدير">
+          <h1 className="sr-only">تصدير مشروع كاروسيل</h1>
           <div className="w-8 h-8 border-[3px] border-stone-200 border-t-accent rounded-full animate-spin" />
-        </div>
+        </main>
       </div>
     );
   }
@@ -194,7 +195,7 @@ export default function ExportPage() {
         ))}
       </div>
 
-      <div className="mx-auto max-w-6xl px-4 py-8">
+      <main id="main-content" className="mx-auto max-w-6xl px-4 py-8">
         <AnimatePresence>
           {showSuccess && (
             <motion.div
@@ -293,7 +294,7 @@ export default function ExportPage() {
         <div className="grid md:grid-cols-2 gap-5 mb-8">
           <div className="rounded-2xl border border-stone-200 bg-white p-5">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold text-ink flex items-center gap-2"><FileText className="w-4 h-4 text-accent" /> وصف المنشور</h3>
+              <h2 className="font-bold text-ink flex items-center gap-2"><FileText className="w-4 h-4 text-accent" /> وصف المنشور</h2>
               <Button variant="ghost" size="sm" onClick={copyCaption}><Copy className="w-3.5 h-3.5" /> نسخ</Button>
             </div>
             <Textarea
@@ -306,7 +307,7 @@ export default function ExportPage() {
           </div>
           <div className="rounded-2xl border border-stone-200 bg-white p-5">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold text-ink flex items-center gap-2"><Hash className="w-4 h-4 text-accent" /> الهاشتاغات</h3>
+              <h2 className="font-bold text-ink flex items-center gap-2"><Hash className="w-4 h-4 text-accent" /> الهاشتاغات</h2>
               <Button variant="ghost" size="sm" onClick={copyHashtags}><Copy className="w-3.5 h-3.5" /> نسخ</Button>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -348,7 +349,7 @@ export default function ExportPage() {
             جارٍ تحميل الخطوط...
           </p>
         )}
-      </div>
+      </main>
     </div>
   );
 }

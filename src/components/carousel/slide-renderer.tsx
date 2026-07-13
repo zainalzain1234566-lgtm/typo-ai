@@ -4,6 +4,7 @@ import { forwardRef, useRef, useState, useEffect, type ForwardRefExoticComponent
 import type { Slide, Palette, FontFamily, BrandKitSettings, CarouselSize, Placement, BrandKit as BrandKitData, SlideType, MedicalProps } from "@/lib/types";
 import { SIZES, ALL_FONTS } from "@/lib/templates";
 import { shouldShowMedicalDisclaimer } from "@/lib/content-mode";
+import { oppositeHorizontalPlacement, templateLayoutProfile } from "@/lib/template-layout";
 
 interface SlideRenderProps {
   slide: Slide;
@@ -110,6 +111,8 @@ export function ScaledSlide({ width = 400, ...slideProps }: SlideRenderProps & {
   return (
     <div
       ref={containerRef}
+      role="img"
+      aria-label={`معاينة شريحة: ${slideProps.slide.title}`}
       className="relative overflow-hidden rounded-xl bg-white mx-auto"
       style={{ width: "100%", maxWidth: `${width}px`, aspectRatio: `${dims.w} / ${dims.h}` }}
     >
@@ -157,10 +160,10 @@ function BrandOverlay({ settings, data, palette, font, fontSizeScale = 1 }: {
 }) {
   if (!settings.enabled) return null;
   const posStyles: Record<Placement, React.CSSProperties> = {
-    "top-right": { top: "40px", right: "40px" },
-    "top-left": { top: "40px", left: "40px" },
-    "bottom-right": { bottom: "40px", right: "40px" },
-    "bottom-left": { bottom: "40px", left: "40px" },
+    "top-right": { top: "64px", right: "64px" },
+    "top-left": { top: "64px", left: "64px" },
+    "bottom-right": { bottom: "64px", right: "64px" },
+    "bottom-left": { bottom: "64px", left: "64px" },
   };
   const alignItems = settings.placement.includes("right") ? "flex-start" : "flex-end";
   return (
@@ -176,7 +179,14 @@ function BrandOverlay({ settings, data, palette, font, fontSizeScale = 1 }: {
       }}
     >
       {settings.showLogo && data.logoDataUrl && (
-        <img src={data.logoDataUrl} alt="logo" style={{ width: "80px", height: "80px", objectFit: "contain" }} />
+        <img
+          src={data.logoDataUrl}
+          alt="شعار الحساب"
+          width={80}
+          height={80}
+          decoding="async"
+          style={{ width: "80px", height: "80px", objectFit: "contain" }}
+        />
       )}
       {settings.showAccountName && (
         <span style={{ fontFamily: fontMap[font], fontSize: fs(32, fontSizeScale), fontWeight: 600, color: palette.accent }}>
@@ -192,10 +202,10 @@ function SlideNumber({ show, index, total, palette, font, placement, fontSizeSca
 }) {
   if (!show) return null;
   const posStyles: Record<Placement, React.CSSProperties> = {
-    "top-right": { top: "40px", right: "40px" },
-    "top-left": { top: "40px", left: "40px" },
-    "bottom-right": { bottom: "40px", right: "40px" },
-    "bottom-left": { bottom: "40px", left: "40px" },
+    "top-right": { top: "64px", right: "64px" },
+    "top-left": { top: "64px", left: "64px" },
+    "bottom-right": { bottom: "64px", right: "64px" },
+    "bottom-left": { bottom: "64px", left: "64px" },
   };
   return (
     <span
@@ -229,8 +239,12 @@ function BaseSlide({ children, palette, font, slide, settings, data, index, tota
   fontSizeScale?: number;
   style?: React.CSSProperties;
 }) {
+  const hasVisibleBrand = settings.enabled && (
+    settings.showAccountName || (settings.showLogo && !!data.logoDataUrl)
+  );
   return (
     <div
+      dir="rtl"
       style={{
         width: "100%",
         height: "100%",
@@ -239,6 +253,9 @@ function BaseSlide({ children, palette, font, slide, settings, data, index, tota
         fontFamily: fontMap[font],
         position: "relative",
         overflow: "hidden",
+        overflowWrap: "anywhere",
+        wordBreak: "break-word",
+        isolation: "isolate",
         ...style,
       }}
     >
@@ -250,7 +267,7 @@ function BaseSlide({ children, palette, font, slide, settings, data, index, tota
         total={total}
         palette={palette}
         font={font}
-        placement={settings.placement}
+        placement={hasVisibleBrand ? oppositeHorizontalPlacement(settings.placement) : settings.placement}
         fontSizeScale={fontSizeScale}
       />
     </div>
@@ -322,7 +339,7 @@ function PhysicianMark({ specialty, palette, font, fontSizeScale = 1 }: {
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 2v20M2 12h20" />
       </svg>
-      <span>من إعداد طبيب</span>
+      <span>محتوى طبي</span>
       <span style={{ opacity: 0.6, fontSize: fs(18, fontSizeScale) }}>•</span>
       <span>{label}</span>
     </div>
@@ -381,7 +398,7 @@ const Tahrir = forwardRef<HTMLDivElement, SlideRenderProps>(function Tahrir(
               </span>
             </div>
           )}
-          <h1 style={{
+          <div style={{
             fontSize: fs(isCover ? 72 : 56, fontSizeScale),
             fontWeight: 800,
             lineHeight: 1.2,
@@ -389,7 +406,7 @@ const Tahrir = forwardRef<HTMLDivElement, SlideRenderProps>(function Tahrir(
             marginBottom: slide.body ? "28px" : 0,
           }}>
             {slide.title}
-          </h1>
+          </div>
           {slide.body && (
             <p style={{ fontSize: fs(isCover ? 32 : 28, fontSizeScale), lineHeight: 1.6, color: palette.text, opacity: 0.75, margin: 0, maxWidth: "85%" }}>
               {slide.body}
@@ -435,7 +452,7 @@ const Wadeh = forwardRef<HTMLDivElement, SlideRenderProps>(function Wadeh(
               {index} / {total - 1}
             </span>
           )}
-          <h1 style={{
+          <div style={{
             fontSize: fs(isCover ? 64 : 52, fontSizeScale),
             fontWeight: 800,
             lineHeight: 1.25,
@@ -444,7 +461,7 @@ const Wadeh = forwardRef<HTMLDivElement, SlideRenderProps>(function Wadeh(
             maxWidth: "90%",
           }}>
             {slide.title}
-          </h1>
+          </div>
           {slide.body && (
             <p style={{ fontSize: fs(30, fontSizeScale), lineHeight: 1.7, opacity: 0.7, margin: 0, maxWidth: "80%" }}>
               {slide.body}
@@ -511,7 +528,7 @@ const Noqta = forwardRef<HTMLDivElement, SlideRenderProps>(function Noqta(
               </span>
             </div>
           )}
-          <h1 style={{
+          <div style={{
             fontSize: fs(isCover ? 68 : 54, fontSizeScale),
             fontWeight: 800,
             lineHeight: 1.2,
@@ -519,7 +536,7 @@ const Noqta = forwardRef<HTMLDivElement, SlideRenderProps>(function Noqta(
             marginBottom: slide.body ? "24px" : 0,
           }}>
             {slide.title}
-          </h1>
+          </div>
           {slide.body && (
             <p style={{ fontSize: fs(30, fontSizeScale), lineHeight: 1.7, opacity: 0.7, margin: 0, maxWidth: "85%" }}>
               {slide.body}
@@ -560,7 +577,7 @@ const Itar = forwardRef<HTMLDivElement, SlideRenderProps>(function Itar(
               شريحة {index}
             </span>
           )}
-          <h1 style={{
+          <div style={{
             fontSize: fs(isCover ? 60 : 50, fontSizeScale),
             fontWeight: 800,
             lineHeight: 1.25,
@@ -568,7 +585,7 @@ const Itar = forwardRef<HTMLDivElement, SlideRenderProps>(function Itar(
             marginBottom: slide.body ? "24px" : 0,
           }}>
             {slide.title}
-          </h1>
+          </div>
           {slide.body && (
             <p style={{ fontSize: fs(28, fontSizeScale), lineHeight: 1.7, opacity: 0.65, margin: 0, maxWidth: "85%" }}>
               {slide.body}
@@ -605,7 +622,7 @@ const Mujaz = forwardRef<HTMLDivElement, SlideRenderProps>(function Mujaz(
               موجز
             </span>
           )}
-          <h1 style={{
+          <div style={{
             fontSize: fs(isCover ? 56 : 44, fontSizeScale),
             fontWeight: 700,
             lineHeight: 1.35,
@@ -613,7 +630,7 @@ const Mujaz = forwardRef<HTMLDivElement, SlideRenderProps>(function Mujaz(
             marginBottom: slide.body ? "20px" : 0,
           }}>
             {slide.title}
-          </h1>
+          </div>
           {slide.body && (
             <p style={{ fontSize: fs(26, fontSizeScale), lineHeight: 1.8, opacity: 0.6, margin: 0 }}>
               {slide.body}
@@ -661,7 +678,7 @@ const Academy = forwardRef<HTMLDivElement, SlideRenderProps>(function Academy(
               محتوى أكاديمي
             </span>
           )}
-          <h1 style={{
+          <div style={{
             fontSize: fs(isCover ? 60 : 48, fontSizeScale),
             fontWeight: 800,
             lineHeight: 1.25,
@@ -669,7 +686,7 @@ const Academy = forwardRef<HTMLDivElement, SlideRenderProps>(function Academy(
             marginBottom: slide.body ? "24px" : 0,
           }}>
             {slide.title}
-          </h1>
+          </div>
           {slide.body && (
             <div style={{ borderRight: `4px solid ${palette.accent}`, paddingRight: "24px", marginRight: "-28px" }}>
               <p style={{ fontSize: fs(28, fontSizeScale), lineHeight: 1.7, opacity: 0.7, margin: 0 }}>
@@ -716,7 +733,7 @@ const Hadith = forwardRef<HTMLDivElement, SlideRenderProps>(function Hadith(
               <span style={{ fontSize: fs(26, fontSizeScale), fontWeight: 700, color: palette.accent, backgroundColor: palette.secondary, padding: "8px 24px", borderRadius: "100px" }}>جديد</span>
             </div>
           )}
-          <h1 style={{
+          <div style={{
             fontSize: fs(isCover ? 64 : 52, fontSizeScale),
             fontWeight: 800,
             lineHeight: 1.2,
@@ -724,7 +741,7 @@ const Hadith = forwardRef<HTMLDivElement, SlideRenderProps>(function Hadith(
             marginBottom: slide.body ? "24px" : 0,
           }}>
             {slide.title}
-          </h1>
+          </div>
           {slide.body && (
             <p style={{ fontSize: fs(28, fontSizeScale), lineHeight: 1.7, opacity: 0.7, margin: 0, maxWidth: "80%" }}>
               {slide.body}
@@ -769,7 +786,7 @@ const Tabayun = forwardRef<HTMLDivElement, SlideRenderProps>(function Tabayun(
               00 /
             </span>
           )}
-          <h1 style={{
+          <div style={{
             fontSize: fs(isCover ? 60 : 50, fontSizeScale),
             fontWeight: 800,
             lineHeight: 1.2,
@@ -777,7 +794,7 @@ const Tabayun = forwardRef<HTMLDivElement, SlideRenderProps>(function Tabayun(
             marginBottom: slide.body ? "24px" : 0,
           }}>
             {slide.title}
-          </h1>
+          </div>
           {slide.body && (
             <p style={{ fontSize: fs(28, fontSizeScale), lineHeight: 1.7, opacity: 0.75, margin: 0, maxWidth: "75%" }}>
               {slide.body}
@@ -836,7 +853,7 @@ const Shabaka = forwardRef<HTMLDivElement, SlideRenderProps>(function Shabaka(
           {isCover && (
             <div style={{ width: "48px", height: "48px", backgroundColor: palette.accent, borderRadius: "12px", marginBottom: "24px" }} />
           )}
-          <h1 style={{
+          <div style={{
             fontSize: fs(isCover ? 56 : 46, fontSizeScale),
             fontWeight: 800,
             lineHeight: 1.25,
@@ -844,7 +861,7 @@ const Shabaka = forwardRef<HTMLDivElement, SlideRenderProps>(function Shabaka(
             marginBottom: slide.body ? "20px" : 0,
           }}>
             {slide.title}
-          </h1>
+          </div>
           {slide.body && (
             <p style={{ fontSize: fs(26, fontSizeScale), lineHeight: 1.7, opacity: 0.65, margin: 0 }}>
               {slide.body}
@@ -910,17 +927,17 @@ const Hero = forwardRef<HTMLDivElement, SlideRenderProps>(function Hero(
             </span>
           )}
           {isCover || isEnding ? (
-            <h1 style={{
+            <div style={{
               fontSize: fs(isCover ? 66 : 54, fontSizeScale), fontWeight: 900, lineHeight: 1.15, margin: 0,
             }}>
               {slide.title}
-            </h1>
+            </div>
           ) : (
-            <h2 style={{
+            <div style={{
               fontSize: fs(46, fontSizeScale), fontWeight: 700, color: palette.accent, lineHeight: 1.2, margin: 0,
             }}>
               {slide.title}
-            </h2>
+            </div>
           )}
           {(isCover || isEnding) && slide.body && (
             <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.6, margin: 0, maxWidth: "760px" }}>
@@ -989,19 +1006,19 @@ const Editorial = forwardRef<HTMLDivElement, SlideRenderProps>(function Editoria
             </span>
           )}
           {isCover || isEnding ? (
-            <h1 style={{
+            <div style={{
               fontFamily: decorFont.playfair, fontSize: fs(isCover ? 58 : 50, fontSizeScale),
               fontWeight: 900, lineHeight: 1.2, margin: 0,
             }}>
               {slide.title}
-            </h1>
+            </div>
           ) : (
-            <h2 style={{
+            <div style={{
               fontFamily: decorFont.playfair, fontSize: fs(42, fontSizeScale),
               fontWeight: 700, color: palette.accent, lineHeight: 1.2, margin: 0,
             }}>
               {slide.title}
-            </h2>
+            </div>
           )}
           {(isCover || isEnding) && slide.body && (
             <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.85, color: palette.text, opacity: 0.6, margin: 0 }}>
@@ -1064,13 +1081,13 @@ const Split = forwardRef<HTMLDivElement, SlideRenderProps>(function Split(
                 </span>
               )}
               {isCover || isEnding ? (
-                <h1 style={{ fontSize: fs(isCover ? 56 : 50, fontSizeScale), fontWeight: 900, lineHeight: 1.2, margin: 0 }}>
+                <div style={{ fontSize: fs(isCover ? 56 : 50, fontSizeScale), fontWeight: 900, lineHeight: 1.2, margin: 0 }}>
                   {slide.title}
-                </h1>
+                </div>
               ) : (
-                <h2 style={{ fontSize: fs(42, fontSizeScale), fontWeight: 700, color: palette.accent, lineHeight: 1.2, margin: 0 }}>
+                <div style={{ fontSize: fs(42, fontSizeScale), fontWeight: 700, color: palette.accent, lineHeight: 1.2, margin: 0 }}>
                   {slide.title}
-                </h2>
+                </div>
               )}
               {(isCover || isEnding) && slide.body && (
                 <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.6, margin: 0 }}>{slide.body}</p>
@@ -1153,13 +1170,13 @@ const Stacked = forwardRef<HTMLDivElement, SlideRenderProps>(function Stacked(
             </span>
           )}
           {isCover || isEnding ? (
-            <h1 style={{ fontSize: fs(isCover ? 60 : 50, fontSizeScale), fontWeight: 900, lineHeight: 1.15, margin: 0 }}>
+            <div style={{ fontSize: fs(isCover ? 60 : 50, fontSizeScale), fontWeight: 900, lineHeight: 1.15, margin: 0 }}>
               {slide.title}
-            </h1>
+            </div>
           ) : (
-            <h2 style={{ fontSize: fs(44, fontSizeScale), fontWeight: 700, color: palette.accent, lineHeight: 1.2, margin: 0 }}>
+            <div style={{ fontSize: fs(44, fontSizeScale), fontWeight: 700, color: palette.accent, lineHeight: 1.2, margin: 0 }}>
               {slide.title}
-            </h2>
+            </div>
           )}
           {(isCover || isEnding) && slide.body && (
             <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.6, margin: 0, maxWidth: "840px" }}>{slide.body}</p>
@@ -1222,13 +1239,13 @@ const Cards = forwardRef<HTMLDivElement, SlideRenderProps>(function Cards(
             </span>
           )}
           {isCover || isEnding ? (
-            <h1 style={{ fontSize: fs(isCover ? 60 : 50, fontSizeScale), fontWeight: 900, lineHeight: 1.15, margin: 0 }}>
+            <div style={{ fontSize: fs(isCover ? 60 : 50, fontSizeScale), fontWeight: 900, lineHeight: 1.15, margin: 0 }}>
               {slide.title}
-            </h1>
+            </div>
           ) : (
-            <h2 style={{ fontSize: fs(42, fontSizeScale), fontWeight: 700, color: palette.accent, lineHeight: 1.2, margin: 0 }}>
+            <div style={{ fontSize: fs(42, fontSizeScale), fontWeight: 700, color: palette.accent, lineHeight: 1.2, margin: 0 }}>
               {slide.title}
-            </h2>
+            </div>
           )}
           {(isCover || isEnding) && slide.body && (
             <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.6, margin: 0 }}>{slide.body}</p>
@@ -1267,23 +1284,26 @@ const Cards = forwardRef<HTMLDivElement, SlideRenderProps>(function Cards(
 // ============= 16. Rotated — Asymmetric Rotated (style06) =============
 
 const Rotated = forwardRef<HTMLDivElement, SlideRenderProps>(function Rotated(
-  { slide, palette, font, brandKitSettings, brandKitData, index, total, fontSizeScale = 1 }, ref
+  { slide, palette, font, size, brandKitSettings, brandKitData, index, total, fontSizeScale: baseFontSizeScale = 1 }, ref
 ) {
   const isCover = slide.type === "cover";
   const isEnding = slide.type === "ending";
   const { para, items } = splitBody(slide.body || "");
+  const layout = templateLayoutProfile(size);
+  const fontSizeScale = baseFontSizeScale * layout.typeScale;
   return (
     <div ref={ref} style={{ width: "100%", height: "100%" }}>
       <BaseSlide slide={slide} palette={palette} font={font} settings={brandKitSettings} data={brandKitData} index={index} total={total} fontSizeScale={fontSizeScale}>
         <div style={{
-          position: "absolute", insetInlineStart: "-40px", top: "300px",
-          width: "8px", height: "420px", background: palette.accent,
-          transform: "rotate(-10deg)", opacity: 0.5, zIndex: 0,
+          position: "absolute", insetInlineStart: "-40px", top: layout.isStory ? "430px" : "300px",
+          width: "8px", height: layout.isStory ? "680px" : "420px", background: palette.accent,
+          transform: `rotate(${-10 * layout.rotationScale}deg)`, opacity: 0.5, zIndex: 0,
         }} />
         <div style={{
           position: "relative", zIndex: 2, height: "100%",
           display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "flex-start",
-          gap: fs(20, fontSizeScale), transform: "translateX(40px)", padding: "60px 70px",
+          gap: fs(20, fontSizeScale), transform: `translateX(${Math.round(40 * layout.rotationScale)}px)`,
+          padding: `${layout.paddingY}px ${layout.paddingX}px`, maxWidth: `${layout.contentMaxWidth}px`,
         }}>
           {(isCover || isEnding) && (
             <span style={{
@@ -1301,23 +1321,23 @@ const Rotated = forwardRef<HTMLDivElement, SlideRenderProps>(function Rotated(
             </span>
           )}
           {isCover || isEnding ? (
-            <h1 style={{ fontSize: fs(isCover ? 62 : 50, fontSizeScale), fontWeight: 900, lineHeight: 1.12, margin: 0 }}>
+            <div style={{ fontSize: fs(isCover ? 62 : 50, fontSizeScale), fontWeight: 900, lineHeight: 1.12, margin: 0 }}>
               {slide.title}
-            </h1>
+            </div>
           ) : (
-            <h2 style={{
+            <div style={{
               fontSize: fs(44, fontSizeScale), fontWeight: 700, color: palette.accent,
-              lineHeight: 1.2, margin: 0, transform: "rotate(-1.5deg)", transformOrigin: "right",
+              lineHeight: 1.2, margin: 0, transform: `rotate(${-1.5 * layout.rotationScale}deg)`, transformOrigin: "right",
             }}>
               {slide.title}
-            </h2>
+            </div>
           )}
           {(isCover || isEnding) && slide.body && (
-            <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.6, margin: 0, maxWidth: "760px" }}>{slide.body}</p>
+            <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.72, margin: 0, maxWidth: `${layout.contentMaxWidth}px` }}>{slide.body}</p>
           )}
           {!isCover && !isEnding && slide.body && (
             <>
-              {para && <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.6, margin: 0, maxWidth: "760px" }}>{para}</p>}
+              {para && <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.72, margin: 0, maxWidth: `${layout.contentMaxWidth}px` }}>{para}</p>}
               {items.length > 0 && (
                 <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: fs(14, fontSizeScale), padding: 0, margin: 0 }}>
                   {items.map((item, i) => (
@@ -1374,13 +1394,13 @@ const Terminal = forwardRef<HTMLDivElement, SlideRenderProps>(function Terminal(
             </span>
           )}
           {isCover || isEnding ? (
-            <h1 style={{ fontSize: fs(isCover ? 54 : 48, fontSizeScale), fontWeight: 900, lineHeight: 1.15, margin: 0 }}>
+            <div style={{ fontSize: fs(isCover ? 54 : 48, fontSizeScale), fontWeight: 900, lineHeight: 1.15, margin: 0 }}>
               {slide.title}
-            </h1>
+            </div>
           ) : (
-            <h2 style={{ fontSize: fs(38, fontSizeScale), fontWeight: 700, color: palette.accent, lineHeight: 1.2, margin: 0 }}>
+            <div style={{ fontSize: fs(38, fontSizeScale), fontWeight: 700, color: palette.accent, lineHeight: 1.2, margin: 0 }}>
               {slide.title}
-            </h2>
+            </div>
           )}
           {(isCover || isEnding) && slide.body && (
             <p style={{ fontSize: fs(21, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.6, margin: 0, maxWidth: "880px", fontFamily: mono }}>{slide.body}</p>
@@ -1415,19 +1435,21 @@ const Terminal = forwardRef<HTMLDivElement, SlideRenderProps>(function Terminal(
 // ============= 18. Magazine — Magazine Columns (style08) =============
 
 const Magazine = forwardRef<HTMLDivElement, SlideRenderProps>(function Magazine(
-  { slide, palette, font, brandKitSettings, brandKitData, index, total, fontSizeScale = 1 }, ref
+  { slide, palette, font, size, brandKitSettings, brandKitData, index, total, fontSizeScale: baseFontSizeScale = 1 }, ref
 ) {
   const isCover = slide.type === "cover";
   const isEnding = slide.type === "ending";
   const { para, items } = splitBody(slide.body || "");
+  const layout = templateLayoutProfile(size);
+  const fontSizeScale = baseFontSizeScale * layout.typeScale;
   return (
     <div ref={ref} style={{ width: "100%", height: "100%" }}>
       <BaseSlide slide={slide} palette={palette} font={font} settings={brandKitSettings} data={brandKitData} index={index} total={total} fontSizeScale={fontSizeScale}
         style={{ border: `2px dashed ${palette.text}40` }}
       >
         <div style={{
-          position: "absolute", insetInlineEnd: "20px", top: "90px",
-          fontWeight: 900, fontSize: fs(300, fontSizeScale), color: palette.accent, opacity: 0.14,
+          position: "absolute", insetInlineEnd: "20px", top: layout.isStory ? "180px" : "90px",
+          fontWeight: 900, fontSize: fs(300 * layout.decorScale, fontSizeScale), color: palette.accent, opacity: 0.14,
           lineHeight: 1, zIndex: 0, pointerEvents: "none",
         }}>
           {String(index + 1).padStart(2, "0")}
@@ -1435,7 +1457,7 @@ const Magazine = forwardRef<HTMLDivElement, SlideRenderProps>(function Magazine(
         <div style={{
           position: "relative", zIndex: 2, height: "100%",
           display: "flex", flexDirection: "column", justifyContent: "center", gap: fs(18, fontSizeScale),
-          maxWidth: "720px", padding: "60px 70px",
+          maxWidth: `${layout.contentMaxWidth}px`, padding: `${layout.paddingY}px ${layout.paddingX}px`,
         }}>
           {(isCover || isEnding) && (
             <span style={{
@@ -1452,22 +1474,22 @@ const Magazine = forwardRef<HTMLDivElement, SlideRenderProps>(function Magazine(
             </span>
           )}
           {isCover || isEnding ? (
-            <h1 style={{ fontSize: fs(isCover ? 58 : 50, fontSizeScale), fontWeight: 900, lineHeight: 1.15, margin: 0 }}>
+            <div style={{ fontSize: fs(isCover ? 58 : 50, fontSizeScale), fontWeight: 900, lineHeight: 1.15, margin: 0 }}>
               {slide.title}
-            </h1>
+            </div>
           ) : (
-            <h2 style={{ fontSize: fs(42, fontSizeScale), fontWeight: 700, color: palette.accent, lineHeight: 1.2, margin: 0 }}>
+            <div style={{ fontSize: fs(42, fontSizeScale), fontWeight: 700, color: palette.accent, lineHeight: 1.2, margin: 0 }}>
               {slide.title}
-            </h2>
+            </div>
           )}
           {(isCover || isEnding) && slide.body && (
-            <p style={{ fontSize: fs(21, fontSizeScale), lineHeight: 1.9, color: palette.text, opacity: 0.6, margin: 0, columnCount: 2, columnGap: "34px", textAlign: "justify" }}>
+            <p style={{ fontSize: fs(21, fontSizeScale), lineHeight: 1.9, color: palette.text, opacity: 0.72, margin: 0, columnCount: layout.magazineColumns, columnGap: "34px", textAlign: "start" }}>
               {slide.body}
             </p>
           )}
           {!isCover && !isEnding && slide.body && (
             <>
-              {para && <p style={{ fontSize: fs(21, fontSizeScale), lineHeight: 1.9, color: palette.text, opacity: 0.6, margin: 0, columnCount: 2, columnGap: "34px", textAlign: "justify" }}>{para}</p>}
+              {para && <p style={{ fontSize: fs(21, fontSizeScale), lineHeight: 1.9, color: palette.text, opacity: 0.72, margin: 0, columnCount: layout.magazineColumns, columnGap: "34px", textAlign: "start" }}>{para}</p>}
               {items.length > 0 && (
                 <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: fs(13, fontSizeScale), padding: 0, margin: 0 }}>
                   {items.map((item, i) => (
@@ -1495,11 +1517,14 @@ const Magazine = forwardRef<HTMLDivElement, SlideRenderProps>(function Magazine(
 // ============= 19. Tilt — Diagonal Tilt (style09) =============
 
 const Tilt = forwardRef<HTMLDivElement, SlideRenderProps>(function Tilt(
-  { slide, palette, font, brandKitSettings, brandKitData, index, total, fontSizeScale = 1 }, ref
+  { slide, palette, font, size, brandKitSettings, brandKitData, index, total, fontSizeScale: baseFontSizeScale = 1 }, ref
 ) {
   const isCover = slide.type === "cover";
   const isEnding = slide.type === "ending";
   const { para, items } = splitBody(slide.body || "");
+  const layout = templateLayoutProfile(size);
+  const fontSizeScale = baseFontSizeScale * layout.typeScale;
+  const rotation = -4 * layout.rotationScale;
   return (
     <div ref={ref} style={{ width: "100%", height: "100%" }}>
       <BaseSlide slide={slide} palette={palette} font={font} settings={brandKitSettings} data={brandKitData} index={index} total={total} fontSizeScale={fontSizeScale}
@@ -1508,13 +1533,13 @@ const Tilt = forwardRef<HTMLDivElement, SlideRenderProps>(function Tilt(
         <div style={{
           position: "absolute", inset: "-60px",
           background: `${palette.accent}12`, border: `1px solid ${palette.accent}30`,
-          transform: "rotate(-4deg)", zIndex: 1,
+          transform: `rotate(${rotation}deg)`, zIndex: 1,
         }} />
         <div style={{
           position: "relative", zIndex: 3, height: "100%",
           display: "flex", flexDirection: "column", gap: fs(20, fontSizeScale),
-          transform: "rotate(-4deg)", padding: "60px 70px",
-          justifyContent: "center",
+          transform: `rotate(${rotation}deg)`, padding: `${layout.paddingY}px ${layout.paddingX}px`,
+          justifyContent: "center", maxWidth: `${layout.contentMaxWidth}px`,
         }}>
           {(isCover || isEnding) && (
             <span style={{
@@ -1532,20 +1557,20 @@ const Tilt = forwardRef<HTMLDivElement, SlideRenderProps>(function Tilt(
             </span>
           )}
           {isCover || isEnding ? (
-            <h1 style={{ fontSize: fs(isCover ? 60 : 50, fontSizeScale), fontWeight: 900, lineHeight: 1.15, margin: 0 }}>
+            <div style={{ fontSize: fs(isCover ? 60 : 50, fontSizeScale), fontWeight: 900, lineHeight: 1.15, margin: 0 }}>
               {slide.title}
-            </h1>
+            </div>
           ) : (
-            <h2 style={{ fontSize: fs(44, fontSizeScale), fontWeight: 700, color: palette.accent, lineHeight: 1.2, margin: 0 }}>
+            <div style={{ fontSize: fs(44, fontSizeScale), fontWeight: 700, color: palette.accent, lineHeight: 1.2, margin: 0 }}>
               {slide.title}
-            </h2>
+            </div>
           )}
           {(isCover || isEnding) && slide.body && (
-            <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.6, margin: 0, maxWidth: "840px" }}>{slide.body}</p>
+            <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.72, margin: 0, maxWidth: `${layout.contentMaxWidth}px` }}>{slide.body}</p>
           )}
           {!isCover && !isEnding && slide.body && (
             <>
-              {para && <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.6, margin: 0, maxWidth: "840px" }}>{para}</p>}
+              {para && <p style={{ fontSize: fs(24, fontSizeScale), lineHeight: 1.8, color: palette.text, opacity: 0.72, margin: 0, maxWidth: `${layout.contentMaxWidth}px` }}>{para}</p>}
               {items.length > 0 && (
                 <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: fs(13, fontSizeScale), padding: 0, margin: 0 }}>
                   {items.map((item, i) => (
@@ -1573,11 +1598,13 @@ const Tilt = forwardRef<HTMLDivElement, SlideRenderProps>(function Tilt(
 // ============= 20. Retro — Retro 90s (style10) =============
 
 const Retro = forwardRef<HTMLDivElement, SlideRenderProps>(function Retro(
-  { slide, palette, font, brandKitSettings, brandKitData, index, total, fontSizeScale = 1 }, ref
+  { slide, palette, font, size, brandKitSettings, brandKitData, index, total, fontSizeScale: baseFontSizeScale = 1 }, ref
 ) {
   const isCover = slide.type === "cover";
   const isEnding = slide.type === "ending";
   const { para, items } = splitBody(slide.body || "");
+  const layout = templateLayoutProfile(size);
+  const fontSizeScale = baseFontSizeScale * layout.typeScale;
   return (
     <div ref={ref} style={{ width: "100%", height: "100%" }}>
       <BaseSlide slide={slide} palette={palette} font={font} settings={brandKitSettings} data={brandKitData} index={index} total={total} fontSizeScale={fontSizeScale}
@@ -1586,8 +1613,8 @@ const Retro = forwardRef<HTMLDivElement, SlideRenderProps>(function Retro(
         }}
       >
         <div style={{
-          position: "absolute", insetInlineStart: "40px", top: "60px",
-          fontFamily: decorFont.grotesk, fontWeight: 700, fontSize: fs(200, fontSizeScale),
+          position: "absolute", insetInlineStart: "40px", top: layout.isStory ? "180px" : "60px",
+          fontFamily: decorFont.grotesk, fontWeight: 700, fontSize: fs(200 * layout.decorScale, fontSizeScale),
           color: palette.accent, WebkitTextStroke: `3px ${palette.text}`,
           lineHeight: 1, zIndex: 0,
         }}>
@@ -1595,8 +1622,9 @@ const Retro = forwardRef<HTMLDivElement, SlideRenderProps>(function Retro(
         </div>
         <div style={{
           position: "relative", zIndex: 2, height: "100%",
-          display: "flex", flexDirection: "column", justifyContent: "flex-end",
-          gap: fs(18, fontSizeScale), padding: "60px 70px",
+          display: "flex", flexDirection: "column", justifyContent: layout.isStory ? "center" : "flex-end",
+          gap: fs(18, fontSizeScale), padding: `${layout.paddingY}px ${layout.paddingX}px`,
+          maxWidth: `${layout.contentMaxWidth}px`,
         }}>
           {(isCover || isEnding) && (
             <span style={{
@@ -1613,29 +1641,29 @@ const Retro = forwardRef<HTMLDivElement, SlideRenderProps>(function Retro(
             </span>
           )}
           {isCover || isEnding ? (
-            <h1 style={{
+            <div style={{
               fontSize: fs(isCover ? 58 : 48, fontSizeScale), fontWeight: 900, lineHeight: 1.15,
               background: palette.text, color: palette.background, display: "inline-block",
               padding: "14px 26px", alignSelf: "flex-start", margin: 0,
               boxShadow: `8px 8px 0 ${palette.accent}`,
             }}>
               {slide.title}
-            </h1>
+            </div>
           ) : (
-            <h2 style={{
+            <div style={{
               fontSize: fs(42, fontSizeScale), fontWeight: 700, color: palette.accent,
               background: palette.background, display: "inline-block", padding: "10px 20px",
               alignSelf: "flex-start", margin: 0, border: `3px solid ${palette.text}`,
               boxShadow: `6px 6px 0 ${palette.secondary}`,
             }}>
               {slide.title}
-            </h2>
+            </div>
           )}
           {(isCover || isEnding) && slide.body && (
             <p style={{
               fontSize: fs(23, fontSizeScale), lineHeight: 1.8, color: palette.text,
               background: `${palette.background}d8`, padding: "14px 20px",
-              alignSelf: "flex-start", maxWidth: "820px", border: `2px solid ${palette.text}`,
+              alignSelf: "flex-start", maxWidth: `${layout.contentMaxWidth}px`, border: `2px solid ${palette.text}`,
             }}>
               {slide.body}
             </p>
@@ -1645,7 +1673,7 @@ const Retro = forwardRef<HTMLDivElement, SlideRenderProps>(function Retro(
               {para && <p style={{
                 fontSize: fs(23, fontSizeScale), lineHeight: 1.8, color: palette.text,
                 background: `${palette.background}d8`, padding: "14px 20px",
-                alignSelf: "flex-start", maxWidth: "820px", border: `2px solid ${palette.text}`,
+                alignSelf: "flex-start", maxWidth: `${layout.contentMaxWidth}px`, border: `2px solid ${palette.text}`,
               }}>{para}</p>}
               {items.length > 0 && (
                 <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: fs(12, fontSizeScale), padding: 0, margin: 0 }}>
@@ -1700,7 +1728,7 @@ const Unwan = forwardRef<HTMLDivElement, SlideRenderProps>(function Unwan(
             )}
           </div>
           <div>
-            <h1 style={{
+            <div style={{
               fontSize: fs(isCover ? 84 : 68, fontSizeScale),
               fontWeight: 900,
               lineHeight: 1.1,
@@ -1709,7 +1737,7 @@ const Unwan = forwardRef<HTMLDivElement, SlideRenderProps>(function Unwan(
               letterSpacing: "-1px",
             }}>
               {slide.title}
-            </h1>
+            </div>
             {slide.body && (
               <p style={{ fontSize: fs(28, fontSizeScale), lineHeight: 1.6, opacity: 0.6, margin: 0, maxWidth: "85%" }}>
                 {slide.body}
@@ -1758,7 +1786,7 @@ const ClinicalClean = forwardRef<HTMLDivElement, SlideRenderProps>(function Clin
               {String(index).padStart(2, "0")} — شريحة
             </span>
           )}
-          <h1 style={{
+          <div style={{
             fontSize: fs(isCover ? 68 : 52, fontSizeScale),
             fontWeight: 700,
             lineHeight: 1.3,
@@ -1768,7 +1796,7 @@ const ClinicalClean = forwardRef<HTMLDivElement, SlideRenderProps>(function Clin
             maxWidth: "90%",
           }}>
             {slide.title}
-          </h1>
+          </div>
           <div style={{ width: fs(80, fontSizeScale), height: "4px", backgroundColor: palette.accent, borderRadius: "2px" }} />
           {slide.body && (
             <p style={{
@@ -1850,7 +1878,7 @@ const NumberedSteps = forwardRef<HTMLDivElement, SlideRenderProps>(function Numb
                   <PhysicianMark specialty={medical.specialty} palette={palette} font={font} fontSizeScale={fontSizeScale} />
                 )}
               </div>
-              <h1 style={{
+              <div style={{
                 fontSize: fs(72, fontSizeScale),
                 fontWeight: 900,
                 lineHeight: 1.2,
@@ -1859,7 +1887,7 @@ const NumberedSteps = forwardRef<HTMLDivElement, SlideRenderProps>(function Numb
                 textAlign: "right",
               }}>
                 {slide.title}
-              </h1>
+              </div>
               {slide.body && (
                 <p style={{ fontSize: fs(34, fontSizeScale), lineHeight: 1.6, opacity: 0.7, margin: 0, maxWidth: "85%" }}>
                   {slide.body}
@@ -1885,9 +1913,9 @@ const NumberedSteps = forwardRef<HTMLDivElement, SlideRenderProps>(function Numb
                 <div style={{ flex: 1, paddingTop: fs(20, fontSizeScale) }}>
                   {isList ? (
                     <>
-                      <h2 style={{ fontSize: fs(40, fontSizeScale), fontWeight: 700, margin: "0 0 16px 0", lineHeight: 1.3 }}>
+                      <div style={{ fontSize: fs(40, fontSizeScale), fontWeight: 700, margin: "0 0 16px 0", lineHeight: 1.3 }}>
                         {slide.title}
-                      </h2>
+                      </div>
                       <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "12px" }}>
                         {stepItems.map((item, i) => (
                           <li key={i} style={{ fontSize: fs(30, fontSizeScale), lineHeight: 1.5, display: "flex", gap: "12px", alignItems: "baseline" }}>
@@ -1899,9 +1927,9 @@ const NumberedSteps = forwardRef<HTMLDivElement, SlideRenderProps>(function Numb
                     </>
                   ) : (
                     <>
-                      <h2 style={{ fontSize: fs(48, fontSizeScale), fontWeight: 700, margin: "0 0 16px 0", lineHeight: 1.3 }}>
+                      <div style={{ fontSize: fs(48, fontSizeScale), fontWeight: 700, margin: "0 0 16px 0", lineHeight: 1.3 }}>
                         {slide.title}
-                      </h2>
+                      </div>
                       <p style={{ fontSize: fs(32, fontSizeScale), lineHeight: 1.6, opacity: 0.8, margin: 0 }}>
                         {slide.body}
                       </p>
@@ -2016,7 +2044,7 @@ const MythFact = forwardRef<HTMLDivElement, SlideRenderProps>(function MythFact(
               }}>
                 ✕
               </div>
-              <h1 style={{
+              <div style={{
                 fontSize: fs(64, fontSizeScale),
                 fontWeight: 800,
                 lineHeight: 1.25,
@@ -2025,7 +2053,7 @@ const MythFact = forwardRef<HTMLDivElement, SlideRenderProps>(function MythFact(
                 maxWidth: "85%",
               }}>
                 {slide.title}
-              </h1>
+              </div>
               <span style={{ fontSize: fs(28, fontSizeScale), fontWeight: 600, color: factColor }}>
                 الحقيقة بالداخل ↓
               </span>
@@ -2074,7 +2102,7 @@ const MythFact = forwardRef<HTMLDivElement, SlideRenderProps>(function MythFact(
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: "20px", height: "100%", justifyContent: "center" }}>
                   {slide.title.includes("خرافة") || slide.title.includes("خرافه") ? <MythBadge /> : slide.title.includes("حقيقة") || slide.title.includes("حقيقه") ? <FactBadge /> : null}
-                  <h2 style={{
+                  <div style={{
                     fontSize: fs(48, fontSizeScale),
                     fontWeight: 600,
                     lineHeight: 1.4,
@@ -2082,7 +2110,7 @@ const MythFact = forwardRef<HTMLDivElement, SlideRenderProps>(function MythFact(
                     fontFamily: fontMap.ibm,
                   }}>
                     {slide.title}
-                  </h2>
+                  </div>
                   {regularBody && (
                     <p style={{ fontSize: fs(34, fontSizeScale), lineHeight: 1.6, opacity: 0.8, margin: 0 }}>
                       {regularBody}
@@ -2152,7 +2180,7 @@ const EditorialHealth = forwardRef<HTMLDivElement, SlideRenderProps>(function Ed
               }}>
                 {String(index).padStart(2, "0")} — مقال صحي
               </span>
-              <h1 style={{
+              <div style={{
                 fontSize: fs(62, fontSizeScale),
                 fontWeight: 800,
                 lineHeight: 1.3,
@@ -2161,7 +2189,7 @@ const EditorialHealth = forwardRef<HTMLDivElement, SlideRenderProps>(function Ed
                 maxWidth: "90%",
               }}>
                 {slide.title}
-              </h1>
+              </div>
               <div style={{ width: fs(60, fontSizeScale), height: "3px", backgroundColor: palette.accent, borderRadius: "2px" }} />
               {slide.body && (
                 <p style={{
@@ -2187,7 +2215,7 @@ const EditorialHealth = forwardRef<HTMLDivElement, SlideRenderProps>(function Ed
               }}>
                 {String(index).padStart(2, "0")}
               </span>
-              <h2 style={{
+              <div style={{
                 fontSize: fs(52, fontSizeScale),
                 fontWeight: 800,
                 lineHeight: 1.3,
@@ -2196,7 +2224,7 @@ const EditorialHealth = forwardRef<HTMLDivElement, SlideRenderProps>(function Ed
                 maxWidth: "95%",
               }}>
                 {slide.title}
-              </h2>
+              </div>
               <div style={{ width: fs(40, fontSizeScale), height: "2px", backgroundColor: palette.accent, opacity: 0.5, borderRadius: "1px" }} />
               {paragraphs.map((para, i) => (
                 <p key={i} style={{
@@ -2277,7 +2305,7 @@ const BoldStatement = forwardRef<HTMLDivElement, SlideRenderProps>(function Bold
                   <PhysicianMark specialty={medical.specialty} palette={palette} font={font} fontSizeScale={fontSizeScale} />
                 </div>
               )}
-              <h1 style={{
+              <div style={{
                 fontSize: fs(84, fontSizeScale),
                 fontWeight: 900,
                 lineHeight: 1.15,
@@ -2287,7 +2315,7 @@ const BoldStatement = forwardRef<HTMLDivElement, SlideRenderProps>(function Bold
                 maxWidth: "95%",
               }}>
                 {slide.title}
-              </h1>
+              </div>
               {slide.body && (
                 <p style={{
                   fontSize: fs(32, fontSizeScale),
@@ -2328,7 +2356,7 @@ const BoldStatement = forwardRef<HTMLDivElement, SlideRenderProps>(function Bold
                 </div>
               )}
               {!isStat && (
-                <h2 style={{
+                <div style={{
                   fontSize: fs(72, fontSizeScale),
                   fontWeight: 800,
                   lineHeight: 1.2,
@@ -2338,7 +2366,7 @@ const BoldStatement = forwardRef<HTMLDivElement, SlideRenderProps>(function Bold
                   maxWidth: "95%",
                 }}>
                   {slide.title}
-                </h2>
+                </div>
               )}
               {slide.body && (
                 <p style={{
@@ -2424,9 +2452,9 @@ const Tahdheer = forwardRef<HTMLDivElement, SlideRenderProps>(function Tahdheer(
           )}
           {isCover && (
             <>
-              <h1 style={{ fontSize: fs(76, fontSizeScale), fontWeight: 900, lineHeight: 1.2, margin: 0, fontFamily: fontMap.ibm, textAlign: "right", maxWidth: "92%" }}>
+              <div style={{ fontSize: fs(76, fontSizeScale), fontWeight: 900, lineHeight: 1.2, margin: 0, fontFamily: fontMap.ibm, textAlign: "right", maxWidth: "92%" }}>
                 {slide.title}
-              </h1>
+              </div>
               {slide.body && (
                 <p style={{ fontSize: fs(32, fontSizeScale), lineHeight: 1.5, opacity: 0.75, margin: 0, maxWidth: "85%" }}>
                   {slide.body}
@@ -2436,9 +2464,9 @@ const Tahdheer = forwardRef<HTMLDivElement, SlideRenderProps>(function Tahdheer(
           )}
           {!isCover && !isEnding && (
             <>
-              <h2 style={{ fontSize: fs(48, fontSizeScale), fontWeight: 800, margin: 0, lineHeight: 1.25, textAlign: "right", fontFamily: fontMap.ibm }}>
+              <div style={{ fontSize: fs(48, fontSizeScale), fontWeight: 800, margin: 0, lineHeight: 1.25, textAlign: "right", fontFamily: fontMap.ibm }}>
                 {slide.title}
-              </h2>
+              </div>
               {isList ? (
                 <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "16px" }}>
                   {warnItems.map((item, i) => (
@@ -2545,7 +2573,7 @@ const Raqmi = forwardRef<HTMLDivElement, SlideRenderProps>(function Raqmi(
           )}
           {!isEnding && !isStat && (
             <>
-              <h1 style={{
+              <div style={{
                 fontSize: fs(isCover ? 68 : 56, fontSizeScale),
                 fontWeight: 800,
                 lineHeight: 1.25,
@@ -2554,7 +2582,7 @@ const Raqmi = forwardRef<HTMLDivElement, SlideRenderProps>(function Raqmi(
                 maxWidth: "90%",
               }}>
                 {slide.title}
-              </h1>
+              </div>
               {slide.body && (
                 <p style={{ fontSize: fs(30, fontSizeScale), lineHeight: 1.6, opacity: 0.75, margin: 0, maxWidth: "85%" }}>
                   {slide.body}
@@ -2599,11 +2627,16 @@ const Raqmi = forwardRef<HTMLDivElement, SlideRenderProps>(function Raqmi(
 // ============= Engineering — Technical Blueprint =============
 
 const Engineering = forwardRef<HTMLDivElement, SlideRenderProps>(function Engineering(
-  { slide, palette, font, brandKitSettings, brandKitData, index, total, fontSizeScale = 1 }, ref
+  { slide, palette, font, size, brandKitSettings, brandKitData, index, total, fontSizeScale: baseFontSizeScale = 1 }, ref
 ) {
   const isCover = slide.type === "cover";
   const isEnding = slide.type === "ending";
   const { para, items } = splitBody(slide.body || "");
+  const layout = templateLayoutProfile(size);
+  const fontSizeScale = baseFontSizeScale * layout.typeScale;
+  const schematicSize = Math.round(170 * layout.decorScale);
+  const axisSize = schematicSize + 46;
+  const contentBottom = layout.isStory ? 260 : layout.isPortrait ? 110 : 45;
   const grid = `linear-gradient(${palette.accent}18 1px, transparent 1px), linear-gradient(90deg, ${palette.accent}18 1px, transparent 1px)`;
 
   return (
@@ -2617,33 +2650,33 @@ const Engineering = forwardRef<HTMLDivElement, SlideRenderProps>(function Engine
         index={index}
         total={total}
         fontSizeScale={fontSizeScale}
-        style={{ backgroundImage: grid, backgroundSize: "36px 36px" }}
+        style={{ backgroundImage: grid, backgroundSize: layout.isStory ? "44px 44px" : "36px 36px" }}
       >
-        <div dir="rtl" style={{ position: "relative", zIndex: 2, height: "100%", padding: "72px", display: "flex", flexDirection: "column" }}>
+        <div dir="rtl" style={{ position: "relative", zIndex: 2, height: "100%", padding: `${layout.paddingY}px ${layout.paddingX}px`, display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", justifyContent: "space-between", color: palette.accent, fontSize: fs(18, fontSizeScale), fontWeight: 700, letterSpacing: "2px" }}>
             <span>{String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}</span>
             <span>ENGINEERING</span>
           </div>
 
-          <div aria-hidden style={{ position: "absolute", top: "145px", left: "82px", width: "170px", height: "170px", border: `2px dashed ${palette.accent}`, borderRadius: "50%", opacity: 0.65 }}>
-            <span style={{ position: "absolute", top: "50%", left: "-24px", width: "216px", height: "1px", background: palette.accent }} />
-            <span style={{ position: "absolute", top: "-24px", left: "50%", width: "1px", height: "216px", background: palette.accent }} />
-            <span style={{ position: "absolute", inset: "38px", border: `1px solid ${palette.accent}`, transform: "rotate(45deg)" }} />
+          <div aria-hidden style={{ position: "absolute", top: layout.isStory ? "230px" : layout.isPortrait ? "175px" : "145px", left: `${layout.paddingX}px`, width: `${schematicSize}px`, height: `${schematicSize}px`, border: `2px dashed ${palette.accent}`, borderRadius: "50%", opacity: 0.65 }}>
+            <span style={{ position: "absolute", top: "50%", left: "-24px", width: `${axisSize}px`, height: "1px", background: palette.accent }} />
+            <span style={{ position: "absolute", top: "-24px", left: "50%", width: "1px", height: `${axisSize}px`, background: palette.accent }} />
+            <span style={{ position: "absolute", inset: `${Math.round(38 * layout.decorScale)}px`, border: `1px solid ${palette.accent}`, transform: "rotate(45deg)" }} />
           </div>
 
           {isCover && (
-            <div style={{ marginTop: "auto", marginBottom: "45px", maxWidth: "820px" }}>
+            <div style={{ marginTop: "auto", marginBottom: `${contentBottom}px`, maxWidth: `${layout.contentMaxWidth}px` }}>
               <div style={{ width: "86px", height: "4px", background: palette.accent, marginBottom: "24px" }} />
-              <h1 style={{ margin: 0, fontSize: fs(68, fontSizeScale), lineHeight: 1.25, fontWeight: 900 }}>{slide.title}</h1>
-              {slide.body && <p style={{ margin: "22px 0 0", maxWidth: "720px", fontSize: fs(30, fontSizeScale), lineHeight: 1.7, opacity: 0.72 }}>{slide.body}</p>}
+              <div style={{ margin: 0, fontSize: fs(68, fontSizeScale), lineHeight: 1.25, fontWeight: 900 }}>{slide.title}</div>
+              {slide.body && <p style={{ margin: "22px 0 0", maxWidth: `${layout.contentMaxWidth - 100}px`, fontSize: fs(30, fontSizeScale), lineHeight: 1.7, opacity: 0.8 }}>{slide.body}</p>}
             </div>
           )}
 
           {!isCover && !isEnding && (
-            <div style={{ marginTop: "auto", marginBottom: "45px", maxWidth: "850px" }}>
+            <div style={{ marginTop: "auto", marginBottom: `${contentBottom}px`, maxWidth: `${layout.contentMaxWidth}px` }}>
               <span style={{ display: "inline-block", marginBottom: "18px", color: palette.accent, fontSize: fs(18, fontSizeScale), fontWeight: 700 }}>DETAIL_{String(index + 1).padStart(2, "0")}</span>
-              <h2 style={{ margin: 0, fontSize: fs(50, fontSizeScale), lineHeight: 1.3, fontWeight: 850 }}>{slide.title}</h2>
-              {para && <p style={{ margin: "22px 0 0", fontSize: fs(29, fontSizeScale), lineHeight: 1.65, opacity: 0.78 }}>{para}</p>}
+              <div style={{ margin: 0, fontSize: fs(50, fontSizeScale), lineHeight: 1.3, fontWeight: 850 }}>{slide.title}</div>
+              {para && <p style={{ margin: "22px 0 0", fontSize: fs(29, fontSizeScale), lineHeight: 1.65, opacity: 0.82 }}>{para}</p>}
               {items.length > 0 && (
                 <ul style={{ listStyle: "none", margin: "24px 0 0", padding: 0, display: "grid", gap: "14px" }}>
                   {items.map((item, itemIndex) => (
@@ -2658,9 +2691,9 @@ const Engineering = forwardRef<HTMLDivElement, SlideRenderProps>(function Engine
           )}
 
           {isEnding && (
-            <div style={{ margin: "auto 0", maxWidth: "820px" }}>
+            <div style={{ margin: "auto 0", maxWidth: `${layout.contentMaxWidth}px` }}>
               <span style={{ color: palette.accent, fontSize: fs(18, fontSizeScale), fontWeight: 700, letterSpacing: "2px" }}>END_OF_DRAWING</span>
-              <h2 style={{ margin: "20px 0 0", fontSize: fs(58, fontSizeScale), lineHeight: 1.3, fontWeight: 900 }}>{slide.title}</h2>
+              <div style={{ margin: "20px 0 0", fontSize: fs(58, fontSizeScale), lineHeight: 1.3, fontWeight: 900 }}>{slide.title}</div>
               {slide.body && <p style={{ margin: "20px 0 0", fontSize: fs(29, fontSizeScale), lineHeight: 1.65, opacity: 0.75 }}>{slide.body}</p>}
               {slide.ctaText && (
                 <div style={{ display: "inline-block", marginTop: "32px", padding: "16px 28px", border: `2px solid ${palette.accent}`, background: palette.secondary, color: palette.text, fontSize: fs(26, fontSizeScale), fontWeight: 800 }}>

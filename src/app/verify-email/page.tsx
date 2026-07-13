@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import { Mail, RefreshCw } from "lucide-react";
 import { MarketingNavbar } from "@/components/layout/marketing-navbar";
 import { Button } from "@/components/ui/button";
@@ -86,8 +85,8 @@ export default function VerifyEmailPage() {
   return (
     <div className="min-h-screen bg-[#faf9f7]">
       <MarketingNavbar />
-      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] p-6">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm text-center">
+      <main id="main-content" className="flex items-center justify-center min-h-[calc(100vh-4rem)] p-6">
+        <div className="w-full max-w-sm animate-fade-in text-center">
           <div className="w-16 h-16 rounded-2xl bg-accent-soft flex items-center justify-center mx-auto mb-6">
             <Mail className="w-8 h-8 text-accent" />
           </div>
@@ -95,12 +94,14 @@ export default function VerifyEmailPage() {
           <p className="mt-2 text-sm text-ink-muted">
             أرسلنا رمز التحقق إلى <span className="font-medium text-ink">{email || "بريدك"}</span>
           </p>
-          {error && <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+          {error && <div id="verification-error" role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
           <div className="mt-6 grid grid-cols-6 gap-2" dir="ltr">
             {code.map((c, i) => (
-              <Input key={i} ref={(el) => { inputsRef.current[i] = el; }} type="text" inputMode="numeric" maxLength={1} value={c}
+              <Input key={i} ref={(el) => { inputsRef.current[i] = el; }} type="text" inputMode="numeric" autoComplete={i === 0 ? "one-time-code" : "off"} maxLength={1} value={c}
                 onChange={(e) => handleInput(i, e.target.value)} onKeyDown={(e) => handleKeyDown(i, e)} onPaste={handlePaste}
                 aria-label={`الرقم ${i + 1} من رمز التحقق`}
+                aria-invalid={!!error}
+                aria-describedby={error ? "verification-error" : undefined}
                 className="w-full h-12 sm:h-14 text-center text-lg sm:text-xl font-bold" />
             ))}
           </div>
@@ -112,8 +113,8 @@ export default function VerifyEmailPage() {
               {countdown > 0 ? `إعادة الإرسال خلال ${countdown} ثانية` : <><RefreshCw className="w-4 h-4" /> إعادة إرسال الرمز</>}
             </Button>
           </div>
-        </motion.div>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }

@@ -153,9 +153,10 @@ export default function EditorPage() {
     return (
       <div className="min-h-screen bg-[#faf9f7]">
         <AppNavbar />
-        <div className="flex items-center justify-center h-[60vh]">
+        <main id="main-content" className="flex items-center justify-center h-[60vh]" aria-label="جارٍ تحميل محرر المشروع">
+          <h1 className="sr-only">تعديل مشروع كاروسيل</h1>
           <div className="w-8 h-8 border-[3px] border-stone-200 border-t-accent rounded-full animate-spin" />
-        </div>
+        </main>
       </div>
     );
   }
@@ -169,10 +170,12 @@ export default function EditorPage() {
   return (
     <div className="min-h-screen bg-[#faf9f7]">
       <AppNavbar />
-      <div className="mx-auto max-w-7xl px-4 py-4 pb-24 lg:pb-4">
+      <main id="main-content" className="mx-auto max-w-7xl px-4 py-4 pb-24 lg:pb-4">
+        <h1 className="sr-only">تعديل مشروع كاروسيل</h1>
         <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
           <div className="flex items-center gap-3">
             <input
+              aria-label="اسم المشروع"
               value={project.title}
               onChange={(e) => update({ title: e.target.value })}
               className="text-lg font-bold text-ink bg-transparent border-none outline-none focus:bg-white focus:border focus:border-stone-200 focus:px-2 focus:py-1 focus:rounded-lg transition-all"
@@ -192,7 +195,9 @@ export default function EditorPage() {
           {project.slides.map((slide, i) => (
             <button
               key={slide.id}
+              type="button"
               onClick={() => setCurrentSlideIdx(i)}
+              aria-pressed={currentSlideIdx === i}
               className={cn("shrink-0 rounded-lg overflow-hidden border-2 transition-colors cursor-pointer", currentSlideIdx === i ? "border-accent" : "border-stone-200")}
             >
               <ScaledSlide
@@ -211,7 +216,7 @@ export default function EditorPage() {
               />
             </button>
           ))}
-          <button onClick={handleAddSlide} className="shrink-0 w-[60px] h-[60px] rounded-lg border-2 border-dashed border-stone-300 flex items-center justify-center cursor-pointer hover:border-accent">
+          <button type="button" aria-label="إضافة شريحة" onClick={handleAddSlide} className="shrink-0 w-[60px] h-[60px] rounded-lg border-2 border-dashed border-stone-300 flex items-center justify-center cursor-pointer hover:border-accent">
             <Plus className="w-5 h-5 text-stone-400" />
           </button>
         </div>
@@ -247,20 +252,20 @@ export default function EditorPage() {
                         <span className="text-[10px] font-bold text-white bg-black/50 rounded px-1.5 py-0.5">{i + 1}</span>
                       </div>
                     </div>
-                    <div className="px-2 py-1.5 flex items-center justify-between">
+                    <div className="flex flex-wrap items-center justify-between gap-1 px-2 py-1.5">
                       <span className="text-xs text-ink-muted">{slide.type === "cover" ? "غلاف" : slide.type === "ending" ? "خاتمة" : "محتوى"}</span>
                       {slide.type !== "cover" && slide.type !== "ending" && (
-                        <div className="flex gap-0.5">
-                          <button onClick={(e) => { e.stopPropagation(); handleMoveSlide(slide.id, "up"); }} disabled={i === 1} className="p-0.5 text-stone-400 hover:text-ink disabled:opacity-30 cursor-pointer"><ChevronRight className="w-3.5 h-3.5" /></button>
-                          <button onClick={(e) => { e.stopPropagation(); handleMoveSlide(slide.id, "down"); }} disabled={i === project.slides.length - 2} className="p-0.5 text-stone-400 hover:text-ink disabled:opacity-30 cursor-pointer"><ChevronLeft className="w-3.5 h-3.5" /></button>
-                          <button onClick={(e) => { e.stopPropagation(); handleDuplicateSlide(slide.id); }} className="p-0.5 text-stone-400 hover:text-ink cursor-pointer"><Copy className="w-3.5 h-3.5" /></button>
-                          <button onClick={(e) => { e.stopPropagation(); handleDeleteSlide(slide.id); }} className="p-0.5 text-red-400 hover:text-red-600 cursor-pointer"><Trash2 className="w-3.5 h-3.5" /></button>
+                        <div className="flex flex-wrap justify-end gap-0.5">
+                          <button type="button" aria-label="نقل الشريحة إلى السابق" onClick={(e) => { e.stopPropagation(); handleMoveSlide(slide.id, "up"); }} disabled={i === 1} className="flex min-h-11 min-w-11 items-center justify-center text-stone-400 hover:text-ink disabled:opacity-30 cursor-pointer"><ChevronRight className="w-3.5 h-3.5" /></button>
+                          <button type="button" aria-label="نقل الشريحة إلى التالي" onClick={(e) => { e.stopPropagation(); handleMoveSlide(slide.id, "down"); }} disabled={i === project.slides.length - 2} className="flex min-h-11 min-w-11 items-center justify-center text-stone-400 hover:text-ink disabled:opacity-30 cursor-pointer"><ChevronLeft className="w-3.5 h-3.5" /></button>
+                          <button type="button" aria-label="تكرار الشريحة" onClick={(e) => { e.stopPropagation(); handleDuplicateSlide(slide.id); }} className="flex min-h-11 min-w-11 items-center justify-center text-stone-400 hover:text-ink cursor-pointer"><Copy className="w-3.5 h-3.5" /></button>
+                          <button type="button" aria-label="حذف الشريحة" onClick={(e) => { e.stopPropagation(); handleDeleteSlide(slide.id); }} className="flex min-h-11 min-w-11 items-center justify-center text-red-400 hover:text-red-600 cursor-pointer"><Trash2 className="w-3.5 h-3.5" /></button>
                         </div>
                       )}
                     </div>
                   </div>
                 ))}
-                <button onClick={handleAddSlide} disabled={project.slides.length >= 10} className="w-full rounded-xl border-2 border-dashed border-stone-300 p-4 flex items-center justify-center gap-2 text-ink-muted hover:border-accent hover:text-accent cursor-pointer disabled:opacity-50">
+                <button type="button" onClick={handleAddSlide} disabled={project.slides.length >= 10} className="min-h-11 w-full rounded-xl border-2 border-dashed border-stone-300 p-4 flex items-center justify-center gap-2 text-ink-muted hover:border-accent hover:text-accent cursor-pointer disabled:opacity-50">
                   <Plus className="w-4 h-4" /> <span className="text-sm">إضافة شريحة</span>
                 </button>
               </div>
@@ -273,6 +278,7 @@ export default function EditorPage() {
                 <div className="flex flex-col items-center">
                   <button
                     type="button"
+                    aria-label="تكبير معاينة الشريحة"
                     onClick={() => setZoomOpen(true)}
                     style={{ width: 480, maxWidth: "100%" }}
                     className="relative group cursor-zoom-in rounded-xl"
@@ -296,11 +302,11 @@ export default function EditorPage() {
                     </div>
                   </button>
                   <div className="flex items-center gap-4 mt-4">
-                    <Button variant="outline" size="icon" disabled={currentSlideIdx === 0} onClick={() => setCurrentSlideIdx(currentSlideIdx - 1)}>
+                    <Button type="button" aria-label="الشريحة السابقة" variant="outline" size="icon" disabled={currentSlideIdx === 0} onClick={() => setCurrentSlideIdx(currentSlideIdx - 1)}>
                       <ChevronRight className="w-4 h-4" />
                     </Button>
                     <span className="text-sm text-ink-muted">{currentSlideIdx + 1} / {project.slides.length}</span>
-                    <Button variant="outline" size="icon" disabled={currentSlideIdx === project.slides.length - 1} onClick={() => setCurrentSlideIdx(currentSlideIdx + 1)}>
+                    <Button type="button" aria-label="الشريحة التالية" variant="outline" size="icon" disabled={currentSlideIdx === project.slides.length - 1} onClick={() => setCurrentSlideIdx(currentSlideIdx + 1)}>
                       <ChevronLeft className="w-4 h-4" />
                     </Button>
                   </div>
@@ -311,7 +317,7 @@ export default function EditorPage() {
 
           <div className="lg:col-span-3">
             <div className="rounded-2xl border border-stone-200 bg-white p-5 space-y-4">
-              <h3 className="font-bold text-ink flex items-center gap-2"><Layers className="w-4 h-4" /> تعديل الشريحة</h3>
+              <h2 className="font-bold text-ink flex items-center gap-2"><Layers className="w-4 h-4" /> تعديل الشريحة</h2>
               {currentSlide && (
                 <>
                   <Badge className={cn(
@@ -367,12 +373,12 @@ export default function EditorPage() {
             <Download className="w-5 h-5" /> تصدير
           </Button>
         </div>
-      </div>
+      </main>
 
       <TemplateDialog open={templateDialog} onClose={() => setTemplateDialog(false)} project={project} update={update} brandKitData={brandKitData} templates={templatesForMode(preferences.contentMode)} isMedicalAccount={preferences.contentMode === "medical"} />
       <BrandDialog open={brandDialog} onClose={() => setBrandDialog(false)} project={project} update={update} />
 
-      <Dialog open={zoomOpen} onClose={() => setZoomOpen(false)} className="max-w-4xl">
+      <Dialog open={zoomOpen} onClose={() => setZoomOpen(false)} className="max-w-4xl" title="معاينة الشريحة بالحجم الكبير">
         {currentSlide && (
           <div className="flex justify-center">
             <ScaledSlide
@@ -418,7 +424,9 @@ function TemplateDialog({ open, onClose, project, update, brandKitData, template
           return (
             <button
               key={t.id}
+              type="button"
               onClick={() => { update({ settings: { ...project.settings, templateId: t.id } }); onClose(); }}
+              aria-pressed={active}
               className={cn("rounded-xl overflow-hidden border-2 transition-all cursor-pointer", active ? "border-accent" : "border-stone-200 hover:border-stone-300")}
             >
               {previewSlide && (
@@ -450,7 +458,9 @@ function TemplateDialog({ open, onClose, project, update, brandKitData, template
           {(TEMPLATE_DEFS.find((t) => t.id === project.settings.templateId) ?? TEMPLATE_DEFS[0]).palettes.map((p) => (
             <button
               key={p.id}
+              type="button"
               onClick={() => update({ settings: { ...project.settings, paletteId: p.id } })}
+              aria-pressed={project.settings.paletteId === p.id}
               className={cn("rounded-xl border-2 p-2 cursor-pointer transition-colors", project.settings.paletteId === p.id ? "border-accent" : "border-stone-200 hover:border-stone-300")}
             >
               <div className="flex gap-1 mb-1">
@@ -469,8 +479,10 @@ function TemplateDialog({ open, onClose, project, update, brandKitData, template
           {ALL_FONTS.map((f) => (
             <button
               key={f.id}
+              type="button"
               onClick={() => update({ settings: { ...project.settings, font: f.id as FontFamily } })}
-              className={cn("rounded-xl border-2 py-2 text-sm font-medium cursor-pointer transition-colors", project.settings.font === f.id ? "border-accent bg-accent-soft text-accent" : "border-stone-200 text-ink hover:bg-stone-50")}
+              aria-pressed={project.settings.font === f.id}
+              className={cn("min-h-11 rounded-xl border-2 py-2 text-sm font-medium cursor-pointer transition-colors", project.settings.font === f.id ? "border-accent bg-accent-soft text-accent" : "border-stone-200 text-ink hover:bg-stone-50")}
             >
               {f.name}
             </button>
@@ -523,8 +535,10 @@ function BrandDialog({ open, onClose, project, update }: {
                 {(["top-right", "top-left", "bottom-right", "bottom-left"] as Placement[]).map((pos) => (
                   <button
                     key={pos}
+                    type="button"
                     onClick={() => setBk({ placement: pos })}
-                    className={cn("rounded-lg border-2 px-2 py-1.5 text-xs cursor-pointer transition-colors", bk.placement === pos ? "border-accent bg-accent-soft text-accent" : "border-stone-200 text-ink-muted hover:bg-stone-50")}
+                    aria-pressed={bk.placement === pos}
+                    className={cn("min-h-11 rounded-lg border-2 px-2 py-1.5 text-xs cursor-pointer transition-colors", bk.placement === pos ? "border-accent bg-accent-soft text-accent" : "border-stone-200 text-ink-muted hover:bg-stone-50")}
                   >
                     {({ "top-right": "أعلى اليمين", "top-left": "أعلى اليسار", "bottom-right": "أسفل اليمين", "bottom-left": "أسفل اليسار" } as Record<Placement, string>)[pos]}
                   </button>

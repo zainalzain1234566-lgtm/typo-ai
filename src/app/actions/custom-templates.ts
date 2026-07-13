@@ -12,8 +12,18 @@ import {
   type GenerationInput,
 } from "@/lib/services/generation";
 import { sanitizeTemplateHtml, sanitizeTemplateCss } from "@/lib/services/template-sandbox";
-import { generateCustomTemplateSchema, editCustomTemplateSchema } from "@/lib/validation/custom-templates";
+import {
+  CANVAS_SIZE_DIMENSIONS,
+  generateCustomTemplateSchema,
+  editCustomTemplateSchema,
+  type CustomTemplateSettings,
+} from "@/lib/validation/custom-templates";
 import { resolveDesignerModel } from "@/lib/template-designer-access";
+import {
+  repairTemplateOnce,
+  TemplateQualityError,
+  type TemplateQualitySettings,
+} from "@/lib/services/template-quality";
 
 function sanitizeResult(result: TemplateGenerationResult): TemplateGenerationResult {
   return {
@@ -62,6 +72,47 @@ function usagePayload(...usage: Array<ProviderUsage | undefined>) {
 
 function usageFromError(error: unknown): ProviderUsage | undefined {
   return error instanceof GenerationError ? error.usage : undefined;
+}
+
+function recordUsage(usages: ProviderUsage[], usage?: ProviderUsage) {
+  if (usage && !usages.includes(usage)) usages.push(usage);
+}
+
+function qualitySettings(settings: CustomTemplateSettings): TemplateQualitySettings {
+  const dimensions = CANVAS_SIZE_DIMENSIONS[settings.size];
+  return {
+    width: dimensions.width,
+    height: dimensions.height,
+    showAccountName: settings.showAccountName,
+    showLogo: settings.showLogo,
+    showSlideNumbers: settings.showSlideNumbers,
+  };
+}
+
+async function validateAndRepairDesign(
+  raw: TemplateGenerationResult,
+  settings: CustomTemplateSettings,
+  model: string,
+  usages: ProviderUsage[]
+): Promise<TemplateGenerationResult> {
+  recordUsage(usages, raw.usage);
+  const initial = sanitizeResult(raw);
+  const checked = await repairTemplateOnce(initial, qualitySettings(settings), async (request) => {
+    try {
+      const repaired = await editTemplateSystem(settings, request, {
+        css: initial.css,
+        htmlCover: initial.htmlCover,
+        htmlContent: initial.htmlContent,
+        htmlEnding: initial.htmlEnding,
+      }, model);
+      recordUsage(usages, repaired.usage);
+      return sanitizeResult(repaired);
+    } catch (error) {
+      recordUsage(usages, usageFromError(error));
+      throw error;
+    }
+  });
+  return checked.design;
 }
 
 function auditedProviderCost(usages: ProviderUsage[]): number {
@@ -165,26 +216,26 @@ export async function generateTemplateAction(input: Record<string, unknown>) {
       getGenerationProvider(selectedModel).generate(contentInput),
       generateTemplateSystem(settings, message, selectedModel),
     ]);
-    if (carouselResult.status === "fulfilled" && carouselResult.value.usage) recordedUsage.push(carouselResult.value.usage);
-    if (designResult.status === "fulfilled") recordedUsage.push(designResult.value.usage);
+    if (carouselResult.status === "fulfilled") recordUsage(recordedUsage, carouselResult.value.usage);
+    if (designResult.status === "fulfilled") recordUsage(recordedUsage, designResult.value.usage);
     if (carouselResult.status === "rejected") {
       const usage = usageFromError(carouselResult.reason);
-      if (usage) recordedUsage.push(usage);
+      recordUsage(recordedUsage, usage);
       throw carouselResult.reason;
     }
     if (designResult.status === "rejected") {
       const usage = usageFromError(designResult.reason);
-      if (usage) recordedUsage.push(usage);
+      recordUsage(recordedUsage, usage);
       throw designResult.reason;
     }
     const carousel = carouselResult.value;
-    const rawDesign = designResult.value;
-    const design = sanitizeResult(rawDesign);
-    const totalCost = providerCost(carousel.usage?.costMicroUsd, design.usage.costMicroUsd);
+    if (!carousel.usage) throw new Error("AI provider did not return carousel usage");
+    const design = await validateAndRepairDesign(designResult.value, settings, selectedModel, recordedUsage);
+    const totalCost = providerCost(...recordedUsage.map((usage) => usage.costMicroUsd));
     const { data: saved, error: saveError } = await (admin.rpc as any)("complete_template_designer_request_internal", {
       p_user_id: user.id,
       p_request_id: reservation.requestId,
-      p_provider_usage: usagePayload(carousel.usage, design.usage),
+      p_provider_usage: usagePayload(...recordedUsage),
       p_provider_cost_microusd: totalCost,
       p_template_payload: {
         title: settings.topic,
@@ -209,9 +260,15 @@ export async function generateTemplateAction(input: Record<string, unknown>) {
     };
   } catch (err) {
     const message2 = err instanceof Error ? err.message : String(err);
+    recordUsage(recordedUsage, usageFromError(err));
     logError("CUSTOM_TEMPLATE", "generate failed", message2);
     await settleFailure(admin, user.id, reservation.requestId, recordedUsage, message2);
-    return { success: false, error: "تعذر توليد التصميم، حاول مرة أخرى" };
+    return {
+      success: false,
+      error: err instanceof TemplateQualityError
+        ? "لم يجتز التصميم فحص الجودة بعد محاولة الإصلاح، حاول مرة أخرى"
+        : "تعذر توليد التصميم، حاول مرة أخرى",
+    };
   }
 }
 
@@ -262,13 +319,12 @@ export async function editTemplateAction(input: Record<string, unknown>) {
       },
       selectedModel
     );
-    recordedUsage.push(raw.usage);
-    const result = sanitizeResult(raw);
-    const totalCost = providerCost(result.usage.costMicroUsd);
+    const result = await validateAndRepairDesign(raw, parsed.data.settings, selectedModel, recordedUsage);
+    const totalCost = providerCost(...recordedUsage.map((usage) => usage.costMicroUsd));
     const { data: saved, error: saveError } = await (admin.rpc as any)("complete_template_designer_request_internal", {
       p_user_id: user.id,
       p_request_id: reservation.requestId,
-      p_provider_usage: usagePayload(result.usage),
+      p_provider_usage: usagePayload(...recordedUsage),
       p_provider_cost_microusd: totalCost,
       p_template_payload: {
         title: parsed.data.settings.topic,
@@ -289,10 +345,14 @@ export async function editTemplateAction(input: Record<string, unknown>) {
     return { success: true, data: { ...result, templateId: saved.templateId }, access: await getAccess(supabase) };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    const failedUsage = usageFromError(err);
-    if (failedUsage) recordedUsage.push(failedUsage);
+    recordUsage(recordedUsage, usageFromError(err));
     logError("CUSTOM_TEMPLATE", "edit failed", message);
     await settleFailure(admin, user.id, reservation.requestId, recordedUsage, message);
-    return { success: false, error: "تعذر تعديل التصميم، حاول مرة أخرى" };
+    return {
+      success: false,
+      error: err instanceof TemplateQualityError
+        ? "لم يجتز التعديل فحص الجودة بعد محاولة الإصلاح، حاول مرة أخرى"
+        : "تعذر تعديل التصميم، حاول مرة أخرى",
+    };
   }
 }

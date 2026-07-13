@@ -119,8 +119,14 @@ export default function SettingsPage() {
     });
   }, [user]);
 
-  if (!ready) return null;
-  if (!user) return null;
+  if (!ready || !user) {
+    return (
+      <main id="main-content" className="flex min-h-screen items-center justify-center" aria-label="جارٍ تحميل إعدادات الحساب">
+        <h1 className="sr-only">إعدادات الحساب</h1>
+        <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-stone-200 border-t-accent" />
+      </main>
+    );
+  }
 
   const handleAvatar = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -249,7 +255,7 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-[#faf9f7]">
       <AppNavbar />
-      <div className="mx-auto max-w-5xl px-4 py-8">
+      <main id="main-content" className="mx-auto max-w-5xl px-4 py-8">
         <h1 className="text-2xl md:text-3xl font-extrabold text-ink mb-6">الإعدادات</h1>
 
         <div className="grid lg:grid-cols-4 gap-6">
@@ -258,9 +264,11 @@ export default function SettingsPage() {
               {SECTIONS.map((s) => (
                 <button
                   key={s.id}
+                  type="button"
                   onClick={() => setActive(s.id)}
+                  aria-pressed={active === s.id}
                   className={cn(
-                    "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors cursor-pointer",
+                    "min-h-11 w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors cursor-pointer",
                     active === s.id
                       ? s.id === "delete" ? "bg-red-50 text-red-600" : "bg-accent-soft text-accent"
                       : "text-ink-muted hover:bg-stone-50"
@@ -280,9 +288,9 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-4 mb-5">
                     <div className="relative">
                       <div className="w-20 h-20 rounded-full bg-accent-soft flex items-center justify-center text-2xl font-bold text-accent overflow-hidden">
-                        {avatarUrl ? <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" /> : name[0] ?? "م"}
+                        {avatarUrl ? <img src={avatarUrl} alt="صورة الحساب" width={80} height={80} decoding="async" className="w-full h-full object-cover" /> : name[0] ?? "م"}
                       </div>
-                      <label className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-white border border-stone-200 flex items-center justify-center cursor-pointer hover:bg-stone-50">
+                      <label aria-label="تغيير صورة الحساب" className="absolute bottom-0 right-0 flex min-h-11 min-w-11 items-center justify-center rounded-full bg-white border border-stone-200 cursor-pointer hover:bg-stone-50">
                         <Upload className="w-3.5 h-3.5 text-ink-muted" />
                         <input type="file" accept="image/*" className="hidden" onChange={handleAvatar} />
                       </label>
@@ -337,20 +345,20 @@ export default function SettingsPage() {
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-4">
                       <div>
-                        <Label>اسم حساب Instagram</Label>
+                        <Label htmlFor="instagram-handle">اسم حساب Instagram</Label>
                         <div className="relative">
                           <Instagram className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-subtle" />
-                          <Input value={igHandle} onChange={(e) => setIgHandle(e.target.value)} className="pr-10" placeholder="@username" />
+                          <Input id="instagram-handle" value={igHandle} onChange={(e) => setIgHandle(e.target.value)} className="pr-10" placeholder="@username" autoComplete="off" />
                         </div>
                       </div>
                       <div>
                         <Label>الشعار</Label>
                         <div className="flex items-center gap-3">
                           <div className="w-16 h-16 rounded-xl border border-stone-200 bg-stone-50 flex items-center justify-center overflow-hidden">
-                            {logoUrl ? <img src={logoUrl} alt="logo" className="w-full h-full object-contain" /> : <Upload className="w-5 h-5 text-stone-300" />}
+                            {logoUrl ? <img src={logoUrl} alt="شعار الحساب" width={64} height={64} decoding="async" className="w-full h-full object-contain" /> : <Upload className="w-5 h-5 text-stone-300" />}
                           </div>
                           <label className="cursor-pointer">
-                            <span className="inline-flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white text-ink hover:bg-stone-50 text-sm font-medium h-8 px-3 cursor-pointer">
+                            <span className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white text-ink hover:bg-stone-50 text-sm font-medium px-3 cursor-pointer">
                               رفع الشعار
                             </span>
                             <input type="file" accept="image/*" className="hidden" onChange={handleLogo} />
@@ -363,7 +371,7 @@ export default function SettingsPage() {
                       <div>
                         <Label>اللون الرئيسي</Label>
                         <div className="flex items-center gap-3">
-                          <input type="color" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="w-12 h-11 rounded-lg border border-stone-200 cursor-pointer" />
+                          <input type="color" aria-label="اللون الرئيسي" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="h-11 w-12 rounded-lg border border-stone-200 cursor-pointer" />
                           <Input value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="max-w-[140px]" />
                         </div>
                       </div>
@@ -373,8 +381,10 @@ export default function SettingsPage() {
                           {ALL_FONTS.map((f) => (
                             <button
                               key={f.id}
+                              type="button"
                               onClick={() => setBrandFont(f.id as FontFamily)}
-                              className={cn("rounded-xl border-2 py-2 text-sm font-medium cursor-pointer transition-colors", brandFont === f.id ? "border-accent bg-accent-soft text-accent" : "border-stone-200 text-ink hover:bg-stone-50")}
+                              aria-pressed={brandFont === f.id}
+                              className={cn("min-h-11 rounded-xl border-2 py-2 text-sm font-medium cursor-pointer transition-colors", brandFont === f.id ? "border-accent bg-accent-soft text-accent" : "border-stone-200 text-ink hover:bg-stone-50")}
                             >
                               {f.name}
                             </button>
@@ -453,9 +463,9 @@ export default function SettingsPage() {
                       <div>
                         <Label>عدد الشرائح: {defSlideCount}</Label>
                         <div className="flex items-center gap-3 mt-2">
-                          <Button variant="outline" size="icon" disabled={defSlideCount <= 2} onClick={() => setDefSlideCount(Math.max(2, defSlideCount - 1))}>-</Button>
+                          <Button type="button" aria-label="تقليل عدد الشرائح" variant="outline" size="icon" disabled={defSlideCount <= 2} onClick={() => setDefSlideCount(Math.max(2, defSlideCount - 1))}>-</Button>
                           <div className="flex-1 h-2 rounded-full bg-stone-100"><div className="h-full rounded-full bg-accent transition-all" style={{ width: `${((defSlideCount - 2) / 8) * 100}%` }} /></div>
-                          <Button variant="outline" size="icon" disabled={defSlideCount >= 10} onClick={() => setDefSlideCount(Math.min(10, defSlideCount + 1))}>+</Button>
+                          <Button type="button" aria-label="زيادة عدد الشرائح" variant="outline" size="icon" disabled={defSlideCount >= 10} onClick={() => setDefSlideCount(Math.min(10, defSlideCount + 1))}>+</Button>
                         </div>
                       </div>
                       <div>
@@ -533,7 +543,7 @@ export default function SettingsPage() {
             </motion.div>
           </div>
         </div>
-      </div>
+      </main>
 
       <Dialog open={deleteDialog} onClose={() => setDeleteDialog(false)} title="تأكيد حذف الحساب" description="سيتم حذف كل شيء نهائيًا. هل أنت متأكد؟">
         <div className="flex gap-3">

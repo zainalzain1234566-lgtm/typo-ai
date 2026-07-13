@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import Link from "next/link";
 import { Heart, Eye, Check, Wand2 } from "lucide-react";
 import { AppNavbar } from "@/components/layout/app-navbar";
 import { Button } from "@/components/ui/button";
@@ -24,7 +23,6 @@ const demoContent: Slide = { id: "d2", type: "content", title: "ابدأ بفك�
 const demoEnding: Slide = { id: "d3", type: "ending", title: "شارك الفكرة", body: "حوّل معرفتك إلى محتوى مفيد", ctaText: "احفظ المنشور" };
 
 export default function TemplatesPage() {
-  const router = useRouter();
   const { supabase, ready, preferences } = useApp();
   const [preview, setPreview] = useState<string | null>(null);
   const [previewSize, setPreviewSize] = useState<CarouselSize>("1080x1080");
@@ -52,15 +50,15 @@ export default function TemplatesPage() {
   return (
     <div className="min-h-screen bg-[#faf9f7]">
       <AppNavbar />
-      <div className="mx-auto max-w-7xl px-4 py-8">
+      <main id="main-content" className="mx-auto max-w-7xl px-4 py-8">
         <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl md:text-3xl font-extrabold text-ink">القوالب</h1>
             <p className="mt-2 text-ink-muted">اختر قالبًا لبدء مشروعك أو دع الذكاء الاصطناعي يصمم كاروسيلًا كاملاً من الصفر</p>
           </div>
-          <Button onClick={() => router.push("/templates/designer")}>
+          <Link href="/templates/designer" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent/90">
             <Wand2 className="w-4 h-4" /> مصمم القوالب بالذكاء الاصطناعي
-          </Button>
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -68,11 +66,8 @@ export default function TemplatesPage() {
             const pal = getPalette(t.id, ["p1", "p2", "p3", "p4"][i % 4]);
             const isFav = favorites.includes(t.id);
             return (
-              <motion.div
+              <article
                 key={t.id}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
                 className="rounded-2xl border border-stone-200 bg-white overflow-hidden shadow-soft"
               >
                 <div className="p-4 bg-stone-50/50">
@@ -91,11 +86,13 @@ export default function TemplatesPage() {
                 </div>
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-bold text-ink">{t.name}</h3>
+                    <h2 className="font-bold text-ink">{t.name}</h2>
                     {!FEATURE_FLAGS.favorites && (
                       <button
+                        type="button"
+                        aria-label={isFav ? `إزالة ${t.name} من المفضلة` : `إضافة ${t.name} إلى المفضلة`}
                         onClick={() => handleToggleFavorite(t.id)}
-                        className={cn("p-1.5 rounded-lg transition-colors cursor-pointer", isFav ? "text-red-500" : "text-ink-subtle hover:text-ink")}
+                        className={cn("flex min-h-11 min-w-11 items-center justify-center rounded-lg transition-colors cursor-pointer", isFav ? "text-red-500" : "text-ink-subtle hover:text-ink")}
                       >
                         <Heart className={cn("w-4 h-4", isFav && "fill-current")} />
                       </button>
@@ -111,16 +108,16 @@ export default function TemplatesPage() {
                     <Button variant="outline" size="sm" className="flex-1" onClick={() => setPreview(t.id)}>
                       <Eye className="w-4 h-4" /> معاينة
                     </Button>
-                    <Button size="sm" className="flex-1" onClick={() => router.push(`/projects/new?template=${t.id}`)}>
+                    <Link href={`/projects/new?template=${t.id}`} className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-accent px-3 text-sm font-medium text-white transition-colors hover:bg-accent/90">
                       استخدم القالب
-                    </Button>
+                    </Link>
                   </div>
                 </div>
-              </motion.div>
+              </article>
             );
           })}
         </div>
-      </div>
+      </main>
 
       <Dialog open={!!preview} onClose={() => setPreview(null)} className="max-w-3xl" title={tmpl?.name} description={tmpl?.description}>
         {tmpl && (
@@ -129,9 +126,11 @@ export default function TemplatesPage() {
               {SIZES.filter((s) => !FEATURE_FLAGS.medicalMode || s.id === "1080x1350").map((s) => (
                 <button
                   key={s.id}
+                  type="button"
                   onClick={() => setPreviewSize(s.id as CarouselSize)}
+                  aria-pressed={previewSize === s.id}
                   className={cn(
-                    "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer",
+                    "min-h-11 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer",
                     previewSize === s.id ? "bg-accent text-white" : "bg-stone-100 text-ink-muted hover:bg-stone-200"
                   )}
                 >
@@ -141,7 +140,7 @@ export default function TemplatesPage() {
             </div>
 
             <div>
-              <h4 className="text-sm font-bold text-ink mb-3">تصاميم الشرائح</h4>
+              <h3 className="text-sm font-bold text-ink mb-3">تصاميم الشرائح</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 justify-items-center">
                 {[
                   { slide: demoSlide, label: "الغلاف" },
@@ -171,7 +170,7 @@ export default function TemplatesPage() {
             </div>
 
             <div>
-              <h4 className="text-sm font-bold text-ink mb-3">اللوحات اللونية</h4>
+              <h3 className="text-sm font-bold text-ink mb-3">اللوحات اللونية</h3>
               <div className="grid grid-cols-4 gap-3">
                 {tmpl.palettes.map((p) => (
                   <div key={p.id} className="rounded-xl border border-stone-200 overflow-hidden">
@@ -188,7 +187,7 @@ export default function TemplatesPage() {
             </div>
 
             <div>
-              <h4 className="text-sm font-bold text-ink mb-3">الخطوط المدعومة</h4>
+              <h3 className="text-sm font-bold text-ink mb-3">الخطوط المدعومة</h3>
               <div className="flex gap-2">
                 {tmpl.fonts.map((f) => {
                   const fontDef = ALL_FONTS.find((x) => x.id === f)!;
@@ -202,14 +201,22 @@ export default function TemplatesPage() {
             </div>
 
             <div className="flex gap-3 pt-2">
-              <Button className="flex-1" onClick={() => { router.push(`/projects/new?template=${tmpl.id}`); }}>
+              <Link href={`/projects/new?template=${tmpl.id}`} className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-medium text-white transition-colors hover:bg-accent/90">
                 <Check className="w-4 h-4" /> استخدم القالب
-              </Button>
+              </Link>
               <Button variant="outline" onClick={() => setPreview(null)}>إغلاق</Button>
             </div>
           </div>
         )}
       </Dialog>
+      <footer className="border-t border-stone-200 bg-white px-4 py-5">
+        <nav aria-label="روابط الموقع" className="mx-auto flex max-w-7xl flex-wrap justify-center gap-x-5 gap-y-1 text-sm text-ink-muted">
+          <Link href="/" className="inline-flex min-h-11 items-center hover:text-ink">الرئيسية</Link>
+          <Link href="/pricing" className="inline-flex min-h-11 items-center hover:text-ink">الأسعار</Link>
+          <Link href="/privacy" className="inline-flex min-h-11 items-center hover:text-ink">سياسة الخصوصية</Link>
+          <Link href="/terms" className="inline-flex min-h-11 items-center hover:text-ink">شروط الاستخدام</Link>
+        </nav>
+      </footer>
     </div>
   );
 }

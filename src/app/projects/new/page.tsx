@@ -78,7 +78,18 @@ const STEPS = [
 ];
 
 export default function NewProjectWizard() {
-  return <Suspense><WizardContent /></Suspense>;
+  return (
+    <Suspense fallback={
+      <main id="main-content" className="flex min-h-screen items-center justify-center bg-[#faf9f7] px-4">
+        <div className="text-center">
+          <h1 className="text-2xl font-extrabold text-ink">إنشاء مشروع كاروسيل</h1>
+          <p className="mt-2 text-sm text-ink-muted">جارٍ تجهيز خطوات إنشاء المشروع...</p>
+        </div>
+      </main>
+    }>
+      <WizardContent />
+    </Suspense>
+  );
 }
 
 function WizardContent() {
@@ -245,10 +256,13 @@ function WizardContent() {
             {STEPS.map((s, i) => (
               <div key={s.num} className="flex items-center flex-1 last:flex-none">
                 <button
+                  type="button"
+                  aria-label={`الانتقال إلى خطوة ${s.num}: ${s.title}`}
+                  aria-current={step === parseInt(s.num) ? "step" : undefined}
                   onClick={() => setStep(parseInt(s.num))}
                   disabled={step < parseInt(s.num)}
                   className={cn(
-                    "flex items-center gap-2 transition-colors",
+                    "flex min-h-11 min-w-11 items-center gap-2 transition-colors",
                     step === parseInt(s.num) ? "text-accent" : step > parseInt(s.num) ? "text-green-600 cursor-pointer" : "text-ink-subtle cursor-not-allowed opacity-50"
                   )}
                 >
@@ -269,7 +283,8 @@ function WizardContent() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-6xl px-4 py-8">
+      <main id="main-content" className="mx-auto max-w-6xl px-4 py-8">
+        <h1 className="sr-only">إنشاء مشروع كاروسيل</h1>
         <AnimatePresence mode="wait">
           <motion.div
             key={step}
@@ -314,7 +329,7 @@ function WizardContent() {
             </div>
           )}
         </div>
-      </div>
+      </main>
     </div>
   );
 }
@@ -352,9 +367,11 @@ function Step1Topic({ project, update, updateSettings, isMedical, contentTypes }
               {SPECIALTIES.map((sp) => (
                 <button
                   key={sp.slug}
+                  type="button"
                   onClick={() => updateSettings({ specialty: sp.slug })}
+                  aria-pressed={project.settings.specialty === sp.slug}
                   className={cn(
-                    "px-4 py-2 rounded-xl text-sm font-medium border transition-all cursor-pointer",
+                    "min-h-11 px-4 py-2 rounded-xl text-sm font-medium border transition-all cursor-pointer",
                     project.settings.specialty === sp.slug ? "border-teal-500 bg-teal-50 text-teal-700" : "border-stone-200 bg-white text-ink-muted hover:bg-stone-50"
                   )}
                 >
@@ -371,7 +388,9 @@ function Step1Topic({ project, update, updateSettings, isMedical, contentTypes }
             {contentTypes.map((ct) => (
               <button
                 key={ct.id}
+                type="button"
                 onClick={() => updateSettings({ contentType: ct.id })}
+                aria-pressed={project.settings.contentType === ct.id}
                 className={cn(
                   "rounded-xl border-2 p-4 text-center transition-all cursor-pointer",
                   project.settings.contentType === ct.id ? "border-accent bg-accent-soft" : "border-stone-200 bg-white hover:border-stone-300"
@@ -391,9 +410,11 @@ function Step1Topic({ project, update, updateSettings, isMedical, contentTypes }
             {CTAS.map((cta) => (
               <button
                 key={cta}
+                type="button"
                 onClick={() => updateSettings({ cta: cta })}
+                aria-pressed={project.settings.cta === cta}
                 className={cn(
-                  "px-4 py-2 rounded-xl text-sm font-medium border transition-all cursor-pointer",
+                  "min-h-11 px-4 py-2 rounded-xl text-sm font-medium border transition-all cursor-pointer",
                   project.settings.cta === cta ? "border-accent bg-accent text-white" : "border-stone-200 bg-white text-ink-muted hover:bg-stone-50"
                 )}
               >
@@ -437,7 +458,9 @@ function Step2Customize({ project, updateSettings, languages }: {
             {LEVELS.map((level) => (
               <button
                 key={level}
+                type="button"
                 onClick={() => updateSettings({ level: level })}
+                aria-pressed={project.settings.level === level}
                 className={cn(
                   "rounded-xl border-2 py-3 text-sm font-medium transition-all cursor-pointer",
                   project.settings.level === level ? "border-accent bg-accent-soft text-accent" : "border-stone-200 bg-white text-ink-muted hover:bg-stone-50"
@@ -456,9 +479,11 @@ function Step2Customize({ project, updateSettings, languages }: {
             {TONES.map((tone) => (
               <button
                 key={tone}
+                type="button"
                 onClick={() => updateSettings({ tone: tone })}
+                aria-pressed={project.settings.tone === tone}
                 className={cn(
-                  "rounded-xl border-2 py-2.5 text-sm font-medium transition-all cursor-pointer",
+                  "min-h-11 rounded-xl border-2 py-2.5 text-sm font-medium transition-all cursor-pointer",
                   project.settings.tone === tone ? "border-accent bg-accent text-white" : "border-stone-200 bg-white text-ink-muted hover:bg-stone-50"
                 )}
               >
@@ -474,9 +499,11 @@ function Step2Customize({ project, updateSettings, languages }: {
             {languages.map((lang) => (
               <button
                 key={lang}
+                type="button"
                 onClick={() => updateSettings({ language: lang })}
+                aria-pressed={project.settings.language === lang}
                 className={cn(
-                  "rounded-xl border-2 py-2.5 text-sm font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5",
+                  "min-h-11 rounded-xl border-2 py-2.5 text-sm font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5",
                   project.settings.language === lang ? "border-accent bg-accent text-white" : "border-stone-200 bg-white text-ink-muted hover:bg-stone-50"
                 )}
               >
@@ -533,7 +560,9 @@ function Step3Size({ project, updateSettings, generating, genMessage, genProgres
               return (
                 <button
                   key={s.id}
+                  type="button"
                   onClick={() => updateSettings({ size: s.id as CarouselSize })}
+                  aria-pressed={active}
                   className={cn(
                     "rounded-xl border-2 p-4 text-center transition-all cursor-pointer",
                     active ? "border-accent bg-accent-soft" : "border-stone-200 bg-white hover:border-stone-300"
@@ -556,13 +585,13 @@ function Step3Size({ project, updateSettings, generating, genMessage, genProgres
         <div>
           <Label>عدد الشرائح: <span className="text-accent">{project.settings.slideCount}</span></Label>
           <div className="flex items-center gap-4 mt-3">
-            <Button variant="outline" size="icon" disabled={project.settings.slideCount <= 2} onClick={() => updateSettings({ slideCount: Math.max(2, project.settings.slideCount - 1) })}>
+            <Button type="button" aria-label="تقليل عدد الشرائح" variant="outline" size="icon" disabled={project.settings.slideCount <= 2} onClick={() => updateSettings({ slideCount: Math.max(2, project.settings.slideCount - 1) })}>
               <Minus className="w-4 h-4" />
             </Button>
             <div className="flex-1 h-2 rounded-full bg-stone-100 relative">
               <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${((project.settings.slideCount - 2) / 8) * 100}%` }} />
             </div>
-            <Button variant="outline" size="icon" disabled={project.settings.slideCount >= 10} onClick={() => updateSettings({ slideCount: Math.min(10, project.settings.slideCount + 1) })}>
+            <Button type="button" aria-label="زيادة عدد الشرائح" variant="outline" size="icon" disabled={project.settings.slideCount >= 10} onClick={() => updateSettings({ slideCount: Math.min(10, project.settings.slideCount + 1) })}>
               <Plus className="w-4 h-4" />
             </Button>
           </div>
@@ -647,7 +676,9 @@ function Step4Template({ project, updateSettings, brandKit, templates, isMedical
               return (
                 <button
                   key={t.id}
+                  type="button"
                   onClick={() => updateSettings({ templateId: t.id })}
+                  aria-pressed={active}
                   className={cn(
                     "w-full rounded-xl overflow-hidden border-2 transition-all cursor-pointer",
                     active ? "border-accent" : "border-stone-200 hover:border-stone-300"
@@ -702,7 +733,9 @@ function Step4Template({ project, updateSettings, brandKit, templates, isMedical
               {tmpl.palettes.map((p) => (
                 <button
                   key={p.id}
+                  type="button"
                   onClick={() => updateSettings({ paletteId: p.id })}
+                  aria-pressed={project.settings.paletteId === p.id}
                   className={cn(
                     "rounded-xl border-2 p-2 transition-all cursor-pointer",
                     project.settings.paletteId === p.id ? "border-accent" : "border-stone-200 hover:border-stone-300"
@@ -725,9 +758,11 @@ function Step4Template({ project, updateSettings, brandKit, templates, isMedical
               {ALL_FONTS.map((f) => (
                 <button
                   key={f.id}
+                  type="button"
                   onClick={() => updateSettings({ font: f.id as FontFamily })}
+                  aria-pressed={project.settings.font === f.id}
                   className={cn(
-                    "w-full rounded-xl border-2 px-3 py-2 text-sm font-medium transition-all cursor-pointer",
+                    "min-h-11 w-full rounded-xl border-2 px-3 py-2 text-sm font-medium transition-all cursor-pointer",
                     project.settings.font === f.id ? "border-accent bg-accent-soft text-accent" : "border-stone-200 bg-white text-ink hover:bg-stone-50"
                   )}
                 >
@@ -787,9 +822,11 @@ function Step4Template({ project, updateSettings, brandKit, templates, isMedical
                     {(["top-right", "top-left", "bottom-right", "bottom-left"] as Placement[]).map((pos) => (
                       <button
                         key={pos}
+                        type="button"
                         onClick={() => updateSettings({ brandKit: { ...project.settings.brandKit, placement: pos } })}
+                        aria-pressed={project.settings.brandKit.placement === pos}
                         className={cn(
-                          "rounded-lg border px-2 py-1.5 text-xs transition-colors cursor-pointer",
+                          "min-h-11 rounded-lg border px-2 py-1.5 text-xs transition-colors cursor-pointer",
                           project.settings.brandKit.placement === pos ? "border-accent bg-accent-soft text-accent" : "border-stone-200 text-ink-muted hover:bg-stone-50"
                         )}
                       >
@@ -946,10 +983,10 @@ function Step5Review({ project, update, setProject, dbProjectId, onRefresh }: {
               <div className="flex-1" />
               {slide.type !== "cover" && slide.type !== "ending" && (
                 <div className="flex items-center gap-1">
-                  <button onClick={() => moveSlide(slide.id, "up")} disabled={i === 1} className="p-1.5 text-ink-subtle hover:text-ink disabled:opacity-30 cursor-pointer"><ArrowRight className="w-4 h-4" /></button>
-                  <button onClick={() => moveSlide(slide.id, "down")} disabled={i === slides.length - 2} className="p-1.5 text-ink-subtle hover:text-ink disabled:opacity-30 cursor-pointer"><ArrowLeft className="w-4 h-4" /></button>
-                  <button onClick={() => handleDuplicateSlide(slide.id)} className="p-1.5 text-ink-subtle hover:text-ink cursor-pointer"><Copy className="w-4 h-4" /></button>
-                  <button onClick={() => handleDeleteSlide(slide.id)} className="p-1.5 text-red-400 hover:text-red-600 cursor-pointer"><Trash2 className="w-4 h-4" /></button>
+                  <button type="button" aria-label="نقل الشريحة إلى السابق" onClick={() => moveSlide(slide.id, "up")} disabled={i === 1} className="flex min-h-11 min-w-11 items-center justify-center text-ink-subtle hover:text-ink disabled:opacity-30 cursor-pointer"><ArrowRight className="w-4 h-4" /></button>
+                  <button type="button" aria-label="نقل الشريحة إلى التالي" onClick={() => moveSlide(slide.id, "down")} disabled={i === slides.length - 2} className="flex min-h-11 min-w-11 items-center justify-center text-ink-subtle hover:text-ink disabled:opacity-30 cursor-pointer"><ArrowLeft className="w-4 h-4" /></button>
+                  <button type="button" aria-label="تكرار الشريحة" onClick={() => handleDuplicateSlide(slide.id)} className="flex min-h-11 min-w-11 items-center justify-center text-ink-subtle hover:text-ink cursor-pointer"><Copy className="w-4 h-4" /></button>
+                  <button type="button" aria-label="حذف الشريحة" onClick={() => handleDeleteSlide(slide.id)} className="flex min-h-11 min-w-11 items-center justify-center text-red-400 hover:text-red-600 cursor-pointer"><Trash2 className="w-4 h-4" /></button>
                 </div>
               )}
             </div>

@@ -1,5 +1,3 @@
-import { toPng } from "html-to-image";
-import JSZip from "jszip";
 import type { CarouselSize } from "./types";
 import { SIZES } from "./templates";
 
@@ -10,6 +8,7 @@ export async function waitForFonts(): Promise<void> {
 }
 
 export async function exportSlideToPng(element: HTMLElement, size: CarouselSize): Promise<string> {
+  const { toPng } = await import("html-to-image");
   await waitForFonts();
   const dims = SIZES.find((s) => s.id === size) ?? SIZES[0];
   return toPng(element, {
@@ -47,6 +46,7 @@ export async function exportAllToZip(
   slideElements: HTMLElement[],
   size: CarouselSize
 ): Promise<void> {
+  const { default: JSZip } = await import("jszip");
   const zip = new JSZip();
   for (let i = 0; i < slideElements.length; i++) {
     const png = await exportSlideToPng(slideElements[i], size);

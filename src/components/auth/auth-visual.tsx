@@ -1,71 +1,56 @@
-"use client";
-
-import { motion } from "framer-motion";
-import { ScaledSlide } from "@/components/carousel/slide-renderer";
-import { TEMPLATE_DEFS, getPalette } from "@/lib/templates";
-import type { Slide, BrandKit, BrandKitSettings } from "@/lib/types";
-import { DEFAULT_ACCENT_COLOR } from "@/lib/constants";
-
-const demoBrandKit: BrandKit = { instagramHandle: "@typo.ai", logoDataUrl: null, primaryColor: DEFAULT_ACCENT_COLOR, font: "tajawal" };
-const demoBkSettings: BrandKitSettings = { enabled: false, showLogo: false, showAccountName: false, showSlideNumber: false, showDisclaimer: true, placement: "bottom-left" };
-
-const slides: Slide[] = [
-  { id: "a1", type: "cover", title: "كيف يعمل الذكاء الاصطناعي؟", body: "دليل مبسّط" },
-  { id: "a2", type: "content", title: "البيانات هي الأساس", body: "الذكاء الاصطناعي يعتمد على البيانات" },
-  { id: "a3", type: "ending", title: "تابعنا للمزيد", body: "شاركنا اهتمامك بالتقنية" },
-];
-
-const configs = [
-  { tmpl: "tahrir", pal: "p1", font: "tajawal" as const },
-  { tmpl: "tabayun", pal: "p2", font: "ibm" as const },
-  { tmpl: "hadith", pal: "p4", font: "cairo" as const },
-];
+const cards = [
+  {
+    eyebrow: "فكرة",
+    title: "ابدأ برسالة واضحة",
+    body: "حدّد ما يحتاجه جمهورك",
+    className: "bg-[#173B4D] text-white",
+  },
+  {
+    eyebrow: "تنظيم",
+    title: "حوّلها إلى شرائح",
+    body: "راجع النص ورتّب النقاط",
+    className: "bg-[#FFF4D8] text-[#4A3417]",
+  },
+  {
+    eyebrow: "تصدير",
+    title: "جهّزها للنشر",
+    body: "اختر القالب ونزّل الصور",
+    className: "bg-[#5B4EE5] text-white",
+  },
+] as const;
 
 export function AuthVisual() {
   return (
-    <div className="hidden lg:flex flex-col justify-center items-center p-12 bg-gradient-to-bl from-accent-soft to-surface-tinted">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="max-w-sm"
-      >
-        <h2 className="text-2xl font-extrabold text-ink mb-2 text-center">
+    <aside className="hidden flex-col items-center justify-center bg-gradient-to-bl from-accent-soft to-surface-tinted p-12 lg:flex">
+      <div className="max-w-md animate-fade-in">
+        <p className="mb-2 text-center text-2xl font-extrabold text-ink">
           أنشئ كاروسيل احترافي
-        </h2>
-        <p className="text-sm text-ink-muted text-center mb-8">
-          حوّل أفكارك إلى شرائح جاهزة للنشر
         </p>
-        <div className="grid grid-cols-3 gap-3">
-          {slides.map((s, i) => {
-            const c = configs[i];
-            const tmpl = TEMPLATE_DEFS.find((t) => t.id === c.tmpl)!;
-            const pal = getPalette(c.tmpl, c.pal);
-            return (
-              <motion.div
-                key={s.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.3 + i * 0.15 }}
-                style={{ transform: `translateY(${i * 12}px)` }}
-              >
-                <ScaledSlide
-                  width={140}
-                  slide={s}
-                  templateId={tmpl.id}
-                  palette={pal}
-                  font={c.font}
-                  size="1080x1350"
-                  brandKitSettings={demoBkSettings}
-                  brandKitData={demoBrandKit}
-                  index={i}
-                  total={3}
-                />
-              </motion.div>
-            );
-          })}
+        <p className="mb-8 text-center text-sm text-ink-muted">
+          حوّل أفكارك إلى شرائح قابلة للمراجعة وجاهزة للتنزيل
+        </p>
+
+        <div aria-hidden="true" className="grid grid-cols-3 items-start gap-3" dir="rtl">
+          {cards.map((card, index) => (
+            <div
+              key={card.title}
+              className={`aspect-[4/5] rounded-2xl p-4 shadow-lift ${card.className}`}
+              style={{ transform: `translateY(${index * 12}px)` }}
+            >
+              <div className="flex h-full flex-col">
+                <span className="text-[10px] font-bold opacity-70">{card.eyebrow}</span>
+                <div className="my-3 h-px bg-current opacity-20" />
+                <p className="text-sm font-extrabold leading-snug">{card.title}</p>
+                <p className="mt-2 text-[10px] leading-relaxed opacity-75">{card.body}</p>
+                <div className="mt-auto flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />
+                  <span className="h-1 w-8 rounded-full bg-current opacity-30" />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
-      </motion.div>
-    </div>
+      </div>
+    </aside>
   );
 }

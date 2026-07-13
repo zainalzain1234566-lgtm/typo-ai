@@ -1,5 +1,3 @@
-import { toPng } from "html-to-image";
-import JSZip from "jszip";
 import { dataUrlToBlob } from "@/lib/export";
 
 // Captures a rasterized PNG of a sandboxed preview iframe's own content.
@@ -18,6 +16,7 @@ import { dataUrlToBlob } from "@/lib/export";
 // boundary needs a real visual check in a browser — this cannot be
 // verified without one.
 export async function captureIframePng(iframe: HTMLIFrameElement, width: number, height: number): Promise<string> {
+  const { toPng } = await import("html-to-image");
   const doc = iframe.contentDocument;
   if (!doc || !doc.body) throw new Error("تعذر الوصول إلى محتوى المعاينة");
 
@@ -41,6 +40,7 @@ export async function captureAllToZip(
   height: number,
   zipFilename: string
 ): Promise<void> {
+  const { default: JSZip } = await import("jszip");
   const zip = new JSZip();
   for (let i = 0; i < iframes.length; i++) {
     const iframe = iframes[i];

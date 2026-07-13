@@ -7,11 +7,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Mail, CheckCircle2, ArrowLeft } from "lucide-react";
 import { MarketingNavbar } from "@/components/layout/marketing-navbar";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AuthVisual } from "@/components/auth/auth-visual";
 import { createClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
 
 const schema = z.object({
   email: z.string().min(1, "البريد الإلكتروني مطلوب").email("بريد إلكتروني غير صحيح"),
@@ -38,7 +39,7 @@ export default function ForgotPasswordPage() {
       <MarketingNavbar />
       <div className="grid lg:grid-cols-2 min-h-[calc(100vh-4rem)]">
         <AuthVisual />
-        <div className="flex items-center justify-center p-6 md:p-12">
+        <main id="main-content" className="flex items-center justify-center p-6 md:p-12">
           <div className="w-full max-w-sm">
             {sent ? (
               <div className="text-center">
@@ -46,12 +47,9 @@ export default function ForgotPasswordPage() {
                   <CheckCircle2 className="w-8 h-8 text-green-600" />
                 </div>
                 <h1 className="text-2xl font-extrabold text-ink">تم إرسال الرابط</h1>
-                <p className="mt-2 text-sm text-ink-muted">تحقق من بريدك الإلكتروني للحصول على رابط استعادة كلمة المرور</p>
-                <Link href="/reset-password" className="block mt-6">
-                  <Button className="w-full" size="lg">المتابعة لإعادة التعيين</Button>
-                </Link>
-                <Link href="/login" className="block mt-3">
-                  <Button variant="ghost" className="w-full">العودة إلى تسجيل الدخول</Button>
+                <p className="mt-2 text-sm text-ink-muted">تحقق من بريدك الإلكتروني وافتح رابط الاستعادة المرسل إليك لإعادة تعيين كلمة المرور.</p>
+                <Link href="/login" className={cn(buttonVariants({ variant: "ghost" }), "mt-6 w-full")}>
+                  العودة إلى تسجيل الدخول
                 </Link>
               </div>
             ) : (
@@ -64,8 +62,8 @@ export default function ForgotPasswordPage() {
                 <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
                   <div>
                     <Label htmlFor="email">البريد الإلكتروني</Label>
-                    <Input id="email" type="email" placeholder="you@example.com" {...register("email")} />
-                    {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email.message}</p>}
+                    <Input id="email" type="email" autoComplete="email" inputMode="email" placeholder="you@example.com" aria-invalid={!!errors.email} aria-describedby={errors.email ? "email-error" : undefined} {...register("email")} />
+                    {errors.email && <p id="email-error" role="alert" className="text-xs text-red-600 mt-1">{errors.email.message}</p>}
                   </div>
                   <Button type="submit" className="w-full" size="lg" disabled={loading}>
                     {loading ? "جارٍ الإرسال..." : "إرسال رابط الاستعادة"}
@@ -79,7 +77,7 @@ export default function ForgotPasswordPage() {
               </>
             )}
           </div>
-        </div>
+        </main>
       </div>
     </div>
   );

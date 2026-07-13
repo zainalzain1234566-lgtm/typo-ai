@@ -34,8 +34,9 @@ export function VersionHistory({ versions, currentVersionId, onSelect, disabled 
               type="button"
               disabled={disabled}
               onClick={() => onSelect(v)}
+              aria-pressed={active}
               className={cn(
-                "w-full text-right rounded-lg border px-3 py-2 text-xs transition-colors cursor-pointer disabled:cursor-not-allowed",
+                "min-h-11 w-full text-right rounded-lg border px-3 py-2 text-xs transition-colors cursor-pointer disabled:cursor-not-allowed",
                 active ? "border-accent bg-accent-soft text-accent" : "border-stone-200 text-ink-muted hover:border-stone-300"
               )}
             >

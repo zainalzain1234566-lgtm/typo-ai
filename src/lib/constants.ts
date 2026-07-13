@@ -1,4 +1,4 @@
-export const DEFAULT_ACCENT_COLOR = "#6D5EFC";
+export const DEFAULT_ACCENT_COLOR = "#5B4EE5";
 
 export const DEFAULT_DISCLAIMER_TEXT = "هذا المحتوى للتوعية فقط ولا يغني عن استشارة الطبيب";
 
