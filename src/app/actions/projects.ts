@@ -7,6 +7,7 @@ import { getGenerationProvider, type GenerationInput, reviewMedicalContent } fro
 import { reorderSlidesSchema, updateSlideSchema } from "@/lib/validation/slides";
 import { log, logError } from "@/lib/logger";
 import { AI_DEFAULT_BASE_URL, AI_DEFAULT_MODEL } from "@/lib/constants";
+import { populateMissingSlideImages, removeProjectImageIfUnreferenced } from "@/lib/services/project-images";
 
 // ============= Create project with generation =============
 
@@ -35,11 +36,12 @@ export async function createProjectAction(input: Record<string, unknown>) {
   // Validate template exists
   const { data: template } = await supabase
     .from("templates")
-    .select("id, category")
+    .select("id, slug, category")
     .eq("id", parsed.data.template_id)
     .eq("is_active", true)
     .single();
-  if (!template || template.category !== (isMedical ? "medical" : "general")) {
+  const accountCategory = isMedical ? "medical" : "general";
+  if (!template || (template.category !== accountCategory && template.category !== "shared")) {
     logError("PROJECT", "template not found", parsed.data.template_id);
     return { success: false, error: "القالب غير موجود" };
   }
@@ -140,6 +142,7 @@ export async function createProjectAction(input: Record<string, unknown>) {
       slideCount: parsed.data.slide_count,
       ctaType: parsed.data.cta_type,
       isMedical,
+      needsImages: template.slug === "laqta",
     };
 
     const generated = await provider.generate(genInput);
@@ -154,13 +157,25 @@ export async function createProjectAction(input: Record<string, unknown>) {
       title: s.title,
       body: s.body,
       cta_text: s.cta_text ?? null,
+      image_query: template.slug === "laqta" ? s.image_query ?? null : null,
     }));
-    const { error: slidesError } = await supabase.from("slides").insert(slideRows);
+    const { data: insertedSlides, error: slidesError } = await supabase
+      .from("slides")
+      .insert(slideRows)
+      .select("id, title, image_query, image_path, image_source_id");
     if (slidesError) {
       logError("PROJECT", "slides insert failed", slidesError.message);
       throw new Error(`slides insert: ${slidesError.message}`);
     }
     log("PROJECT", "slides inserted", { count: slideRows.length });
+
+    // Images are optional enrichment: text is already safely persisted, so
+    // Pexels or Storage failures leave retryable placeholders instead of
+    // archiving the project.
+    if (template.slug === "laqta" && insertedSlides) {
+      const imageResult = await populateMissingSlideImages(supabase, user.id, insertedSlides);
+      log("PROJECT", "slide images processed", imageResult);
+    }
 
     // ============ Medical accuracy pass ============
     if (isMedical) try {
@@ -239,8 +254,17 @@ export async function deleteProjectAction(id: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "غير مصرح" };
 
+  const { data: slides } = await supabase
+    .from("slides")
+    .select("image_path")
+    .eq("project_id", id)
+    .eq("user_id", user.id)
+    .not("image_path", "is", null);
   const { error } = await supabase.from("projects").delete().eq("id", id).eq("user_id", user.id);
   if (error) return { success: false, error: "تعذر حذف المشروع" };
+  for (const path of Array.from(new Set((slides ?? []).map((slide) => slide.image_path).filter(Boolean)))) {
+    await removeProjectImageIfUnreferenced(supabase, user.id, path);
+  }
   revalidatePath("/projects");
   return { success: true };
 }
@@ -366,11 +390,13 @@ export async function addSlideAction(projectId: string, afterPosition: number, t
   // Check project ownership and slide count
   const { data: project } = await supabase
     .from("projects")
-    .select("slide_count, topic, content_type, language, tone, content_level, target_audience, cta_type, requires_medical_review")
+    .select("slide_count, topic, content_type, language, tone, content_level, target_audience, cta_type, requires_medical_review, template:templates(slug)")
     .eq("id", projectId)
     .eq("user_id", user.id)
     .single();
   if (!project) return { success: false, error: "المشروع غير موجود" };
+  const projectTemplate = project.template as unknown as { slug?: string } | null;
+  const needsImages = projectTemplate?.slug === "laqta";
   if (project.slide_count >= 10) return { success: false, error: "وصلت للحد الأقصى (10 شرائح)" };
 
   // Generate content for new slide using the project's real settings
@@ -387,6 +413,7 @@ export async function addSlideAction(projectId: string, afterPosition: number, t
       slideCount: 3,
       ctaType: project.cta_type,
       isMedical: project.requires_medical_review,
+      needsImages,
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -426,11 +453,21 @@ export async function addSlideAction(projectId: string, afterPosition: number, t
       slide_type: "content",
       title: newSlide.title,
       body: newSlide.body,
+      image_query: needsImages ? newSlide.image_query ?? null : null,
     })
     .select()
     .single();
 
   if (error) return { success: false, error: "تعذر إضافة الشريحة" };
+
+  if (needsImages && inserted) {
+    const { data: projectSlides } = await supabase
+      .from("slides")
+      .select("id, title, image_query, image_path, image_source_id")
+      .eq("project_id", projectId)
+      .eq("user_id", user.id);
+    await populateMissingSlideImages(supabase, user.id, projectSlides ?? [inserted]);
+  }
 
   // Update project slide count
   await supabase
@@ -496,6 +533,15 @@ export async function duplicateSlideAction(slideId: string) {
       title: slide.title,
       body: slide.body,
       cta_text: dupType === "content" ? null : slide.cta_text,
+      image_path: slide.image_path,
+      image_source: slide.image_source,
+      image_query: slide.image_query,
+      image_source_id: slide.image_source_id,
+      image_source_url: slide.image_source_url,
+      image_photographer: slide.image_photographer,
+      image_photographer_url: slide.image_photographer_url,
+      image_alt: slide.image_alt,
+      image_focal_position: slide.image_focal_position,
     })
     .select()
     .single();
@@ -542,6 +588,7 @@ export async function deleteSlideAction(slideId: string) {
 
   // Delete and reorder
   await supabase.from("slides").delete().eq("id", slideId).eq("user_id", user.id);
+  await removeProjectImageIfUnreferenced(supabase, user.id, slide.image_path);
 
   // Reorder remaining slides
   const { data: remaining } = await supabase

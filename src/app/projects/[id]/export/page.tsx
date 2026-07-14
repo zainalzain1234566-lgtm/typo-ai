@@ -19,6 +19,7 @@ import { TEMPLATE_DEFS, getPalette, SIZES } from "@/lib/templates";
 import { DEFAULT_ACCENT_COLOR } from "@/lib/constants";
 import { exportSlideToPng, downloadDataUrl, exportAllToZip, slidesToBlobs, waitForFonts } from "@/lib/export";
 import { mapProject } from "@/lib/db-mappers";
+import { attachSignedImageUrls } from "@/lib/slide-images";
 import { updateProjectAction, recordExportAction } from "@/app/actions/projects";
 import { sendToTelegramAction } from "@/app/actions/telegram";
 import { cn } from "@/lib/utils";
@@ -51,7 +52,7 @@ export default function ExportPage() {
       .select("*")
       .eq("project_id", projectId)
       .order("position");
-    setProject(mapProject(row, slideRows ?? []));
+    setProject(mapProject(row, await attachSignedImageUrls(supabase, slideRows ?? [])));
   }, [supabase, projectId, router]);
 
   useEffect(() => {
@@ -87,6 +88,30 @@ export default function ExportPage() {
   const sizeLabel = { "1080x1080": "1080×1080", "1080x1350": "1080×1350", "1080x1920": "1080×1920" }[project.settings.size];
   const exportBlocked = project.reviewStatus === "blocked";
 
+  const refreshProjectImageUrls = async () => {
+    if (project.settings.templateId !== "laqta") return;
+    const { data: rows, error } = await supabase
+      .from("slides")
+      .select("id, image_path")
+      .eq("project_id", project.id);
+    if (error) throw new Error("تعذر تحديث رابط صورة الشريحة. أعد المحاولة.");
+    const signed = await attachSignedImageUrls(supabase, rows ?? []);
+    const urls = new Map(signed.map((row) => [row.id, row.image_url]));
+    project.slides.forEach((slide, index) => {
+      if (!slide.imagePath) return;
+      const signedUrl = urls.get(slide.id);
+      const image = exportRefs.current[index]?.querySelector<HTMLImageElement>("[data-laqta-image]");
+      if (!signedUrl || !image) {
+        throw new Error("تعذر تحديث رابط صورة الشريحة. أعد المحاولة.");
+      }
+      image.srcset = "";
+      image.src = signedUrl;
+    });
+  };
+
+  const exportErrorDescription = (error: unknown) =>
+    error instanceof Error ? error.message : "حاول مرة أخرى";
+
   const handleExportOne = async (idx: number) => {
     if (exportBlocked) {
       toast({ type: "error", title: "المحتوى الطبي يحتاج مراجعة قبل التصدير" });
@@ -95,11 +120,12 @@ export default function ExportPage() {
     if (!exportRefs.current[idx]) return;
     setExportingIdx(idx);
     try {
+      await refreshProjectImageUrls();
       const dataUrl = await exportSlideToPng(exportRefs.current[idx]!, project.settings.size);
       await downloadDataUrl(dataUrl, `slide-${String(idx + 1).padStart(2, "0")}.png`);
       toast({ type: "success", title: "تم تنزيل الشريحة", description: `slide-${String(idx + 1).padStart(2, "0")}.png` });
-    } catch {
-      toast({ type: "error", title: "فشل التصدير", description: "حاول مرة أخرى" });
+    } catch (error) {
+      toast({ type: "error", title: "فشل التصدير", description: exportErrorDescription(error) });
     }
     setExportingIdx(null);
   };
@@ -113,12 +139,13 @@ export default function ExportPage() {
     if (validRefs.length === 0) return;
     setExporting(true);
     try {
+      await refreshProjectImageUrls();
       await exportAllToZip(validRefs, project.settings.size);
       await recordExportAction(project.id, "zip");
       setShowSuccess(true);
       toast({ type: "success", title: "تم تنزيل الملف", description: "typo-carousel.zip" });
-    } catch {
-      toast({ type: "error", title: "فشل التصدير", description: "حاول مرة أخرى" });
+    } catch (error) {
+      toast({ type: "error", title: "فشل التصدير", description: exportErrorDescription(error) });
     }
     setExporting(false);
   };
@@ -132,6 +159,7 @@ export default function ExportPage() {
     if (validRefs.length === 0) return;
     setSendingTg(true);
     try {
+      await refreshProjectImageUrls();
       const blobs = await slidesToBlobs(validRefs, project.settings.size);
       const formData = new FormData();
       blobs.forEach((blob, i) => {
@@ -144,8 +172,8 @@ export default function ExportPage() {
       } else {
         toast({ type: "error", title: result.error ?? "فشل الإرسال" });
       }
-    } catch {
-      toast({ type: "error", title: "فشل الإرسال", description: "حاول مرة أخرى" });
+    } catch (error) {
+      toast({ type: "error", title: "فشل الإرسال", description: exportErrorDescription(error) });
     }
     setSendingTg(false);
   };

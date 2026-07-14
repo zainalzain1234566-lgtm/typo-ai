@@ -16,6 +16,7 @@ export interface GenerationInput {
   slideCount: number;
   ctaType: string | null;
   isMedical: boolean;
+  needsImages?: boolean;
 }
 
 export interface GeneratedSlide {
@@ -23,6 +24,7 @@ export interface GeneratedSlide {
   title: string;
   body: string;
   cta_text?: string | null;
+  image_query?: string | null;
 }
 
 export interface GeneratedCarousel {
@@ -233,6 +235,7 @@ function validateAIResponse(raw: any): GeneratedCarousel {
     title: String(s.title || "").slice(0, 300),
     body: String(s.body || "").slice(0, 2000),
     cta_text: s.cta_text ? String(s.cta_text).slice(0, 200) : null,
+    image_query: s.image_query ? String(s.image_query).trim().replace(/\s+/g, " ").slice(0, 160) : null,
   }));
 
   return {
@@ -263,7 +266,7 @@ const MEDICAL_SYSTEM_PROMPT = `أنت كاتب محتوى طبي محترف مت
 أرجع JSON فقط بالصيغة التالية:
 {
   "slides": [
-    { "slide_type": "cover|content|summary|cta", "title": "...", "body": "...", "cta_text": "..." }
+    { "slide_type": "cover|content|summary|cta", "title": "...", "body": "...", "cta_text": "...", "image_query": "optional English photo search" }
   ],
   "caption": "...",
   "hashtags": ["...", "..."]
@@ -281,7 +284,7 @@ const GENERAL_SYSTEM_PROMPT = `أنت كاتب محتوى محترف متخصص 
 أرجع JSON فقط بالصيغة التالية:
 {
   "slides": [
-    { "slide_type": "cover|content|summary|cta", "title": "...", "body": "...", "cta_text": "..." }
+    { "slide_type": "cover|content|summary|cta", "title": "...", "body": "...", "cta_text": "...", "image_query": "optional English photo search" }
   ],
   "caption": "...",
   "hashtags": ["...", "..."]
@@ -311,6 +314,9 @@ function buildPrompt(input: GenerationInput): string {
   const ctaLine = input.ctaType && input.ctaType !== "بدون CTA"
     ? `دعوة الإجراء: ${input.ctaType}. ضعها في الشريحة الأخيرة.`
     : "دعوة الإجراء: بدون. الشريحة الأخيرة تكون ملخص (summary).";
+  const imageLine = input.needsImages
+    ? `لكل شريحة أضف image_query: عبارة بحث إنجليزية قصيرة ومحددة لصورة فوتوغرافية عمودية مناسبة لموضوع الشريحة. يجب أن تكون العبارة مختلفة لكل شريحة.${input.isMedical ? " استخدم صورًا تعليمية محايدة وغير دموية أو صادمة، وتجنب الإجراءات الطبية المصورة." : ""}`
+    : "";
 
   return `أنشئ كاروسيل إنستغرام عن: "${input.topic}"
 
@@ -321,6 +327,7 @@ ${toneLine}
 ${langLine}
 عدد الشرائح: ${input.slideCount}
 ${ctaLine}
+${imageLine}
 
 أرجع JSON فقط بدون أي نص إضافي.`;
 }

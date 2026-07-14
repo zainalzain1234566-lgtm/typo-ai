@@ -1,4 +1,4 @@
-import type { Project, Slide, ContentType, ContentLevel, Tone, Language, CarouselSize, CTAOption, FontFamily, Placement, SlideType, ProjectStatus, ReviewStatus, Folder, TextAlignment } from "./types";
+import type { Project, Slide, ContentType, ContentLevel, Tone, Language, CarouselSize, CTAOption, FontFamily, Placement, SlideType, ProjectStatus, ReviewStatus, Folder, TextAlignment, ImageFocalPosition, ImageSource } from "./types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 
@@ -91,6 +91,16 @@ export function mapSlide(row: any): Slide {
     title: row.title ?? "",
     body: row.body ?? "",
     ctaText: row.cta_text ?? undefined,
+    imagePath: row.image_path ?? undefined,
+    imageUrl: row.image_url ?? undefined,
+    imageSource: row.image_source as ImageSource | undefined,
+    imageQuery: row.image_query ?? undefined,
+    imageSourceId: row.image_source_id ?? undefined,
+    imageSourceUrl: row.image_source_url ?? undefined,
+    imagePhotographer: row.image_photographer ?? undefined,
+    imagePhotographerUrl: row.image_photographer_url ?? undefined,
+    imageAlt: row.image_alt ?? undefined,
+    imageFocalPosition: (row.image_focal_position ?? "center") as ImageFocalPosition,
   };
 }
 

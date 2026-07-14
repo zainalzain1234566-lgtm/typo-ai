@@ -1,6 +1,8 @@
 // ============= Core Type Definitions =============
 
 export type SlideType = "cover" | "content" | "ending";
+export type ImageSource = "pexels" | "upload";
+export type ImageFocalPosition = "center" | "top" | "bottom" | "left" | "right";
 
 export interface Slide {
   id: string;
@@ -8,6 +10,16 @@ export interface Slide {
   title: string;
   body: string;
   ctaText?: string;
+  imagePath?: string;
+  imageUrl?: string;
+  imageSource?: ImageSource;
+  imageQuery?: string;
+  imageSourceId?: string;
+  imageSourceUrl?: string;
+  imagePhotographer?: string;
+  imagePhotographerUrl?: string;
+  imageAlt?: string;
+  imageFocalPosition?: ImageFocalPosition;
 }
 
 export type ContentType =
@@ -65,7 +77,7 @@ export interface Template {
   palettes: Palette[];
   fonts: FontFamily[];
   component: string; // template key for renderer
-  category?: "medical" | "general";
+  category?: "medical" | "general" | "shared";
 }
 
 export interface MedicalProps {

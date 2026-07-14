@@ -27,6 +27,7 @@ import {
   createBlankProject, useTemplateLookup, projectToCreateInput,
   projectToUpdateInput, mapProject, mapSlide,
 } from "@/lib/db-mappers";
+import { attachSignedImageUrls } from "@/lib/slide-images";
 import { friendlyAuthError } from "@/lib/error-messages";
 import { cn } from "@/lib/utils";
 import { DEFAULT_ACCENT_COLOR, DEFAULT_DISCLAIMER_TEXT } from "@/lib/constants";
@@ -156,7 +157,7 @@ function WizardContent() {
       .select("*")
       .eq("project_id", id)
       .order("position");
-    return mapProject(row, slideRows ?? []);
+    return mapProject(row, await attachSignedImageUrls(supabase, slideRows ?? []));
   }, [supabase]);
 
   const handleGenerate = async () => {

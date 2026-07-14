@@ -16,6 +16,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScaledSlide } from "@/components/carousel/slide-renderer";
 import { TypographyControls } from "@/components/carousel/typography-controls";
+import { SlideImageControls } from "@/components/carousel/slide-image-controls";
 import { useApp } from "@/lib/app-context";
 import { useToast } from "@/components/ui/toast";
 import { TEMPLATE_DEFS, getPalette, templatesForMode } from "@/lib/templates";
@@ -23,12 +24,14 @@ import { DEFAULT_ACCENT_COLOR } from "@/lib/constants";
 import {
   mapProject, useTemplateLookup, projectToUpdateInput,
 } from "@/lib/db-mappers";
+import { attachSignedImageUrls } from "@/lib/slide-images";
 import { cn } from "@/lib/utils";
 import type { Slide, Placement, Project } from "@/lib/types";
 import {
   updateProjectAction, updateSlideAction, addSlideAction,
   duplicateSlideAction, deleteSlideAction, reorderSlidesAction,
 } from "@/app/actions/projects";
+import { generateMissingProjectImagesAction } from "@/app/actions/project-images";
 
 export default function EditorPage() {
   const params = useParams();
@@ -44,6 +47,7 @@ export default function EditorPage() {
   const [templateDialog, setTemplateDialog] = useState(false);
   const [brandDialog, setBrandDialog] = useState(false);
   const [zoomOpen, setZoomOpen] = useState(false);
+  const [imageBusy, setImageBusy] = useState(false);
 
   const fetchProject = useCallback(async () => {
     const { data: row } = await supabase
@@ -57,7 +61,7 @@ export default function EditorPage() {
       .select("*")
       .eq("project_id", projectId)
       .order("position");
-    const mapped = mapProject(row, slideRows ?? []);
+    const mapped = mapProject(row, await attachSignedImageUrls(supabase, slideRows ?? []));
     setProject(mapped);
   }, [supabase, projectId, router]);
 
@@ -133,6 +137,30 @@ export default function EditorPage() {
     else toast({ type: "error", title: result.error ?? "تعذر الإضافة" });
   };
 
+  const handleGenerateMissingImages = async () => {
+    if (!project) return;
+    setImageBusy(true);
+    const saveInput = projectToUpdateInput(project, lookup);
+    if (!saveInput) {
+      setImageBusy(false);
+      return toast({ type: "error", title: "انتظر اكتمال تحميل القالب ثم حاول مرة أخرى" });
+    }
+    const saved = await updateProjectAction(saveInput);
+    if (!saved.success) {
+      setImageBusy(false);
+      return toast({ type: "error", title: saved.error ?? "تعذر حفظ القالب" });
+    }
+    const result = await generateMissingProjectImagesAction(project.id);
+    setImageBusy(false);
+    if (!result.success) return toast({ type: "error", title: result.error ?? "تعذر توليد الصور" });
+    await fetchProject();
+    toast({
+      type: result.failed ? "info" : "success",
+      title: result.failed ? "تم توليد بعض الصور" : "تم توليد الصور",
+      description: result.failed ? `تعذر توليد ${result.failed} صورة ويمكنك إعادة المحاولة` : undefined,
+    });
+  };
+
   const handleMoveSlide = async (id: string, dir: "up" | "down") => {
     if (!project) return;
     const idx = project.slides.findIndex((s) => s.id === id);
@@ -191,6 +219,15 @@ export default function EditorPage() {
             <Button size="sm" onClick={() => router.push(`/projects/${project.id}/export`)}><Download className="w-4 h-4" /> تصدير</Button>
           </div>
         </div>
+
+        {project.settings.templateId === "laqta" && project.slides.some((slide) => !slide.imagePath) && (
+          <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
+            <p className="text-sm text-amber-900">بعض الشرائح لا تحتوي على صور بعد.</p>
+            <Button type="button" size="sm" onClick={() => void handleGenerateMissingImages()} disabled={imageBusy}>
+              <Sparkles className={cn("h-4 w-4", imageBusy && "animate-pulse")} /> توليد الصور الناقصة
+            </Button>
+          </div>
+        )}
 
         <div className="lg:hidden mb-4 flex gap-2 overflow-x-auto no-scrollbar pb-2">
           {project.slides.map((slide, i) => (
@@ -352,6 +389,9 @@ export default function EditorPage() {
                       <Label htmlFor="slide-cta">نص CTA</Label>
                       <Input id="slide-cta" value={currentSlide.ctaText} onChange={(e) => updateSlide(currentSlide.id, { ctaText: e.target.value })} />
                     </div>
+                  )}
+                  {project.settings.templateId === "laqta" && (
+                    <SlideImageControls slide={currentSlide} onChanged={fetchProject} />
                   )}
                 </>
               )}

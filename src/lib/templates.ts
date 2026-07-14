@@ -93,6 +93,13 @@ const ENGINEERING_PALETTES: Palette[] = [
   { id: "p4", name: "كوبالت أبيض", background: "#123B6D", text: "#FFFFFF", accent: "#A8E4FF", secondary: "#1D518F" },
 ];
 
+const LAQTA_PALETTES: Palette[] = [
+  { id: "p1", name: "عاجي كهرماني", background: "#FFFDF5", text: "#2F261E", accent: "#D97706", secondary: "#FDEBC8" },
+  { id: "p2", name: "أبيض بنفسجي", background: "#FFFFFF", text: "#27223A", accent: "#6D5EFC", secondary: "#ECEAFE" },
+  { id: "p3", name: "فحمي سماوي", background: "#171A1F", text: "#F8FAFC", accent: "#38BDF8", secondary: "#26313A" },
+  { id: "p4", name: "وردي مرجاني", background: "#FFF7F7", text: "#3D2529", accent: "#E85D75", secondary: "#FDE2E7" },
+];
+
 // ============= Medical Spec Template Palettes =============
 
 const CLINICAL_CLEAN_PALETTES: Palette[] = [
@@ -175,12 +182,13 @@ export const TEMPLATE_DEFS: Template[] = [
   { id: "tilt", name: "قطري", description: "تصميم مائل قطريًا بخلفية متدرجة وزجاجية", palettes: TILT_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "tilt", category: "general" },
   { id: "retro", name: "ريترو", description: "تصميم تسعينيات بخطوط قطرية وظلال صلبة", palettes: RETRO_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "retro", category: "general" },
   { id: "engineering", name: "هندسي", description: "مخطط هندسي بخلفية شبكية وخطوط قياس تقنية", palettes: ENGINEERING_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "engineering", category: "general" },
+  { id: "laqta", name: "لقطة", description: "صور مرتبطة بالموضوع مع بطاقة نصية عائمة", palettes: LAQTA_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "laqta", category: "shared" },
 ];
 
 export const VISIBLE_TEMPLATES = TEMPLATE_DEFS;
 
 export function templatesForMode(mode: ContentMode): Template[] {
-  return TEMPLATE_DEFS.filter((template) => template.category === mode);
+  return TEMPLATE_DEFS.filter((template) => template.category === mode || template.category === "shared");
 }
 
 export function getTemplate(id: string): Template {

@@ -17,6 +17,7 @@ import { useToast } from "@/components/ui/toast";
 import { ScaledSlide } from "@/components/carousel/slide-renderer";
 import { useApp } from "@/lib/app-context";
 import { mapProject, mapFolder } from "@/lib/db-mappers";
+import { attachSignedImageUrls } from "@/lib/slide-images";
 import { getPalette } from "@/lib/templates";
 import { FEATURE_FLAGS } from "@/lib/feature-flags";
 import { cn, relativeTime } from "@/lib/utils";
@@ -63,8 +64,9 @@ export default function ProjectsPage() {
         .in("project_id", projectIds)
         .order("position");
 
+      const signedSlides = await attachSignedImageUrls(supabase, allSlides ?? []);
       const slidesByProject: Record<string, any[]> = {};
-      for (const s of allSlides ?? []) {
+      for (const s of signedSlides) {
         if (!slidesByProject[s.project_id]) slidesByProject[s.project_id] = [];
         slidesByProject[s.project_id].push(s);
       }
