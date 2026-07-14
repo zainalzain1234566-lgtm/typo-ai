@@ -7,3 +7,17 @@ node_modules/
 *.tsbuildinfo
 .DS_Store
 graphify-out/
+
+# Local tools, internal documentation, QA artifacts, and database migrations
+/.codex/
+/.opencode/skills/ui-ux-pro-max/
+/docs/superpowers/
+/qa-screenshots/
+/supabase/migrations/
+/.env.example
+/AGENTS.md
+/ARCHITECTURE.md
+/DATABASE.md
+/DEVELOPMENT.md
+/description.md
+/qa-report.md
