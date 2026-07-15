@@ -14,6 +14,7 @@ import {
   storePexelsPhotoForSlide,
 } from "@/lib/services/project-images";
 import type { ImageFocalPosition } from "@/lib/types";
+import { templateUsesSubjectImages } from "@/lib/templates";
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const MIME_EXTENSIONS: Record<string, string> = {
@@ -124,7 +125,7 @@ export async function generateMissingProjectImagesAction(projectId: string) {
     .eq("user_id", user.id)
     .single();
   const template = project?.template as unknown as { slug?: string } | null;
-  if (!project || template?.slug !== "laqta") return { success: false, error: "هذا الإجراء متاح لقالب لقطة فقط" };
+  if (!project || !templateUsesSubjectImages(template?.slug)) return { success: false, error: "هذا الإجراء متاح للقوالب المصورة فقط" };
 
   const { data: slides, error } = await supabase
     .from("slides")

@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScaledSlide, SlideRenderer, DisclaimerFooter } from "@/components/carousel/slide-renderer";
 import { useApp } from "@/lib/app-context";
 import { useToast } from "@/components/ui/toast";
-import { TEMPLATE_DEFS, getPalette, SIZES } from "@/lib/templates";
+import { TEMPLATE_DEFS, getPalette, paletteWithBrandAccent, SIZES, templateUsesSubjectImages } from "@/lib/templates";
 import { DEFAULT_ACCENT_COLOR } from "@/lib/constants";
 import { exportSlideToPng, downloadDataUrl, exportAllToZip, slidesToBlobs, waitForFonts } from "@/lib/export";
 import { mapProject } from "@/lib/db-mappers";
@@ -82,14 +82,14 @@ export default function ExportPage() {
   }
 
   const basePal = getPalette(project.settings.templateId, project.settings.paletteId);
-  const pal = brandKit.primaryColor && brandKit.primaryColor !== DEFAULT_ACCENT_COLOR ? { ...basePal, accent: brandKit.primaryColor } : basePal;
+  const pal = paletteWithBrandAccent(basePal, project.settings.brandKit.enabled, brandKit.primaryColor, DEFAULT_ACCENT_COLOR);
   const brandKitData = { instagramHandle: brandKit.instagramHandle, logoDataUrl: brandKit.logoUrl, primaryColor: brandKit.primaryColor, font: project.settings.bodyFont, disclaimerText: brandKit.disclaimerText };
   const tmpl = TEMPLATE_DEFS.find((t) => t.id === project.settings.templateId);
   const sizeLabel = { "1080x1080": "1080×1080", "1080x1350": "1080×1350", "1080x1920": "1080×1920" }[project.settings.size];
   const exportBlocked = project.reviewStatus === "blocked";
 
   const refreshProjectImageUrls = async () => {
-    if (project.settings.templateId !== "laqta") return;
+    if (!templateUsesSubjectImages(project.settings.templateId)) return;
     const { data: rows, error } = await supabase
       .from("slides")
       .select("id, image_path")
@@ -100,7 +100,7 @@ export default function ExportPage() {
     project.slides.forEach((slide, index) => {
       if (!slide.imagePath) return;
       const signedUrl = urls.get(slide.id);
-      const image = exportRefs.current[index]?.querySelector<HTMLImageElement>("[data-laqta-image]");
+      const image = exportRefs.current[index]?.querySelector<HTMLImageElement>("[data-project-image]");
       if (!signedUrl || !image) {
         throw new Error("تعذر تحديث رابط صورة الشريحة. أعد المحاولة.");
       }

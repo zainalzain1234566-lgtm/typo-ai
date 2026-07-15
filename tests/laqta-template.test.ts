@@ -87,7 +87,8 @@ test("Laqta renders a full-bleed positioned image and a safe placeholder", () =>
       imageFocalPosition: "top" as const,
     },
   }));
-  assert.match(withImage, /data-laqta-image="true"/);
+  assert.match(withImage, /data-project-image="true"/);
+  assert.doesNotMatch(withImage, /data-laqta-image/);
   assert.match(withImage, /object-position:top center/);
   assert.match(withImage, /data-slide-title="true"/);
   assert.match(withImage, /data-slide-body="true"/);
@@ -235,9 +236,10 @@ test("Laqta cover cropping honors every focal position for every canvas size", a
 
 test("Laqta export captures a transparent overlay then composites it above the photo", () => {
   const source = readFileSync("src/lib/export.ts", "utf8");
-  assert.match(source, /querySelector<HTMLImageElement>\("img\[data-laqta-image\]"\)/);
-  assert.match(source, /async function loadLaqtaBackground[\s\S]*const source = image\.src \|\| image\.currentSrc/);
-  assert.match(source, /filter:\s*\(node\)\s*=>\s*node !== laqtaImage/);
+  assert.match(source, /querySelector<HTMLImageElement>\("img\[data-project-image\]"\)/);
+  assert.match(source, /async function loadProjectImageBackground[\s\S]*const source = image\.src \|\| image\.currentSrc/);
+  assert.match(source, /filter:\s*\(node\)\s*=>\s*node !== projectImage/);
+  assert.doesNotMatch(source, /data-laqta-image|loadLaqtaBackground|\blaqtaImage\b/);
   assert.match(source, /baseSlide\.style\.backgroundColor = "transparent"/);
   assert.match(source, /finally\s*{[\s\S]*baseSlide\.style\.backgroundColor = previousBackgroundColor/);
   assert.match(source, /URL\.revokeObjectURL\(background\.objectUrl\)/);

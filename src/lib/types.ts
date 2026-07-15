@@ -76,8 +76,9 @@ export interface Template {
   description: string;
   palettes: Palette[];
   fonts: FontFamily[];
-  component: string; // template key for renderer
+  component: string; // stable renderer-family key; multiple templates may share it
   category?: "medical" | "general" | "shared";
+  usesSubjectImages?: boolean;
 }
 
 export interface MedicalProps {

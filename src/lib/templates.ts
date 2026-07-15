@@ -1,4 +1,4 @@
-import type { Palette, Template, FontFamily } from "./types";
+import type { CarouselSize, Palette, Template, FontFamily, ProjectSettings } from "./types";
 import type { ContentMode } from "./content-mode";
 
 export const PALETTES: Palette[] = [
@@ -100,6 +100,20 @@ const LAQTA_PALETTES: Palette[] = [
   { id: "p4", name: "وردي مرجاني", background: "#FFF7F7", text: "#3D2529", accent: "#E85D75", secondary: "#FDE2E7" },
 ];
 
+const FLOW_PALETTES: Palette[] = [
+  { id: "p1", name: "قرمزي ليلي", background: "#171717", text: "#FFF7F7", accent: "#C91C2B", secondary: "#2A2A2A" },
+  { id: "p2", name: "كحلي كهربائي", background: "#0B1220", text: "#F8FAFC", accent: "#2563EB", secondary: "#172033" },
+  { id: "p3", name: "عاجي طوبي", background: "#F6F0E8", text: "#2B211C", accent: "#B33A1B", secondary: "#E8DDD2" },
+  { id: "p4", name: "برقوق وردي", background: "#24152B", text: "#FFF7FB", accent: "#BE185D", secondary: "#3A2244" },
+];
+
+const VIBRANT_PALETTES: Palette[] = [
+  { id: "p1", name: "أزرق حيوي", background: "#0754B8", text: "#FFFFFF", accent: "#22D3EE", secondary: "#0B75D1" },
+  { id: "p2", name: "بنفسجي سماوي", background: "#312E81", text: "#FFFFFF", accent: "#67E8F9", secondary: "#4F46E5" },
+  { id: "p3", name: "زمردي", background: "#065F46", text: "#FFFFFF", accent: "#A7F3D0", secondary: "#0F766E" },
+  { id: "p4", name: "فحمي مرجاني", background: "#18181B", text: "#FAFAFA", accent: "#E11D48", secondary: "#2D2D35" },
+];
+
 // ============= Medical Spec Template Palettes =============
 
 const CLINICAL_CLEAN_PALETTES: Palette[] = [
@@ -182,13 +196,22 @@ export const TEMPLATE_DEFS: Template[] = [
   { id: "tilt", name: "قطري", description: "تصميم مائل قطريًا بخلفية متدرجة وزجاجية", palettes: TILT_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "tilt", category: "general" },
   { id: "retro", name: "ريترو", description: "تصميم تسعينيات بخطوط قطرية وظلال صلبة", palettes: RETRO_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "retro", category: "general" },
   { id: "engineering", name: "هندسي", description: "مخطط هندسي بخلفية شبكية وخطوط قياس تقنية", palettes: ENGINEERING_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "engineering", category: "general" },
-  { id: "laqta", name: "لقطة", description: "صور مرتبطة بالموضوع مع بطاقة نصية عائمة", palettes: LAQTA_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "laqta", category: "shared" },
+  { id: "laqta", name: "لقطة", description: "صور مرتبطة بالموضوع مع بطاقة نصية عائمة", palettes: LAQTA_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "laqta", category: "shared", usesSubjectImages: true },
+  { id: "flow", name: "تدفّق", description: "تسلسل بصري متدفق بحركة واتصال بين العناصر", palettes: FLOW_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "flow", category: "general" },
+  { id: "vibrant", name: "حيوية", description: "تصميم حيوي بصور مرتبطة بالموضوع وألوان مشبعة", palettes: VIBRANT_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "vibrant", category: "shared", usesSubjectImages: true },
 ];
 
 export const VISIBLE_TEMPLATES = TEMPLATE_DEFS;
 
 export function templatesForMode(mode: ContentMode): Template[] {
   return TEMPLATE_DEFS.filter((template) => template.category === mode || template.category === "shared");
+}
+
+export function templateUsesSubjectImages(idOrSlug?: string): boolean {
+  return TEMPLATE_DEFS.some(
+    (template) =>
+      (template.id === idOrSlug || template.component === idOrSlug) && template.usesSubjectImages === true,
+  );
 }
 
 export function getTemplate(id: string): Template {
@@ -200,8 +223,36 @@ export function getPalette(templateId: string, paletteId: string): Palette {
   return t.palettes.find((p) => p.id === paletteId) ?? t.palettes[0];
 }
 
+export function settingsForTemplateSelection(settings: ProjectSettings, template: Template): ProjectSettings {
+  return { ...settings, templateId: template.id, paletteId: template.palettes[0].id };
+}
+
+export function paletteForTemplateThumbnail(
+  template: Template,
+  selectedTemplateId: string,
+  selectedPaletteId: string,
+): Palette {
+  const paletteId = template.id === selectedTemplateId ? selectedPaletteId : template.palettes[0].id;
+  return getPalette(template.id, paletteId);
+}
+
+export function paletteWithBrandAccent(
+  palette: Palette,
+  brandKitEnabled: boolean,
+  brandColor: string | null | undefined,
+  defaultAccentColor: string,
+): Palette {
+  if (!brandKitEnabled || !brandColor || brandColor === defaultAccentColor) return palette;
+  return { ...palette, accent: brandColor };
+}
+
 export const SIZES: { id: string; label: string; ratio: string; w: number; h: number }[] = [
   { id: "1080x1080", label: "منشور مربع", ratio: "1:1", w: 1080, h: 1080 },
   { id: "1080x1350", label: "منشور عمودي", ratio: "4:5", w: 1080, h: 1350 },
   { id: "1080x1920", label: "ستوري Instagram", ratio: "9:16", w: 1080, h: 1920 },
 ];
+
+export function editorPreviewWidth(size: CarouselSize, maxWidth = 480, maxHeight = 560): number {
+  const dimensions = SIZES.find((candidate) => candidate.id === size) ?? SIZES[0];
+  return Math.min(maxWidth, maxHeight * dimensions.w / dimensions.h);
+}

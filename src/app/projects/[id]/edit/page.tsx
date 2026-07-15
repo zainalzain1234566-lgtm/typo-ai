@@ -19,7 +19,10 @@ import { TypographyControls } from "@/components/carousel/typography-controls";
 import { SlideImageControls } from "@/components/carousel/slide-image-controls";
 import { useApp } from "@/lib/app-context";
 import { useToast } from "@/components/ui/toast";
-import { TEMPLATE_DEFS, getPalette, templatesForMode } from "@/lib/templates";
+import {
+  TEMPLATE_DEFS, editorPreviewWidth, getPalette, paletteForTemplateThumbnail, paletteWithBrandAccent,
+  settingsForTemplateSelection, templatesForMode, templateUsesSubjectImages,
+} from "@/lib/templates";
 import { DEFAULT_ACCENT_COLOR } from "@/lib/constants";
 import {
   mapProject, useTemplateLookup, projectToUpdateInput,
@@ -192,9 +195,11 @@ export default function EditorPage() {
 
   const currentSlide = project.slides[currentSlideIdx];
   const basePal = getPalette(project.settings.templateId, project.settings.paletteId);
-  const pal = brandKit.primaryColor && brandKit.primaryColor !== DEFAULT_ACCENT_COLOR ? { ...basePal, accent: brandKit.primaryColor } : basePal;
+  const pal = paletteWithBrandAccent(basePal, project.settings.brandKit.enabled, brandKit.primaryColor, DEFAULT_ACCENT_COLOR);
   const brandKitData = { instagramHandle: brandKit.instagramHandle, logoDataUrl: brandKit.logoUrl, primaryColor: brandKit.primaryColor, font: project.settings.bodyFont, disclaimerText: brandKit.disclaimerText };
   const tmpl = TEMPLATE_DEFS.find((t) => t.id === project.settings.templateId);
+  const usesSubjectImages = templateUsesSubjectImages(project.settings.templateId);
+  const mainPreviewWidth = editorPreviewWidth(project.settings.size);
 
   return (
     <div className="min-h-screen bg-[#faf9f7]">
@@ -220,7 +225,7 @@ export default function EditorPage() {
           </div>
         </div>
 
-        {project.settings.templateId === "laqta" && project.slides.some((slide) => !slide.imagePath) && (
+        {usesSubjectImages && project.slides.some((slide) => !slide.imagePath) && (
           <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
             <p className="text-sm text-amber-900">بعض الشرائح لا تحتوي على صور بعد.</p>
             <Button type="button" size="sm" onClick={() => void handleGenerateMissingImages()} disabled={imageBusy}>
@@ -327,11 +332,11 @@ export default function EditorPage() {
                     type="button"
                     aria-label="تكبير معاينة الشريحة"
                     onClick={() => setZoomOpen(true)}
-                    style={{ width: 480, maxWidth: "100%" }}
+                    style={{ width: mainPreviewWidth, maxWidth: "100%" }}
                     className="relative group cursor-zoom-in rounded-xl"
                   >
                     <ScaledSlide
-                      width={480}
+                      width={mainPreviewWidth}
                       slide={currentSlide}
                       templateId={project.settings.templateId}
                       palette={pal}
@@ -390,7 +395,7 @@ export default function EditorPage() {
                       <Input id="slide-cta" value={currentSlide.ctaText} onChange={(e) => updateSlide(currentSlide.id, { ctaText: e.target.value })} />
                     </div>
                   )}
-                  {project.settings.templateId === "laqta" && (
+                  {usesSubjectImages && (
                     <SlideImageControls slide={currentSlide} onChanged={fetchProject} />
                   )}
                 </>
@@ -477,13 +482,13 @@ function TemplateDialog({ open, onClose, project, update, brandKitData, template
     <Dialog open={open} onClose={onClose} title="تغيير القالب" description="اختر قالبًا جديدًا. لن يتأثر المحتوى.">
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[400px] overflow-y-auto thin-scrollbar">
         {templates.map((t) => {
-          const p = getPalette(t.id, project.settings.paletteId);
+          const p = paletteForTemplateThumbnail(t, project.settings.templateId, project.settings.paletteId);
           const active = project.settings.templateId === t.id;
           return (
             <button
               key={t.id}
               type="button"
-              onClick={() => { update({ settings: { ...project.settings, templateId: t.id } }); onClose(); }}
+              onClick={() => update({ settings: settingsForTemplateSelection(project.settings, t) })}
               aria-pressed={active}
               className={cn("rounded-xl overflow-hidden border-2 transition-all cursor-pointer", active ? "border-accent" : "border-stone-200 hover:border-stone-300")}
             >
@@ -535,6 +540,7 @@ function TemplateDialog({ open, onClose, project, update, brandKitData, template
           ))}
         </div>
       </div>
+      <Button className="mt-4 w-full" onClick={onClose}>تم</Button>
     </Dialog>
   );
 }

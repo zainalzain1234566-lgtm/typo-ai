@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { RENDERER_REGISTRY } from "../src/components/carousel/renderers/registry";
 import { contentModeFromValue, defaultTemplateForMode, shouldShowMedicalDisclaimer } from "../src/lib/content-mode";
 import { getTemplate, templatesForMode } from "../src/lib/templates";
 
@@ -35,10 +36,8 @@ test("seeds the Engineering template and all four palettes", () => {
 });
 
 test("connects Engineering to the renderer and filters the catalogue by account mode", () => {
-  const renderer = readFileSync("src/components/carousel/slide-renderer.tsx", "utf8");
   const catalogue = readFileSync("src/app/templates/page.tsx", "utf8");
-  assert.match(renderer, /engineering:\s*Engineering/);
-  assert.match(renderer, /const Engineering = forwardRef/);
+  assert.ok(RENDERER_REGISTRY.engineering);
   assert.match(catalogue, /templatesForMode\(preferences\.contentMode\)/);
   assert.doesNotMatch(catalogue, /VISIBLE_TEMPLATES\.map/);
 });

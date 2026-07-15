@@ -8,6 +8,7 @@ import { reorderSlidesSchema, updateSlideSchema } from "@/lib/validation/slides"
 import { log, logError } from "@/lib/logger";
 import { AI_DEFAULT_BASE_URL, AI_DEFAULT_MODEL } from "@/lib/constants";
 import { populateMissingSlideImages, removeProjectImageIfUnreferenced } from "@/lib/services/project-images";
+import { templateUsesSubjectImages } from "@/lib/templates";
 
 // ============= Create project with generation =============
 
@@ -45,6 +46,7 @@ export async function createProjectAction(input: Record<string, unknown>) {
     logError("PROJECT", "template not found", parsed.data.template_id);
     return { success: false, error: "القالب غير موجود" };
   }
+  const needsImages = templateUsesSubjectImages(template.slug);
 
   // Validate palette belongs to template
   const { data: palette } = await supabase
@@ -142,7 +144,7 @@ export async function createProjectAction(input: Record<string, unknown>) {
       slideCount: parsed.data.slide_count,
       ctaType: parsed.data.cta_type,
       isMedical,
-      needsImages: template.slug === "laqta",
+      needsImages,
     };
 
     const generated = await provider.generate(genInput);
@@ -157,7 +159,7 @@ export async function createProjectAction(input: Record<string, unknown>) {
       title: s.title,
       body: s.body,
       cta_text: s.cta_text ?? null,
-      image_query: template.slug === "laqta" ? s.image_query ?? null : null,
+      image_query: needsImages ? s.image_query ?? null : null,
     }));
     const { data: insertedSlides, error: slidesError } = await supabase
       .from("slides")
@@ -172,7 +174,7 @@ export async function createProjectAction(input: Record<string, unknown>) {
     // Images are optional enrichment: text is already safely persisted, so
     // Pexels or Storage failures leave retryable placeholders instead of
     // archiving the project.
-    if (template.slug === "laqta" && insertedSlides) {
+    if (needsImages && insertedSlides) {
       const imageResult = await populateMissingSlideImages(supabase, user.id, insertedSlides);
       log("PROJECT", "slide images processed", imageResult);
     }
@@ -396,7 +398,7 @@ export async function addSlideAction(projectId: string, afterPosition: number, t
     .single();
   if (!project) return { success: false, error: "المشروع غير موجود" };
   const projectTemplate = project.template as unknown as { slug?: string } | null;
-  const needsImages = projectTemplate?.slug === "laqta";
+  const needsImages = templateUsesSubjectImages(projectTemplate?.slug);
   if (project.slide_count >= 10) return { success: false, error: "وصلت للحد الأقصى (10 شرائح)" };
 
   // Generate content for new slide using the project's real settings

@@ -49,16 +49,33 @@ test("new project typography is included in persistence input", () => {
 });
 
 test("renderer and UI expose independent title and body controls", () => {
-  const renderer = readFileSync("src/components/carousel/slide-renderer.tsx", "utf8");
   const controls = readFileSync("src/components/carousel/typography-controls.tsx", "utf8");
   const styles = readFileSync("src/app/globals.css", "utf8");
+  const template = TEMPLATE_DEFS[0];
+  const markup = renderToStaticMarkup(createElement(SlideRenderer, {
+    slide: { id: "typography", type: "cover", title: "عنوان", body: "وصف" },
+    templateId: template.id,
+    palette: template.palettes[0],
+    font: "cairo",
+    titleFont: "ibm",
+    bodyFont: "tajawal",
+    titleFontSizeScale: 1.3,
+    bodyFontSizeScale: 0.8,
+    titleTextAlign: "left",
+    bodyTextAlign: "right",
+    size: "1080x1080",
+    brandKitSettings: { enabled: false, showLogo: false, showAccountName: false, showSlideNumber: false, showDisclaimer: false, placement: "bottom-left" },
+    brandKitData: { instagramHandle: "@typo.ai", logoDataUrl: null, primaryColor: template.palettes[0].accent, font: "tajawal" },
+    index: 0,
+    total: 1,
+  }));
 
-  assert.match(renderer, /--slide-title-font/);
-  assert.match(renderer, /--slide-title-size/);
-  assert.match(renderer, /data-slide-title/);
-  assert.match(renderer, /data-slide-body/);
-  assert.equal(renderer.match(/\{slide\.title\}/g)?.length, renderer.match(/<TitleText>\{slide\.title\}<\/TitleText>/g)?.length);
-  assert.equal(renderer.match(/\{slide\.body\}/g)?.length, renderer.match(/<BodyText>\{slide\.body\}<\/BodyText>/g)?.length);
+  assert.match(markup, /--slide-title-font:var\(--font-ibm\)/);
+  assert.match(markup, /--slide-body-font:var\(--font-tajawal\)/);
+  assert.match(markup, /data-slide-title="true"/);
+  assert.match(markup, /data-slide-body="true"/);
+  assert.match(markup, /data-title-align="left"/);
+  assert.match(markup, /data-body-align="right"/);
   assert.match(styles, /data-title-align="right"/);
   assert.match(styles, /data-body-align="left"/);
   assert.match(controls, /العنوان الرئيسي/);

@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { SlideRenderer } from "../src/components/carousel/slide-renderer";
 import { TEMPLATE_DEFS } from "../src/lib/templates";
 import { oppositeHorizontalPlacement, templateLayoutProfile } from "../src/lib/template-layout";
 
@@ -45,17 +48,25 @@ test("brand metadata and slide numbers can occupy opposite corners", () => {
 });
 
 test("shared and targeted renderers use the quality baseline", () => {
-  const source = readFileSync("src/components/carousel/slide-renderer.tsx", "utf8");
-  assert.match(source, /dir="rtl"/);
-  assert.match(source, /overflowWrap: "anywhere"/);
-  assert.match(source, /oppositeHorizontalPlacement/);
+  for (const templateId of ["engineering", "magazine", "rotated", "tilt", "retro"]) {
+    const template = TEMPLATE_DEFS.find((candidate) => candidate.id === templateId)!;
+    const render = (size: "1080x1080" | "1080x1920") => renderToStaticMarkup(createElement(SlideRenderer, {
+      slide: { id: `${templateId}-${size}`, type: "content", title: "عنوان", body: "وصف" },
+      templateId,
+      palette: template.palettes[0],
+      font: "tajawal",
+      size,
+      brandKitSettings: { enabled: false, showLogo: false, showAccountName: false, showSlideNumber: false, showDisclaimer: false, placement: "bottom-left" },
+      brandKitData: { instagramHandle: "@typo.ai", logoDataUrl: null, primaryColor: template.palettes[0].accent, font: "tajawal" },
+      index: 0,
+      total: 1,
+    }));
+    const square = render("1080x1080");
+    const story = render("1080x1920");
 
-  for (const name of ["Engineering", "Magazine", "Rotated", "Tilt", "Retro"]) {
-    const start = source.indexOf(`const ${name} = forwardRef`);
-    assert.notEqual(start, -1, `${name} renderer missing`);
-    const next = source.indexOf("// =============", start + 30);
-    const block = source.slice(start, next === -1 ? undefined : next);
-    assert.match(block, /templateLayoutProfile\(size\)/, `${name} is not size-aware`);
+    assert.match(square, /dir="rtl"/, `${templateId} is not RTL`);
+    assert.match(square, /overflow-wrap:anywhere/, `${templateId} lacks overflow containment`);
+    assert.notEqual(story, square, `${templateId} is not size-aware`);
   }
 });
 

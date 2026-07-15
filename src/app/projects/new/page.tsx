@@ -21,7 +21,10 @@ import { ScaledSlide } from "@/components/carousel/slide-renderer";
 import { TypographyControls } from "@/components/carousel/typography-controls";
 import { useApp } from "@/lib/app-context";
 import { useToast } from "@/components/ui/toast";
-import { TEMPLATE_DEFS, getPalette, SIZES, templatesForMode, ALL_FONTS } from "@/lib/templates";
+import {
+  TEMPLATE_DEFS, getPalette, paletteForTemplateThumbnail, paletteWithBrandAccent, settingsForTemplateSelection,
+  SIZES, templatesForMode, ALL_FONTS,
+} from "@/lib/templates";
 import { PROGRESS_MESSAGES } from "@/lib/services/generation";
 import {
   createBlankProject, useTemplateLookup, projectToCreateInput,
@@ -30,7 +33,7 @@ import {
 import { attachSignedImageUrls } from "@/lib/slide-images";
 import { friendlyAuthError } from "@/lib/error-messages";
 import { cn } from "@/lib/utils";
-import { DEFAULT_ACCENT_COLOR, DEFAULT_DISCLAIMER_TEXT } from "@/lib/constants";
+import { DEFAULT_ACCENT_COLOR } from "@/lib/constants";
 import { defaultTemplateForMode } from "@/lib/content-mode";
 import type { Project, Slide, ContentType, Tone, Language, ContentLevel, CarouselSize, CTAOption, FontFamily, Placement, SlideType } from "@/lib/types";
 import {
@@ -312,7 +315,7 @@ function WizardContent() {
             )}
             {step === 4 && <Step4Template project={project} updateSettings={updateSettings} brandKit={brandKit} templates={modeTemplates} isMedical={isMedical} />}
             {step === 5 && <Step5Review project={project} update={update} setProject={setProject} dbProjectId={dbProjectId} onRefresh={fetchProject} />}
-            {step === 6 && <Step6Export project={project} templates={modeTemplates} isMedical={isMedical} />}
+            {step === 6 && <Step6Export project={project} brandKit={brandKit} templates={modeTemplates} isMedical={isMedical} />}
           </motion.div>
         </AnimatePresence>
 
@@ -665,7 +668,7 @@ function Step4Template({ project, updateSettings, brandKit, templates, isMedical
 }) {
   const tmpl = templates.find((t) => t.id === project.settings.templateId) ?? templates[0];
   const basePal = getPalette(project.settings.templateId, project.settings.paletteId);
-  const pal = brandKit.primaryColor && brandKit.primaryColor !== DEFAULT_ACCENT_COLOR ? { ...basePal, accent: brandKit.primaryColor } : basePal;
+  const pal = paletteWithBrandAccent(basePal, project.settings.brandKit.enabled, brandKit.primaryColor, DEFAULT_ACCENT_COLOR);
   const previewSlide = project.slides[0] ?? { id: "p", type: "cover" as SlideType, title: project.title, body: "" };
   const brandKitData = { instagramHandle: brandKit.instagramHandle, logoDataUrl: brandKit.logoUrl, primaryColor: brandKit.primaryColor, font: project.settings.bodyFont, disclaimerText: brandKit.disclaimerText };
 
@@ -679,13 +682,13 @@ function Step4Template({ project, updateSettings, brandKit, templates, isMedical
           <h3 className="text-sm font-bold text-ink mb-3">القوالب</h3>
           <div className="space-y-2 max-h-[500px] overflow-y-auto thin-scrollbar pr-1">
             {templates.map((t) => {
-              const p = getPalette(t.id, project.settings.paletteId);
+              const p = paletteForTemplateThumbnail(t, project.settings.templateId, project.settings.paletteId);
               const active = project.settings.templateId === t.id;
               return (
                 <button
                   key={t.id}
                   type="button"
-                  onClick={() => updateSettings({ templateId: t.id })}
+                  onClick={() => updateSettings(settingsForTemplateSelection(project.settings, t))}
                   aria-pressed={active}
                   className={cn(
                     "w-full rounded-xl overflow-hidden border-2 transition-all cursor-pointer",
@@ -990,8 +993,10 @@ function Step5Review({ project, update, setProject, dbProjectId, onRefresh }: {
 
 // ============ STEP 6: Export Link ============
 
-function Step6Export({ project, templates, isMedical }: { project: Project; templates: typeof TEMPLATE_DEFS; isMedical: boolean }) {
-  const pal = getPalette(project.settings.templateId, project.settings.paletteId);
+function Step6Export({ project, brandKit, templates, isMedical }: { project: Project; brandKit: any; templates: typeof TEMPLATE_DEFS; isMedical: boolean }) {
+  const basePal = getPalette(project.settings.templateId, project.settings.paletteId);
+  const pal = paletteWithBrandAccent(basePal, project.settings.brandKit.enabled, brandKit.primaryColor, DEFAULT_ACCENT_COLOR);
+  const brandKitData = { instagramHandle: brandKit.instagramHandle, logoDataUrl: brandKit.logoUrl, primaryColor: brandKit.primaryColor, font: project.settings.bodyFont, disclaimerText: brandKit.disclaimerText };
   const coverSlide = project.slides[0];
 
   return (
@@ -1010,7 +1015,7 @@ function Step6Export({ project, templates, isMedical }: { project: Project; temp
             titleFont={project.settings.titleFont}
             size={project.settings.size}
             brandKitSettings={project.settings.brandKit}
-            brandKitData={{ instagramHandle: "@typo.ai", logoDataUrl: null, primaryColor: DEFAULT_ACCENT_COLOR, font: project.settings.bodyFont, disclaimerText: DEFAULT_DISCLAIMER_TEXT }}
+            brandKitData={brandKitData}
             medical={{ isMedical, specialty: project.settings.specialty, source: project.settings.source }}
             index={0}
             total={project.slides.length}

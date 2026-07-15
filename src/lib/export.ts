@@ -2,7 +2,7 @@ import type { CarouselSize } from "./types";
 import { SIZES } from "./templates";
 
 const EXPORT_IMAGE_ERROR = "تعذر تضمين صورة الشريحة. أعد المحاولة.";
-const LAQTA_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const PROJECT_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 let exportQueue: Promise<void> = Promise.resolve();
 
 export function runExportSerially<T>(task: () => Promise<T>): Promise<T> {
@@ -92,7 +92,7 @@ async function loadBrowserImage(source: string): Promise<HTMLImageElement> {
   return image;
 }
 
-async function loadLaqtaBackground(image: HTMLImageElement) {
+async function loadProjectImageBackground(image: HTMLImageElement) {
   const source = image.src || image.currentSrc;
   if (!source) throw new Error(EXPORT_IMAGE_ERROR);
 
@@ -100,7 +100,7 @@ async function loadLaqtaBackground(image: HTMLImageElement) {
     const response = await fetch(source, { cache: "no-store" });
     if (!response.ok) throw new Error(EXPORT_IMAGE_ERROR);
     const blob = await response.blob();
-    if (blob.size === 0 || !LAQTA_IMAGE_TYPES.has(blob.type)) throw new Error(EXPORT_IMAGE_ERROR);
+    if (blob.size === 0 || !PROJECT_IMAGE_TYPES.has(blob.type)) throw new Error(EXPORT_IMAGE_ERROR);
 
     const objectUrl = URL.createObjectURL(blob);
     try {
@@ -157,27 +157,27 @@ async function captureSlideToPng(element: HTMLElement, size: CarouselSize): Prom
       transformOrigin: "top right",
     },
   };
-  const laqtaImage = element.querySelector<HTMLImageElement>("img[data-laqta-image]");
+  const projectImage = element.querySelector<HTMLImageElement>("img[data-project-image]");
 
-  if (!laqtaImage) {
+  if (!projectImage) {
     await inlineImagesForExport(element);
     await waitForImages(element);
     return toPng(element, captureOptions);
   }
 
-  const baseSlide = laqtaImage.parentElement;
+  const baseSlide = projectImage.parentElement;
   if (!baseSlide) throw new Error(EXPORT_IMAGE_ERROR);
-  const background = await loadLaqtaBackground(laqtaImage);
+  const background = await loadProjectImageBackground(projectImage);
   const previousBackgroundColor = baseSlide.style.backgroundColor;
 
   try {
-    await inlineImagesForExport(element, laqtaImage);
-    await waitForImages(element, laqtaImage);
+    await inlineImagesForExport(element, projectImage);
+    await waitForImages(element, projectImage);
     baseSlide.style.backgroundColor = "transparent";
 
     const overlayDataUrl = await toPng(element, {
       ...captureOptions,
-      filter: (node) => node !== laqtaImage,
+      filter: (node) => node !== projectImage,
     });
     const overlayImage = await loadBrowserImage(overlayDataUrl);
     const canvas = document.createElement("canvas");
@@ -191,7 +191,7 @@ async function captureSlideToPng(element: HTMLElement, size: CarouselSize): Prom
       background.image.naturalHeight,
       dims.w,
       dims.h,
-      laqtaImage.style.objectPosition || "center center",
+      projectImage.style.objectPosition || "center center",
     );
     context.drawImage(background.image, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, canvas.width, canvas.height);
     context.drawImage(overlayImage, 0, 0, canvas.width, canvas.height);
