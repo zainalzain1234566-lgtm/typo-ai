@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AuthVisual } from "@/components/auth/auth-visual";
 import { createClient } from "@/lib/supabase/client";
+import { friendlyAuthError } from "@/lib/error-messages";
 import { cn } from "@/lib/utils";
 
 const schema = z.object({
@@ -22,16 +23,30 @@ type FormData = z.infer<typeof schema>;
 export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({ resolver: zodResolver(schema) });
 
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("error") === "invalid-recovery-link") {
+      setServerError("رابط الاستعادة غير صالح أو منتهي. اطلب رابطًا جديدًا.");
+    }
+  }, []);
+
   const onSubmit = async (data: FormData) => {
+    setServerError(null);
     setLoading(true);
-    const supabase = createClient();
-    await supabase.auth.resetPasswordForEmail(data.email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    setLoading(false);
-    setSent(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
+        redirectTo: `${window.location.origin}/auth/recovery`,
+      });
+      if (error) setServerError(friendlyAuthError(error.message));
+      else setSent(true);
+    } catch {
+      setServerError("تعذر إرسال رابط الاستعادة، يرجى المحاولة مرة أخرى.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -59,6 +74,7 @@ export default function ForgotPasswordPage() {
                 </div>
                 <h1 className="text-2xl font-extrabold text-ink">نسيت كلمة المرور؟</h1>
                 <p className="mt-2 text-sm text-ink-muted">أدخل بريدك الإلكتروني وسنرسل لك رابط الاستعادة</p>
+                {serverError && <div role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{serverError}</div>}
                 <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
                   <div>
                     <Label htmlFor="email">البريد الإلكتروني</Label>

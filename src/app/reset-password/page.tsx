@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AuthVisual } from "@/components/auth/auth-visual";
 import { createClient } from "@/lib/supabase/client";
+import { friendlyAuthError } from "@/lib/error-messages";
 
 const schema = z.object({
   password: z.string().min(6, "كلمة المرور يجب أن تكون 6 أحرف على الأقل"),
@@ -29,6 +30,8 @@ function ResetContent() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [checkingSession, setCheckingSession] = useState(true);
+  const [sessionReady, setSessionReady] = useState(false);
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>({ resolver: zodResolver(schema) });
   const pass = watch("password") ?? "";
@@ -38,17 +41,42 @@ function ResetContent() {
     { label: "يحتوي على أحرف", met: /[a-zA-Z\u0600-\u06FF]/.test(pass) },
   ];
 
+  useEffect(() => {
+    let active = true;
+
+    const checkSession = async () => {
+      try {
+        const supabase = createClient();
+        const { data, error: sessionError } = await supabase.auth.getUser();
+        if (!active) return;
+        if (sessionError || !data.user) {
+          setError("رابط الاستعادة غير صالح أو منتهي. اطلب رابطًا جديدًا.");
+        } else {
+          setSessionReady(true);
+        }
+      } catch {
+        if (active) setError("تعذر التحقق من رابط الاستعادة. يرجى المحاولة مرة أخرى.");
+      } finally {
+        if (active) setCheckingSession(false);
+      }
+    };
+
+    void checkSession();
+    return () => { active = false; };
+  }, []);
+
   const onSubmit = async (data: FormData) => {
+    if (!sessionReady) return;
     setError(null);
     setLoading(true);
     const supabase = createClient();
     const { error } = await supabase.auth.updateUser({ password: data.password });
     setLoading(false);
     if (error) {
-      setError(error.message);
+      setError(friendlyAuthError(error.message));
     } else {
-      await supabase.auth.signOut();
-      router.push("/login");
+      await supabase.auth.signOut({ scope: "local" });
+      router.replace("/login?message=password-updated");
       router.refresh();
     }
   };
@@ -62,8 +90,12 @@ function ResetContent() {
           <div className="w-full max-w-sm">
             <h1 className="text-2xl font-extrabold text-ink">إعادة تعيين كلمة المرور</h1>
             <p className="mt-2 text-sm text-ink-muted">أدخل كلمة المرور الجديدة</p>
+            {checkingSession && <p className="mt-4 text-sm text-ink-muted">جارٍ التحقق من رابط الاستعادة...</p>}
             {error && <div role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
-            <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
+            {!checkingSession && !sessionReady && (
+              <Link href="/forgot-password" className="mt-4 inline-block text-sm font-medium text-accent hover:underline">طلب رابط استعادة جديد</Link>
+            )}
+            {sessionReady && <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
               <div>
                 <Label htmlFor="password">كلمة المرور الجديدة</Label>
                 <div className="relative">
@@ -87,10 +119,10 @@ function ResetContent() {
                 <Input id="confirm" type="password" autoComplete="new-password" placeholder="••••••••" aria-invalid={!!errors.confirm} aria-describedby={errors.confirm ? "confirm-error" : undefined} {...register("confirm")} />
                 {errors.confirm && <p id="confirm-error" role="alert" className="text-xs text-red-600 mt-1">{errors.confirm.message}</p>}
               </div>
-              <Button type="submit" className="w-full" size="lg" disabled={loading}>
+              <Button type="submit" className="w-full" size="lg" disabled={loading || !sessionReady}>
                 {loading ? "جارٍ الحفظ..." : "حفظ كلمة المرور"}
               </Button>
-            </form>
+            </form>}
             <p className="mt-6 text-center text-sm text-ink-muted">
               <Link href="/login" className="text-accent font-medium hover:underline">العودة إلى تسجيل الدخول</Link>
             </p>

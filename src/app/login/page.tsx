@@ -45,6 +45,9 @@ function LoginContent() {
   const confirmationError = searchParams.get("error") === "email-confirmation"
     ? "تعذر تأكيد البريد الإلكتروني. قد يكون الرابط منتهيًا أو مستخدمًا بالفعل."
     : null;
+  const successMessage = searchParams.get("message") === "password-updated"
+    ? "تم تحديث كلمة المرور. يمكنك تسجيل الدخول الآن."
+    : null;
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState<string | null>(confirmationError);
   const [loading, setLoading] = useState(false);
@@ -79,6 +82,12 @@ function LoginContent() {
           <div className="w-full max-w-sm">
             <h1 className="text-2xl font-extrabold text-ink">تسجيل الدخول</h1>
             <p className="mt-2 text-sm text-ink-muted">مرحبًا بعودتك إلى Typo AI</p>
+
+            {successMessage && (
+              <div role="status" className="mt-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                {successMessage}
+              </div>
+            )}
 
             {error && (
               <div id="login-error" role="alert" className="mt-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">

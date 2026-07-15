@@ -12,5 +12,8 @@ export function friendlyAuthError(raw: string): string {
   if (/rate limit|too many requests/i.test(raw)) {
     return "تم إرسال طلبات كثيرة، يرجى الانتظار قبل طلب رسالة جديدة";
   }
+  if (/auth session missing|session.*(?:missing|expired|invalid)/i.test(raw)) {
+    return "رابط الاستعادة غير صالح أو منتهي. اطلب رابطًا جديدًا.";
+  }
   return "حدث خطأ غير متوقع، يرجى المحاولة مرة أخرى";
 }
