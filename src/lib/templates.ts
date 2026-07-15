@@ -114,6 +114,20 @@ const VIBRANT_PALETTES: Palette[] = [
   { id: "p4", name: "فحمي مرجاني", background: "#18181B", text: "#FAFAFA", accent: "#E11D48", secondary: "#2D2D35" },
 ];
 
+const WINDOW_PALETTES: Palette[] = [
+  { id: "p1", name: "ليلي ذهبي", background: "#161A22", text: "#FFF1A8", accent: "#FFE27A", secondary: "#30343C" },
+  { id: "p2", name: "زمردي ضبابي", background: "#10221E", text: "#E8FFF5", accent: "#7DE2B8", secondary: "#28443A" },
+  { id: "p3", name: "نبيذي دافئ", background: "#28161A", text: "#FFF1E8", accent: "#F2B27D", secondary: "#4A2A2C" },
+  { id: "p4", name: "رمادي جليدي", background: "#18202A", text: "#F5FAFF", accent: "#8CC8FF", secondary: "#344252" },
+];
+
+const PULSE_PALETTES: Palette[] = [
+  { id: "p1", name: "سماوي داكن", background: "#021827", text: "#F4FBFF", accent: "#22B8F0", secondary: "#073655" },
+  { id: "p2", name: "نيلي كهربائي", background: "#11183A", text: "#F8FAFF", accent: "#6EA8FF", secondary: "#1D2D63" },
+  { id: "p3", name: "بنفسجي رقمي", background: "#1B1438", text: "#F9F5FF", accent: "#A78BFA", secondary: "#34245E" },
+  { id: "p4", name: "فحمي فيروزي", background: "#111A1D", text: "#F1FAF8", accent: "#2DD4BF", secondary: "#1F3639" },
+];
+
 // ============= Medical Spec Template Palettes =============
 
 const CLINICAL_CLEAN_PALETTES: Palette[] = [
@@ -199,6 +213,8 @@ export const TEMPLATE_DEFS: Template[] = [
   { id: "laqta", name: "لقطة", description: "صور مرتبطة بالموضوع مع بطاقة نصية عائمة", palettes: LAQTA_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "laqta", category: "shared", usesSubjectImages: true },
   { id: "flow", name: "تدفّق", description: "تسلسل بصري متدفق بحركة واتصال بين العناصر", palettes: FLOW_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "flow", category: "general" },
   { id: "vibrant", name: "حيوية", description: "تصميم حيوي بصور مرتبطة بالموضوع وألوان مشبعة", palettes: VIBRANT_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "vibrant", category: "shared", usesSubjectImages: true },
+  { id: "window", name: "نافذة", description: "صور موضوعية مع نافذة زجاجية داكنة ومحتوى واضح", palettes: WINDOW_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "window", category: "shared", usesSubjectImages: true },
+  { id: "pulse", name: "نبض", description: "تصميم تقني داكن بصور مؤطرة ولمسات سماوية حيوية", palettes: PULSE_PALETTES, fonts: ["tajawal", "cairo", "ibm"], component: "pulse", category: "shared", usesSubjectImages: true },
 ];
 
 export const VISIBLE_TEMPLATES = TEMPLATE_DEFS;

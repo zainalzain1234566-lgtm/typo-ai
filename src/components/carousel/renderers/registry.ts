@@ -33,6 +33,8 @@ import { Engineering } from "./engineering";
 import { Flow } from "./flow";
 import { Laqta } from "./laqta";
 import { Vibrant } from "./vibrant";
+import { Window } from "./window";
+import { Pulse } from "./pulse";
 
 export type TemplateRenderer = ForwardRefExoticComponent<
   SlideRenderProps & RefAttributes<HTMLDivElement>
@@ -70,4 +72,6 @@ export const RENDERER_REGISTRY: Record<string, TemplateRenderer> = {
   flow: Flow,
   laqta: Laqta,
   vibrant: Vibrant,
+  window: Window,
+  pulse: Pulse,
 };

@@ -59,7 +59,7 @@ export const ROUTE_SEO = {
   "/privacy": {
     path: "/privacy",
     title: "سياسة الخصوصية",
-    description: "صفحة سياسة الخصوصية لخدمة Typo AI؛ النص القانوني الكامل قيد الإعداد.",
+    description: "توضح سياسة خصوصية Typo AI البيانات التي نعالجها، وأسباب استخدامها، وحقوقك وخياراتك المتعلقة بها.",
     index: false,
     follow: true,
   },
