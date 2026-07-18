@@ -22,6 +22,7 @@ import { getPalette } from "@/lib/templates";
 import { FEATURE_FLAGS } from "@/lib/feature-flags";
 import { cn, relativeTime } from "@/lib/utils";
 import { DEFAULT_ACCENT_COLOR } from "@/lib/constants";
+import { getProjectCreationAccess } from "@/lib/project-generation-access";
 import type { Project, Folder as FolderType } from "@/lib/types";
 import {
   deleteProjectAction, duplicateProjectAction, toggleProjectFavoriteAction,
@@ -36,7 +37,7 @@ type SortKey = "newest" | "oldest" | "modified" | "name";
 export default function ProjectsPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { supabase, stats, ready, preferences } = useApp();
+  const { supabase, stats, ready, preferences, billing, refresh } = useApp();
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [folders, setFolders] = useState<FolderType[]>([]);
@@ -98,6 +99,26 @@ export default function ProjectsPage() {
     return list;
   }, [projects, search, sizeFilter, folderFilter, sortBy]);
 
+  const generationAccess = getProjectCreationAccess({
+    operation: "generate",
+    plan: billing.plan,
+    subscriptionStatus: billing.subscriptionStatus,
+    freeProjectsRemaining: billing.freeProjectsRemaining,
+    creditBalanceMicroUsd: billing.creditBalanceMicroUsd,
+  });
+  const duplicateAccess = getProjectCreationAccess({
+    operation: "duplicate",
+    plan: billing.plan,
+    subscriptionStatus: billing.subscriptionStatus,
+    freeProjectsRemaining: billing.freeProjectsRemaining,
+    creditBalanceMicroUsd: billing.creditBalanceMicroUsd,
+  });
+  const paidActive = billing.plan === "paid" && billing.subscriptionStatus === "active";
+
+  const handleNewProject = () => {
+    router.push(generationAccess.allowed ? "/projects/new" : "/pricing");
+  };
+
   const handleDelete = async () => {
     if (!deleteTarget) return;
     await deleteProjectAction(deleteTarget);
@@ -107,9 +128,19 @@ export default function ProjectsPage() {
   };
 
   const handleDuplicate = async (id: string) => {
-    await duplicateProjectAction(id);
+    if (!duplicateAccess.allowed) {
+      toast({ type: "error", title: "انتهت المشاريع المجانية", description: "قم بالترقية لتكرار المزيد من المشاريع" });
+      router.push("/pricing");
+      return;
+    }
+    const result = await duplicateProjectAction(id);
+    if (!result.success) {
+      toast({ type: "error", title: "تعذر تكرار المشروع", description: result.error });
+      await refresh();
+      return;
+    }
     toast({ type: "success", title: "تم تكرار المشروع" });
-    loadData();
+    await Promise.all([loadData(), refresh()]);
   };
 
   const handleFavorite = async (id: string) => {
@@ -158,9 +189,17 @@ export default function ProjectsPage() {
           <div>
             <h1 className="text-2xl md:text-3xl font-extrabold text-ink">مشاريعي</h1>
             <p className="mt-1 text-ink-muted">أنشئ محتوى جديدًا أو أكمل العمل على مشاريعك السابقة.</p>
+            <p className="mt-2 text-sm font-medium text-accent">
+              {paidActive
+                ? `الرصيد المتاح: $${(billing.creditBalanceMicroUsd / 1_000_000).toFixed(2)}`
+                : `${billing.freeProjectsRemaining} من 5 مشاريع متبقية`}
+            </p>
+            {generationAccess.reason === "insufficient_credit" && (
+              <p className="mt-1 text-sm text-red-700">الرصيد غير كافٍ لإنشاء مشروع جديد</p>
+            )}
           </div>
-          <Button size="lg" onClick={() => router.push("/projects/new")}>
-            <Plus className="w-5 h-5" /> مشروع جديد
+          <Button size="lg" onClick={handleNewProject}>
+            <Plus className="w-5 h-5" /> {generationAccess.allowed ? "مشروع جديد" : "ترقية لإنشاء المزيد"}
           </Button>
         </div>
 
@@ -275,14 +314,14 @@ export default function ProjectsPage() {
           <button
             type="button"
             aria-label="إنشاء مشروع جديد"
-            onClick={() => router.push("/projects/new")}
+            onClick={handleNewProject}
             className="rounded-2xl border-2 border-dashed border-stone-300 bg-white/50 p-8 min-h-[280px] flex flex-col items-center justify-center gap-3 hover:border-accent hover:bg-accent-soft/30 transition-all cursor-pointer group"
           >
             <div className="w-14 h-14 rounded-2xl bg-accent-soft flex items-center justify-center group-hover:scale-110 transition-transform">
               <Plus className="w-7 h-7 text-accent" />
             </div>
-            <span className="font-semibold text-ink">مشروع جديد</span>
-            <span className="text-sm text-ink-muted">ابدأ من فكرة جديدة</span>
+            <span className="font-semibold text-ink">{generationAccess.allowed ? "مشروع جديد" : "ترقية الخطة"}</span>
+            <span className="text-sm text-ink-muted">{generationAccess.allowed ? "ابدأ من فكرة جديدة" : "أنشئ المزيد من المشاريع"}</span>
           </button>
 
           {filtered.map((p) => (
@@ -305,8 +344,8 @@ export default function ProjectsPage() {
           <div className="text-center py-20">
             <FileText className="w-12 h-12 text-stone-300 mx-auto mb-4" />
             <p className="text-ink-muted">لا توجد مشاريع بعد</p>
-            <Button className="mt-4" onClick={() => router.push("/projects/new")}>
-              <Plus className="w-4 h-4" /> أنشئ مشروعك الأول
+            <Button className="mt-4" onClick={handleNewProject}>
+              <Plus className="w-4 h-4" /> {generationAccess.allowed ? "أنشئ مشروعك الأول" : "ترقية الخطة"}
             </Button>
           </div>
         )}

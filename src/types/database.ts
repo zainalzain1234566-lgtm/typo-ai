@@ -496,6 +496,95 @@ export type Database = {
           completed_at?: string | null;
         };
       };
+      account_entitlements: {
+        Row: {
+          user_id: string;
+          current_plan: "free" | "paid";
+          subscription_status: "inactive" | "active" | "expired" | "canceled";
+          subscription_activated_at: string | null;
+          subscription_expires_at: string | null;
+          free_template_generations_used: number;
+          free_template_generations_reserved: number;
+          free_project_creations_used: number;
+          free_project_creations_reserved: number;
+          credit_balance_microusd: number;
+          credit_reserved_microusd: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          current_plan?: "free" | "paid";
+          subscription_status?: "inactive" | "active" | "expired" | "canceled";
+          subscription_activated_at?: string | null;
+          subscription_expires_at?: string | null;
+          free_template_generations_used?: number;
+          free_template_generations_reserved?: number;
+          free_project_creations_used?: number;
+          free_project_creations_reserved?: number;
+          credit_balance_microusd?: number;
+          credit_reserved_microusd?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["account_entitlements"]["Insert"]>;
+      };
+      project_generation_requests: {
+        Row: {
+          id: string;
+          user_id: string;
+          project_id: string | null;
+          model: string;
+          reservation_type: "trial" | "credit";
+          reserved_microusd: number;
+          status: "reserved" | "completed" | "failed" | "canceled";
+          provider_usage: Json;
+          provider_cost_microusd: number;
+          customer_cost_microusd: number;
+          error_message: string | null;
+          created_at: string;
+          completed_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          project_id?: string | null;
+          model: string;
+          reservation_type: "trial" | "credit";
+          reserved_microusd?: number;
+          status?: "reserved" | "completed" | "failed" | "canceled";
+          provider_usage?: Json;
+          provider_cost_microusd?: number;
+          customer_cost_microusd?: number;
+          error_message?: string | null;
+          created_at?: string;
+          completed_at?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["project_generation_requests"]["Insert"]>;
+      };
+      credit_ledger: {
+        Row: {
+          id: string;
+          user_id: string;
+          request_id: string | null;
+          project_request_id: string | null;
+          amount_microusd: number;
+          kind: "manual_topup" | "designer_charge" | "project_charge" | "adjustment";
+          note: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          request_id?: string | null;
+          project_request_id?: string | null;
+          amount_microusd: number;
+          kind: "manual_topup" | "designer_charge" | "project_charge" | "adjustment";
+          note?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["credit_ledger"]["Insert"]>;
+      };
       account_usage: {
         Row: {
           user_id: string;
@@ -536,6 +625,30 @@ export type Database = {
       duplicate_project: {
         Args: { p_project_id: string };
         Returns: string;
+      };
+      begin_project_generation_request_internal: {
+        Args: { p_user_id: string; p_model: string };
+        Returns: Json;
+      };
+      complete_project_generation_request_internal: {
+        Args: {
+          p_user_id: string;
+          p_request_id: string;
+          p_project_id: string;
+          p_provider_usage: Json;
+          p_provider_cost_microusd: number;
+        };
+        Returns: Json;
+      };
+      fail_project_generation_request_internal: {
+        Args: {
+          p_user_id: string;
+          p_request_id: string;
+          p_provider_usage: Json;
+          p_provider_cost_microusd: number;
+          p_error: string;
+        };
+        Returns: Json;
       };
       handle_new_user: { Args: Record<string, never>; Returns: never };
       update_updated_at: { Args: Record<string, never>; Returns: never };

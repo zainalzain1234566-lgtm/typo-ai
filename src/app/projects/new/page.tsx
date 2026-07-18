@@ -35,6 +35,7 @@ import { friendlyAuthError } from "@/lib/error-messages";
 import { cn } from "@/lib/utils";
 import { DEFAULT_ACCENT_COLOR } from "@/lib/constants";
 import { defaultTemplateForMode } from "@/lib/content-mode";
+import { getProjectCreationAccess } from "@/lib/project-generation-access";
 import type { Project, Slide, ContentType, Tone, Language, ContentLevel, CarouselSize, CTAOption, FontFamily, Placement, SlideType } from "@/lib/types";
 import {
   createProjectAction, updateProjectAction, updateSlideAction,
@@ -100,7 +101,7 @@ export default function NewProjectWizard() {
 function WizardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { brandKit, supabase, preferences } = useApp();
+  const { brandKit, supabase, preferences, billing, refresh } = useApp();
   const { toast } = useToast();
   const lookup = useTemplateLookup(supabase);
   const lookupReady = Object.keys(lookup).length > 0;
@@ -124,6 +125,14 @@ function WizardContent() {
   const [genProgress, setGenProgress] = useState(0);
   const [dbProjectId, setDbProjectId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const generationAccess = getProjectCreationAccess({
+    operation: "generate",
+    plan: billing.plan,
+    subscriptionStatus: billing.subscriptionStatus,
+    freeProjectsRemaining: billing.freeProjectsRemaining,
+    creditBalanceMicroUsd: billing.creditBalanceMicroUsd,
+  });
+  const paidActive = billing.plan === "paid" && billing.subscriptionStatus === "active";
 
   useEffect(() => {
     const requestedTemplate = searchParams.get("template");
@@ -164,6 +173,13 @@ function WizardContent() {
   }, [supabase]);
 
   const handleGenerate = async () => {
+    if (!generationAccess.allowed) {
+      setGenFailed(true);
+      setGenMessage(generationAccess.reason === "insufficient_credit"
+        ? "رصيدك غير كافٍ لإنشاء مشروع جديد"
+        : "استخدمت المشاريع المجانية الخمسة. قم بالترقية لإنشاء المزيد");
+      return;
+    }
     setGenerating(true);
     setGenFailed(false);
     setGenProgress(0);
@@ -215,6 +231,7 @@ function WizardContent() {
       fetched.settings.brandKit = project.settings.brandKit;
       setProject(fetched);
     }
+    await refresh();
     setGenerating(false);
     toast({ type: "success", title: "تم إنشاء المحتوى", description: `${fetched?.slides.length ?? 0} شرائح جاهزة للمراجعة` });
   };
@@ -296,6 +313,21 @@ function WizardContent() {
 
       <main id="main-content" className="mx-auto max-w-6xl px-4 py-8">
         <h1 className="sr-only">إنشاء مشروع كاروسيل</h1>
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm">
+          <span className="font-medium text-ink">
+            {paidActive
+              ? `الرصيد المتاح: $${(billing.creditBalanceMicroUsd / 1_000_000).toFixed(2)}`
+              : `${billing.freeProjectsRemaining} من 5 مشاريع متبقية`}
+            {generationAccess.reason === "insufficient_credit" && (
+              <span className="mt-1 block text-red-700">الرصيد غير كافٍ لإنشاء مشروع جديد</span>
+            )}
+          </span>
+          {!generationAccess.allowed && (
+            <button type="button" onClick={() => router.push("/pricing")} className="min-h-11 font-semibold text-accent underline underline-offset-4">
+              ترقية الخطة
+            </button>
+          )}
+        </div>
         <AnimatePresence mode="wait">
           <motion.div
             key={step}

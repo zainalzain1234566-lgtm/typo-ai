@@ -348,6 +348,7 @@ export interface MedicalReviewResult {
   verdict: "pass" | "needs_review" | "blocked";
   flags: MedicalFlag[];
   summary: string;
+  usage: ProviderUsage;
 }
 
 export interface MedicalFlag {
@@ -406,13 +407,14 @@ export async function reviewMedicalContent(
   try {
     parsed = JSON.parse(jsonStr);
   } catch {
-    return { verdict: "needs_review", flags: [], summary: "تعذر فحص المحتوى طبيًا — يُنصح بالمراجعة اليدوية" };
+    return { verdict: "needs_review", flags: [], summary: "تعذر فحص المحتوى طبيًا — يُنصح بالمراجعة اليدوية", usage: completion.usage };
   }
 
   return {
     verdict: ["pass", "needs_review", "blocked"].includes(parsed.verdict) ? parsed.verdict : "needs_review",
     flags: Array.isArray(parsed.flags) ? parsed.flags.slice(0, 20) : [],
     summary: String(parsed.summary || "").slice(0, 500),
+    usage: completion.usage,
   };
 }
 

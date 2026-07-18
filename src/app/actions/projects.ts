@@ -1,14 +1,49 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { createProjectSchema, updateProjectSchema, SIZE_MAP } from "@/lib/validation/projects";
-import { getGenerationProvider, type GenerationInput, reviewMedicalContent } from "@/lib/services/generation";
+import {
+  GenerationError,
+  getGenerationProvider,
+  reviewMedicalContent,
+  type GenerationInput,
+  type ProviderUsage,
+} from "@/lib/services/generation";
 import { reorderSlidesSchema, updateSlideSchema } from "@/lib/validation/slides";
 import { log, logError } from "@/lib/logger";
 import { AI_DEFAULT_BASE_URL, AI_DEFAULT_MODEL } from "@/lib/constants";
 import { populateMissingSlideImages, removeProjectImageIfUnreferenced } from "@/lib/services/project-images";
 import { templateUsesSubjectImages } from "@/lib/templates";
+
+function projectUsagePayload(usages: ProviderUsage[]) {
+  return usages.map((usage) => ({
+    requestId: usage.requestId,
+    model: usage.model,
+    promptTokens: usage.promptTokens,
+    completionTokens: usage.completionTokens,
+    costMicroUsd: usage.costMicroUsd,
+  }));
+}
+
+function usageFromError(error: unknown) {
+  return error instanceof GenerationError ? error.usage : undefined;
+}
+
+function recordProjectUsage(usages: ProviderUsage[], usage?: ProviderUsage) {
+  if (usage && !usages.includes(usage)) usages.push(usage);
+}
+
+function auditedProjectCost(usages: ProviderUsage[]) {
+  return usages.reduce((total, usage) => total + (usage.costMicroUsd ?? 0), 0);
+}
+
+function billableProjectCost(usages: ProviderUsage[]) {
+  if (usages.length === 0 || usages.some((usage) => usage.costMicroUsd === null)) {
+    throw new Error("AI provider did not return usage cost");
+  }
+  return auditedProjectCost(usages);
+}
 
 // ============= Create project with generation =============
 
@@ -60,80 +95,80 @@ export async function createProjectAction(input: Record<string, unknown>) {
     return { success: false, error: "اللوحة اللونية غير صحيحة" };
   }
 
-  // Insert project
-  const { data: project, error: projectError } = await supabase
-    .from("projects")
-    .insert({
-      user_id: user.id,
-      folder_id: parsed.data.folder_id ?? null,
-      template_id: parsed.data.template_id,
-      palette_id: parsed.data.palette_id,
-      title: parsed.data.title,
-      topic: parsed.data.topic,
-      content_type: parsed.data.content_type,
-      target_audience: parsed.data.target_audience ?? null,
-      content_level: parsed.data.content_level,
-      tone: parsed.data.tone,
-      language: parsed.data.language,
-      size: parsed.data.size,
-      width: dims.width,
-      height: dims.height,
-      slide_count: parsed.data.slide_count,
-      cta_type: parsed.data.cta_type,
-      font_family: parsed.data.font_family,
-      font_size_scale: parsed.data.font_size_scale,
-      title_font_family: parsed.data.title_font_family,
-      title_font_size_scale: parsed.data.title_font_size_scale,
-      title_text_align: parsed.data.title_text_align,
-      body_text_align: parsed.data.body_text_align,
-      use_brand_kit: parsed.data.use_brand_kit,
-      show_logo: parsed.data.show_logo,
-      show_account_name: parsed.data.show_account_name,
-      show_slide_number: parsed.data.show_slide_number,
-      show_disclaimer: isMedical && parsed.data.show_disclaimer,
-      logo_position: parsed.data.logo_position,
-      account_name_position: parsed.data.account_name_position,
-      specialty_slug: isMedical ? parsed.data.specialty_slug ?? null : null,
-      requires_medical_review: isMedical,
-      review_status: isMedical ? "pending" : null,
-      status: "in_progress",
-    })
-    .select()
-    .single();
-
-  if (projectError) {
-    logError("PROJECT", "insert failed", projectError.message);
-    return { success: false, error: "تعذر إنشاء المشروع" };
-  }
-  log("PROJECT", "inserted", { projectId: project.id });
-
-  // Increment usage
-  await supabase.rpc("increment_usage", { p_user_id: user.id, p_field: "projects_created" });
-
-  // Create generation job
-  const { data: genJob, error: genJobErr } = await supabase
-    .from("generation_jobs")
-    .insert({
-      user_id: user.id,
-      project_id: project.id,
-      status: "pending",
-    })
-    .select()
-    .single();
-
-  if (genJobErr || !genJob) {
-    logError("PROJECT", "gen_job insert failed", genJobErr?.message ?? "no data returned");
-    return { success: false, error: "تعذر إنشاء مهمة التوليد" };
+  const model = process.env.AI_MODEL || AI_DEFAULT_MODEL;
+  const admin = createAdminClient();
+  const { data: reservation, error: reservationError } = await (admin.rpc as any)("begin_project_generation_request_internal", {
+    p_user_id: user.id,
+    p_model: model,
+  });
+  if (reservationError || !reservation?.requestId) {
+    const raw = reservationError?.message ?? "";
+    logError("PROJECT", "reservation failed", raw || "missing reservation response");
+    return {
+      success: false,
+      error: raw.includes("INSUFFICIENT_CREDIT")
+        ? "رصيدك غير كافٍ لإنشاء مشروع جديد"
+        : raw.includes("FREE_PROJECT_LIMIT_REACHED")
+          ? "استخدمت المشاريع المجانية الخمسة. قم بالترقية لإنشاء المزيد"
+          : "تعذر التحقق من أهلية إنشاء المشروع. حاول مرة أخرى",
+    };
   }
 
-  // Generate content
-  await supabase
-    .from("generation_jobs")
-    .update({ status: "processing" })
-    .eq("id", genJob.id);
-
+  const requestId = reservation.requestId as string;
+  const recordedUsage: ProviderUsage[] = [];
+  let projectId: string | null = null;
   try {
-    const provider = getGenerationProvider();
+    const { data: project, error: projectError } = await admin
+      .from("projects")
+      .insert({
+        user_id: user.id,
+        folder_id: parsed.data.folder_id ?? null,
+        template_id: parsed.data.template_id,
+        palette_id: parsed.data.palette_id,
+        title: parsed.data.title,
+        topic: parsed.data.topic,
+        content_type: parsed.data.content_type,
+        target_audience: parsed.data.target_audience ?? null,
+        content_level: parsed.data.content_level,
+        tone: parsed.data.tone,
+        language: parsed.data.language,
+        size: parsed.data.size,
+        width: dims.width,
+        height: dims.height,
+        slide_count: parsed.data.slide_count,
+        cta_type: parsed.data.cta_type,
+        font_family: parsed.data.font_family,
+        font_size_scale: parsed.data.font_size_scale,
+        title_font_family: parsed.data.title_font_family,
+        title_font_size_scale: parsed.data.title_font_size_scale,
+        title_text_align: parsed.data.title_text_align,
+        body_text_align: parsed.data.body_text_align,
+        use_brand_kit: parsed.data.use_brand_kit,
+        show_logo: parsed.data.show_logo,
+        show_account_name: parsed.data.show_account_name,
+        show_slide_number: parsed.data.show_slide_number,
+        show_disclaimer: isMedical && parsed.data.show_disclaimer,
+        logo_position: parsed.data.logo_position,
+        account_name_position: parsed.data.account_name_position,
+        specialty_slug: isMedical ? parsed.data.specialty_slug ?? null : null,
+        requires_medical_review: isMedical,
+        review_status: isMedical ? "pending" : null,
+        status: "in_progress",
+      })
+      .select()
+      .single();
+    if (projectError || !project) throw new Error(projectError?.message ?? "Could not insert project");
+    projectId = project.id;
+    log("PROJECT", "inserted", { projectId });
+
+    const { data: genJob, error: genJobError } = await admin
+      .from("generation_jobs")
+      .insert({ user_id: user.id, project_id: projectId, status: "processing" })
+      .select()
+      .single();
+    if (genJobError || !genJob) throw new Error(genJobError?.message ?? "Could not create generation job");
+
+    const provider = getGenerationProvider(model);
     const genInput: GenerationInput = {
       topic: parsed.data.topic,
       contentType: parsed.data.content_type,
@@ -148,11 +183,14 @@ export async function createProjectAction(input: Record<string, unknown>) {
     };
 
     const generated = await provider.generate(genInput);
+    recordProjectUsage(recordedUsage, generated.usage);
+    if (!generated.usage || generated.usage.costMicroUsd === null) {
+      throw new Error("AI provider did not return usage cost");
+    }
     log("PROJECT", "content generated", { slides: generated.slides.length, provider: "external" });
 
-    // Insert slides
     const slideRows = generated.slides.map((s, i) => ({
-      project_id: project.id,
+      project_id: projectId,
       user_id: user.id,
       position: i + 1,
       slide_type: s.slide_type,
@@ -161,7 +199,7 @@ export async function createProjectAction(input: Record<string, unknown>) {
       cta_text: s.cta_text ?? null,
       image_query: needsImages ? s.image_query ?? null : null,
     }));
-    const { data: insertedSlides, error: slidesError } = await supabase
+    const { data: insertedSlides, error: slidesError } = await admin
       .from("slides")
       .insert(slideRows)
       .select("id, title, image_query, image_path, image_source_id");
@@ -171,63 +209,77 @@ export async function createProjectAction(input: Record<string, unknown>) {
     }
     log("PROJECT", "slides inserted", { count: slideRows.length });
 
-    // Images are optional enrichment: text is already safely persisted, so
-    // Pexels or Storage failures leave retryable placeholders instead of
-    // archiving the project.
-    if (needsImages && insertedSlides) {
-      const imageResult = await populateMissingSlideImages(supabase, user.id, insertedSlides);
-      log("PROJECT", "slide images processed", imageResult);
-    }
-
-    // ============ Medical accuracy pass ============
     if (isMedical) try {
       const apiKey = process.env.AI_API_KEY!;
       const baseUrl = process.env.AI_BASE_URL || AI_DEFAULT_BASE_URL;
-      const model = process.env.AI_MODEL || AI_DEFAULT_MODEL;
       const review = await reviewMedicalContent(generated.slides, apiKey, baseUrl, model);
       log("PROJECT", "medical review", { verdict: review.verdict, flags: review.flags.length });
 
-      await supabase.from("medical_review_results").insert({
-        project_id: project.id,
+      const { error: reviewInsertError } = await admin.from("medical_review_results").insert({
+        project_id: projectId,
         user_id: user.id,
         verdict: review.verdict,
         flags: review.flags,
         summary: review.summary,
         reviewed_at: new Date().toISOString(),
       });
+      if (reviewInsertError) throw reviewInsertError;
 
-      await supabase.from("projects").update({ review_status: review.verdict }).eq("id", project.id);
+      const { error: reviewUpdateError } = await admin.from("projects").update({ review_status: review.verdict }).eq("id", projectId);
+      if (reviewUpdateError) throw reviewUpdateError;
+      recordProjectUsage(recordedUsage, review.usage);
     } catch (reviewErr) {
       const msg = reviewErr instanceof Error ? reviewErr.message : String(reviewErr);
       logError("PROJECT", "medical review failed", msg);
     }
 
-    // Save caption and hashtags
-    await supabase
+    const { error: projectUpdateError } = await admin
       .from("projects")
       .update({ caption: generated.caption, hashtags: generated.hashtags.join(" ") })
-      .eq("id", project.id);
+      .eq("id", projectId);
+    if (projectUpdateError) throw projectUpdateError;
 
-    await supabase
-      .from("generation_jobs")
-      .update({ status: "completed", completed_at: new Date().toISOString() })
-      .eq("id", genJob.id);
+    const providerCostMicroUsd = billableProjectCost(recordedUsage);
+    const { data: settlement, error: settlementError } = await (admin.rpc as any)("complete_project_generation_request_internal", {
+      p_user_id: user.id,
+      p_request_id: requestId,
+      p_project_id: projectId,
+      p_provider_usage: projectUsagePayload(recordedUsage),
+      p_provider_cost_microusd: providerCostMicroUsd,
+    });
+    if (settlementError) throw settlementError;
+    if (settlement?.success === false) {
+      return { success: false, error: "الرصيد المتبقي لا يغطي التكلفة النهائية للمشروع" };
+    }
 
-    await supabase.rpc("increment_usage", { p_user_id: user.id, p_field: "generations_used" });
+    await admin.from("generation_jobs").update({ status: "completed", completed_at: new Date().toISOString() }).eq("id", genJob.id);
+    await (admin.rpc as any)("increment_usage", { p_user_id: user.id, p_field: "projects_created" });
+    await (admin.rpc as any)("increment_usage", { p_user_id: user.id, p_field: "generations_used" });
 
-    log("PROJECT", "create success", { projectId: project.id, slides: generated.slides.length });
+    // Images are free optional enrichment and run only after billing succeeds.
+    if (needsImages && insertedSlides) try {
+      const imageResult = await populateMissingSlideImages(supabase, user.id, insertedSlides);
+      log("PROJECT", "slide images processed", imageResult);
+    } catch (imageError) {
+      logError("PROJECT", "slide images failed", imageError instanceof Error ? imageError.message : String(imageError));
+    }
+
+    log("PROJECT", "create success", { projectId, slides: generated.slides.length });
     revalidatePath("/projects");
-    return { success: true, projectId: project.id };
+    return { success: true, projectId };
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
+    recordProjectUsage(recordedUsage, usageFromError(err));
     logError("PROJECT", "generation failed", errMsg);
-    await supabase
-      .from("generation_jobs")
-      .update({ status: "failed", error_message: errMsg.slice(0, 500), completed_at: new Date().toISOString() })
-      .eq("id", genJob.id);
-    // Project has no slides and generation failed — don't leave it stuck in "in_progress"
-    await supabase.from("projects").update({ status: "archived" }).eq("id", project.id);
-    return { success: false, error: errMsg.slice(0, 200) };
+    await (admin.rpc as any)("fail_project_generation_request_internal", {
+      p_user_id: user.id,
+      p_request_id: requestId,
+      p_provider_usage: projectUsagePayload(recordedUsage),
+      p_provider_cost_microusd: auditedProjectCost(recordedUsage),
+      p_error: errMsg,
+    });
+    if (projectId) await admin.from("projects").delete().eq("id", projectId).eq("user_id", user.id);
+    return { success: false, error: "تعذر إنشاء المشروع. لم يتم خصم رصيد أو استخدام مجاني" };
   }
 }
 
@@ -280,7 +332,14 @@ export async function duplicateProjectAction(projectId: string) {
   if (!user) return { success: false, error: "غير مصرح" };
 
   const { data: newId, error } = await supabase.rpc("duplicate_project", { p_project_id: projectId });
-  if (error || !newId) return { success: false, error: "تعذر تكرار المشروع" };
+  if (error || !newId) {
+    return {
+      success: false,
+      error: error?.message.includes("FREE_PROJECT_LIMIT_REACHED")
+        ? "استخدمت المشاريع المجانية الخمسة. قم بالترقية لتكرار المزيد"
+        : "تعذر تكرار المشروع",
+    };
+  }
 
   revalidatePath("/projects");
   return { success: true, projectId: newId };

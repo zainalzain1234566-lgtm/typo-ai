@@ -49,6 +49,7 @@ export interface AppData {
     plan: "free" | "paid";
     subscriptionStatus: "inactive" | "active" | "expired" | "canceled";
     freeUsesRemaining: number;
+    freeProjectsRemaining: number;
     creditBalanceMicroUsd: number;
     subscriptionExpiresAt: string | null;
   };
@@ -69,7 +70,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [brandKit, setBrandKit] = useState<{ instagramHandle: string; logoUrl: string | null; primaryColor: string; font: string; disclaimerText: string }>({ instagramHandle: "", logoUrl: null, primaryColor: DEFAULT_ACCENT_COLOR, font: "tajawal", disclaimerText: DEFAULT_DISCLAIMER_TEXT });
   const [preferences, setPreferences] = useState({ language: "العربية الفصحى", tone: "مبسطة", level: "مبتدئ", size: "portrait", slideCount: 6, preferredTemplateId: null, contentMode: "general" as ContentMode });
   const [telegramEnabled, setTelegramEnabled] = useState(false);
-  const [billing, setBilling] = useState<AppData["billing"]>({ plan: "free", subscriptionStatus: "inactive", freeUsesRemaining: 2, creditBalanceMicroUsd: 0, subscriptionExpiresAt: null });
+  const [billing, setBilling] = useState<AppData["billing"]>({ plan: "free", subscriptionStatus: "inactive", freeUsesRemaining: 2, freeProjectsRemaining: 5, creditBalanceMicroUsd: 0, subscriptionExpiresAt: null });
 
   const loadUserData = useCallback(async (userId: string) => {
     console.log("[APP] loadUserData start", { userId });
@@ -146,6 +147,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         plan: entitlement.current_plan === "paid" ? "paid" : "free",
         subscriptionStatus,
         freeUsesRemaining: Math.max(0, 2 - entitlement.free_template_generations_used - entitlement.free_template_generations_reserved),
+        freeProjectsRemaining: Math.max(0, 5 - (entitlement.free_project_creations_used ?? 0) - (entitlement.free_project_creations_reserved ?? 0)),
         creditBalanceMicroUsd: Math.max(0, entitlement.credit_balance_microusd - entitlement.credit_reserved_microusd),
         subscriptionExpiresAt: entitlement.subscription_expires_at,
       });
